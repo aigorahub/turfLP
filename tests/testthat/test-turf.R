@@ -174,6 +174,26 @@ test_that("a later stage cannot make an earlier criterion worse", {
   expect_identical(p$penetration, 20000)
 })
 
+test_that("a retried stage finds the true optimum on the later criterion", {
+  # Pairs 1-2 and 3-4 tie exactly on penetration, and pair 5-6 is about 1e-9
+  # (relative) worse. The frequency stage returned pair 5-6. Keeping the
+  # earlier pair 1-2 would lose frequency; the optimum is pair 3-4.
+  set.seed(1)
+  n <- 35043L
+  r <- c(20025L, 20025L, 16020L, 26700L, 14953L, 30304L)
+  a <- matrix(1, n, 6)
+  for (pair in 0:2) {
+    ids <- sample.int(n)
+    j <- 2 * pair + 1
+    miss <- n - r[j]
+    a[ids[seq_len(miss)], j] <- 0
+    a[ids[miss + seq_len(n - r[j + 1])], j + 1] <- 0
+  }
+  p <- turf(a, 2, c("penetration", "frequency"))
+  expect_equal(p$products, c(3, 4))
+  expect_equal(p$frequency, 42720)
+})
+
 test_that("turf_simulate() checks its arguments", {
   expect_error(turf_simulate(10, 2.9), "`n_products` must be")
   expect_error(turf_simulate(0, 3), "`n_respondents` must be")

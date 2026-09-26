@@ -136,19 +136,36 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
     )
   )
 
+  max_cuts <- 100
   stages <- c("reach", tiebreak)
   for (s in seq_along(stages)) {
     obj <- objectives[[stages[s]]]
     sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
     selected <- sol[x_vars] > 0.5
 
-    # lp_solve can satisfy the penetration bound only to within its
-    # tolerance, so a later stage can return products that are slightly
-    # worse on an earlier criterion. Keep the previous products in that case.
-    # They meet every bound exactly, so they are feasible in this stage.
-    if (s > 1 && worse_on_earlier(objectives[stages[seq_len(s - 1)]],
-                                  selected, previous)) {
-      selected <- previous
+    # lp_solve meets the penetration bound and the penetration copy only to
+    # within its tolerance, so a later stage can return products that are
+    # slightly worse on an earlier criterion. Cut off those exact products
+    # and solve again. The previous products meet every bound exactly and
+    # are never cut, so a valid portfolio always remains.
+    if (s > 1) {
+      earlier <- objectives[stages[seq_len(s - 1)]]
+      cuts <- 0
+      while (worse_on_earlier(earlier, selected, previous)) {
+        cuts <- cuts + 1
+        if (cuts > max_cuts) {
+          warning(sprintf(paste(
+            "The %s stage stopped after %d retries. The portfolio is",
+            "optimal on the earlier criteria but may not be optimal on %s."
+          ), stages[s], max_cuts, stages[s]), call. = FALSE)
+          selected <- previous
+          break
+        }
+        model <- add_row(model, coef = on_vars(x = selected),
+                         dir = "<=", rhs = size - 1)
+        sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
+        selected <- sol[x_vars] > 0.5
+      }
     }
     previous <- selected
 
