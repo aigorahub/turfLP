@@ -124,7 +124,7 @@ Reach and frequency are whole numbers, so the package fixes them with exact boun
 
 In R, two values count as equal when they differ by less than the rounding error of the sum, 16 × size × machine epsilon (relative, about 7e-15 for a portfolio of two products). Values that differ by less than that are treated as a tie.
 
-The collection stops after 1000 portfolios or 30 seconds. This happens only when very many portfolios have almost the same penetration. The package then warns that the penetration is optimal only to within the solver tolerance, and the solver finds the best frequency with penetration bounded by the best value found. Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
+The collection stops after 1000 portfolios or 30 seconds. This happens only when very many portfolios have almost the same penetration. The package then warns that the penetration is optimal only to within the solver tolerance, and the solver finds the best frequency with penetration bounded by the best value found, with another 30 seconds. If that search also stops, the package warns and returns the best portfolio on penetration. The time limits apply inside each solve, but the reach stage, a frequency stage before penetration, and the first penetration solve have no time limit. Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
 
 ### Run time
 

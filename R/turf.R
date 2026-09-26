@@ -152,18 +152,26 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
   # exact products and solve again. The previous products meet every bound
   # exactly and are never cut, so they stay feasible. `status` is "ok",
   # "none" (no other valid portfolio is feasible), "limit" (`max_solves`
-  # solves), or "invalid" (the solver returned a vector that does not select
-  # `size` products; a cut built from it could remove valid portfolios).
+  # solves), "time" (past `deadline`), or "invalid" (the solver returned a
+  # vector that does not select `size` products; a cut built from it could
+  # remove valid portfolios).
   max_solves <- 100
   exclude <- function(model, selected) {
     add_row(model, coef = on_vars(x = selected), dir = "<=", rhs = size - 1)
   }
-  next_valid <- function(model, obj, earlier, previous) {
+  next_valid <- function(model, obj, earlier, previous, deadline = Inf) {
     for (i in seq_len(max_solves)) {
+      remaining <- deadline - proc.time()[["elapsed"]]
+      if (remaining <= 0) {
+        return(list(status = "time", model = model))
+      }
       sol <- solve_lp(obj$direction, obj$coef, model, x_vars, obj$name,
-                      soft = !is.null(previous))
+                      soft = !is.null(previous), time_limit = remaining)
       if (is.null(sol)) {
         return(list(status = "none", model = model))
+      }
+      if (identical(sol, "time")) {
+        return(list(status = "time", model = model))
       }
       x <- sol[x_vars]
       selected <- x > 0.5
@@ -190,6 +198,7 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
       "earlier criteria but may not be optimal on %s."
     ), stage, switch(status,
       limit = sprintf("%d solves", max_solves),
+      time = sprintf("time limit of %g seconds", max_pool_seconds),
       invalid = "HiGHS returned an invalid solution",
       none = "HiGHS found no valid portfolio"
     ), stage), call. = FALSE)
@@ -225,14 +234,10 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
       last <- selected
       model <- add_row(model, coef = obj$coef, dir = "<=", rhs = bound)
       status <- "full"
-      started <- proc.time()[["elapsed"]]
+      deadline <- proc.time()[["elapsed"]] + max_pool_seconds
       for (i in seq_len(max_pool)) {
-        if (proc.time()[["elapsed"]] - started > max_pool_seconds) {
-          status <- "time"
-          break
-        }
         model <- exclude(model, last)
-        res <- next_valid(model, obj, earlier, previous)
+        res <- next_valid(model, obj, earlier, previous, deadline)
         model <- res$model
         if (res$status != "ok") {
           status <- if (res$status == "none") "complete" else res$status
@@ -267,7 +272,7 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
             add_row(without_pool, coef = obj$coef, dir = "<=",
                     rhs = obj$value(selected)),
             objectives[[stages[s + 1]]], objectives[stages[seq_len(s)]],
-            selected
+            selected, proc.time()[["elapsed"]] + max_pool_seconds
           )
           if (res$status == "ok") {
             selected <- res$selected
@@ -434,10 +439,10 @@ check_tiebreak <- function(tiebreak) {
 # Solve one stage with HiGHS. `model` holds the constraints as triplets
 # (row, column, value) with their directions and right-hand sides. Variables
 # are at least 0, and the variables in `binary` are 0 or 1. With
-# `soft = TRUE`, an infeasible model gives NULL and any other failure gives
-# NA; otherwise both stop with an error.
+# `soft = TRUE`, an infeasible model gives NULL, the time limit gives "time",
+# and any other failure gives NA; otherwise all stop with an error.
 solve_lp <- function(direction, objective, model, binary, stage,
-                     soft = FALSE) {
+                     soft = FALSE, time_limit = Inf) {
   n_vars <- length(objective)
   types <- rep("C", n_vars)
   types[binary] <- "I"
@@ -458,6 +463,7 @@ solve_lp <- function(direction, objective, model, binary, stage,
     # HiGHS 1.14 presolve returned a wrong optimum on a 7 by 4 test matrix
     # (5 unreached respondents where 4 is optimal), so presolve is off.
     control = highs::highs_control(
+      time_limit = time_limit,
       presolve = "off",
       mip_rel_gap = 0,
       mip_abs_gap = 0,
@@ -469,7 +475,11 @@ solve_lp <- function(direction, objective, model, binary, stage,
     return(res$primal_solution)
   }
   if (soft) {
-    return(if (res$status_message == "Infeasible") NULL else NA)
+    return(switch(res$status_message,
+      "Infeasible" = NULL,
+      "Time limit reached" = "time",
+      NA
+    ))
   }
   stop(sprintf(
     "HiGHS did not find a solution in the %s stage (%s).",
