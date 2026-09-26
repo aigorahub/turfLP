@@ -1,0 +1,39 @@
+bibentry(
+  bibtype = "Manual",
+  header = "To cite turfLP in publications, use:",
+  title = "{turfLP}: TURF Analysis with Integer Linear Programming",
+  author = person("John", "Ennis"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/aigorahub/turfLP"
+)
+
+bibentry(
+  bibtype = "Article",
+  header = "turfLP implements the binary linear programming approach of:",
+  title = "Implementing {TURF} Analysis Through Binary Linear Programming",
+  author = person("Daniel", "Serra"),
+  journal = "Food Quality and Preference",
+  volume = "28",
+  number = "1",
+  pages = "382--388",
+  year = "2013",
+  doi = "10.1016/j.foodqual.2012.10.001"
+)
+
+bibentry(
+  bibtype = "Article",
+  header = "For TURF analysis of large data sets, see also:",
+  title = "{eTURF}: A Competitive {TURF} Algorithm for Large Datasets",
+  author = c(
+    person(c("John", "M."), "Ennis"),
+    person(c("Charles", "M."), "Fayle"),
+    person(c("Daniel", "M."), "Ennis")
+  ),
+  journal = "Food Quality and Preference",
+  volume = "23",
+  number = "1",
+  pages = "44--48",
+  year = "2012",
+  doi = "10.1016/j.foodqual.2011.06.004"
+)

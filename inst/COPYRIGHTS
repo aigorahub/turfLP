@@ -1,0 +1,34 @@
+The turfLP code is Copyright (c) 2021-2026 Aigora and licensed under the
+MIT License. See the LICENSE file.
+
+The data sets icecream, chips, and cafe are simulated. They are part of
+turfLP and licensed under the MIT License.
+
+The other data sets come from public data under their own licenses. Each
+was changed as described in its help page and in data-raw/real.R.
+
+ham
+  Berget, I. (2024). Dataset on rapid sensory methods for cured hams and
+  associations with consumer values in the Schwartz model [Data set].
+  Zenodo. https://doi.org/10.5281/zenodo.10996096
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0),
+  https://creativecommons.org/licenses/by/4.0/
+
+coffee
+  Ristenpart, W., Cotter, A. R., & Guinard, J.-X. (2023). Consumer
+  preference data for black coffee [Data set]. Dryad.
+  https://doi.org/10.25338/B8993H
+  License: CC0 1.0 Universal Public Domain Dedication,
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+pies
+  FiveThirtyEight (2015). thanksgiving-2015 [Data set].
+  https://github.com/fivethirtyeight/data/tree/master/thanksgiving-2015
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0),
+  https://creativecommons.org/licenses/by/4.0/
+
+lunchbags
+  Chen, D. (2015). Online Retail [Data set]. UCI Machine Learning
+  Repository. https://doi.org/10.24432/C5BW33
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0),
+  https://creativecommons.org/licenses/by/4.0/
