@@ -220,13 +220,17 @@ test_that("many exact ties on penetration keep the frequency optimum", {
   }
   a[1:6, 401] <- 1
   a[5:16, 402] <- 1
+  # The pool needs about 200 solves here. Remove the time limit so that the
+  # test does not depend on the speed of the machine.
+  old <- options(turfLP.max_pool_seconds = Inf)
+  on.exit(options(old), add = TRUE)
   expect_no_warning(p <- turf(a, 2, c("penetration", "frequency")))
   expect_equal(p$products, c(401, 402))
 
   # With a smaller pool limit the pool is incomplete, and the frequency
   # stage goes back to the solver.
-  withr_pool <- options(turfLP.max_pool = 50)
-  on.exit(options(withr_pool))
+  old_pool <- options(turfLP.max_pool = 50)
+  on.exit(options(old_pool), add = TRUE)
   expect_warning(p <- turf(a, 2, c("penetration", "frequency")),
                  "penetration optimum stopped")
   expect_equal(p$products, c(401, 402))
