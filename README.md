@@ -121,12 +121,13 @@ The first case is an objective with fractional coefficients on the integer varia
 
 The second case is a bound with a small tolerance. In one test, the bound "unreached ≤ 2 + 2e-9" made lp_solve skip the optimum, and the exact bound "unreached ≤ 2" did not. Reach and frequency are whole numbers, so the package fixes them with exact bounds.
 
-The penetration value is not a whole number, and lp_solve meets bounds only to within its tolerance (about 1e-9). A review found two cases with about 35,000 to 40,000 respondents where a stage returned a portfolio about 1e-9 (relative) worse on penetration than the optimum. The package handles this in two steps:
+The penetration value is not a whole number, and lp_solve meets bounds only to within its tolerance (about 1e-9). A review found cases with 35,000 to 60,000 respondents where a stage returned a portfolio slightly worse on penetration than the optimum. The package handles this in three steps:
 
 - After each stage, it computes the earlier criteria from the selected products. If the portfolio is worse on an earlier criterion, it adds a constraint that excludes that exact portfolio and solves the stage again.
-- The solver does not decide the penetration stage. The package collects every portfolio whose penetration sum is within a relative 1e-7 of the first solution, which is far wider than the solver tolerance, by excluding each portfolio it finds and solving again. It then picks the best of these on penetration, and on frequency if frequency comes after penetration, in R. Penetration values within a relative 1e-12 count as equal.
+- The solver does not decide the penetration stage. The package collects every portfolio whose penetration sum is within a relative 1e-7 of the first solution, which is far wider than the solver tolerance, by excluding each portfolio it finds and solving again. It then picks the best in R.
+- If frequency comes after penetration, the solver maximizes frequency with penetration bounded by that best value, and the first step removes any portfolio that meets the bound only to within the solver tolerance.
 
-Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
+In R, two values count as equal when they differ by less than the rounding error of the sum, 16 × size × machine epsilon (relative, about 7e-15 for a portfolio of two products). The collection stops at 100 portfolios. If more exist, the package warns that the penetration is optimal only to within the solver tolerance. Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
 
 ### Run time
 

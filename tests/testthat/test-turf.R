@@ -205,6 +205,45 @@ test_that("identical products do not flood the penetration stage", {
   expect_equal(p$penetration, b$penetration)
 })
 
+test_that("many exact ties on penetration keep the frequency optimum", {
+  # 200 complementary pairs of 8-hit columns and the pair 401-402 all reach
+  # the 16 respondents with penetration 8. Only 401-402 has frequency 18.
+  comb <- combn(16, 8)
+  comb <- comb[, colSums(comb <= 4) %in% 1:3, drop = FALSE]
+  comb <- comb[, apply(comb, 2, function(x) 1 %in% x), drop = FALSE]
+  set.seed(1)
+  chosen <- sample.int(ncol(comb), 200)
+  a <- matrix(0, 16, 402)
+  for (j in 1:200) {
+    a[comb[, chosen[j]], 2 * j - 1] <- 1
+    a[, 2 * j] <- 1 - a[, 2 * j - 1]
+  }
+  a[1:6, 401] <- 1
+  a[5:16, 402] <- 1
+  expect_warning(p <- turf(a, 2, c("penetration", "frequency")),
+                 "More than 100 portfolios")
+  expect_equal(p$products, c(401, 402))
+})
+
+test_that("penetration differences near 1e-13 are not treated as ties", {
+  set.seed(20260926)
+  n <- 42000L
+  r <- c(26318L, 27898L, 25803L, 28501L)
+  a <- matrix(1, n, 4)
+  for (i in c(1, 3)) {
+    ids <- sample.int(n)
+    miss <- n - r[i]
+    a[ids[seq_len(miss)], i] <- 0
+    a[ids[miss + seq_len(n - r[i + 1])], i + 1] <- 0
+  }
+  expect_equal(turf(a, 2, c("penetration", "frequency"))$products, c(1, 2))
+})
+
+test_that("the pool warns only when more than 100 portfolios exist", {
+  expect_no_warning(turf(diag(100), 1, "penetration"))
+  expect_warning(turf(diag(101), 1, "penetration"), "More than 100")
+})
+
 test_that("turf_simulate() checks its arguments", {
   expect_error(turf_simulate(10, 2.9), "`n_products` must be")
   expect_error(turf_simulate(0, 3), "`n_respondents` must be")
