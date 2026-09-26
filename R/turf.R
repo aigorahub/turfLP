@@ -142,6 +142,16 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
     sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
     selected <- sol[x_vars] > 0.5
 
+    # lp_solve can satisfy the penetration bound only to within its
+    # tolerance, so a later stage can return products that are slightly
+    # worse on an earlier criterion. Keep the previous products in that case.
+    # They meet every bound exactly, so they are feasible in this stage.
+    if (s > 1 && worse_on_earlier(objectives[stages[seq_len(s - 1)]],
+                                  selected, previous)) {
+      selected <- previous
+    }
+    previous <- selected
+
     if (s < length(stages)) {
       # Fix this criterion at the value that the selected products actually
       # give, not at the solver's value for the continuous variables. Reach
@@ -164,9 +174,9 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
 #'
 #' `turf_min_cover()` solves the set cover problem: it finds the fewest
 #' products such that every respondent that some product reaches is reached
-#' by at least one selected product. The size of this portfolio is the
-#' largest size worth passing to [turf()], because larger portfolios cannot
-#' add reach.
+#' by at least one selected product. Larger portfolios cannot add reach, so
+#' for reach this is the largest size worth passing to [turf()]. Larger
+#' portfolios can still add frequency.
 #'
 #' @inheritParams turf
 #' @return An object of class `turf_portfolio`. See [turf()] for its
@@ -313,6 +323,27 @@ solve_lp <- function(direction, objective, model, binary, stage) {
     ), call. = FALSE)
   }
   res$solution
+}
+
+# TRUE when the products in `selected` are lexicographically worse than the
+# products in `previous` on the criteria in `objectives`, in order. Values
+# within a relative 1e-12 count as equal, so rounding in the penetration sum
+# does not break a true tie. Reach and frequency are whole numbers and are
+# compared exactly.
+worse_on_earlier <- function(objectives, selected, previous) {
+  for (obj in objectives) {
+    sign <- if (obj$direction == "min") 1 else -1
+    new <- sign * obj$value(selected)
+    old <- sign * obj$value(previous)
+    tol <- 1e-12 * max(1, abs(old))
+    if (new > old + tol) {
+      return(TRUE)
+    }
+    if (new < old - tol) {
+      return(FALSE)
+    }
+  }
+  FALSE
 }
 
 add_row <- function(model, coef, dir, rhs) {

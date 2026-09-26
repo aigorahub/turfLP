@@ -11,7 +11,8 @@ turf_simulate(n_respondents = 1000, n_products = 30, max_prob = 0.5)
 
 \item{n_products}{Number of products (columns).}
 
-\item{max_prob}{Largest possible reach probability for a product.}
+\item{max_prob}{Largest possible reach probability for a product, from 0
+to 1.}
 }
 \value{
 A numeric matrix of 0 and 1 with \code{n_respondents} rows and

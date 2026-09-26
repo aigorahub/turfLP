@@ -161,3 +161,22 @@ test_that("print() shows the portfolio", {
   expect_output(print(turf(tie_matrix, 2)), "P2, P3")
   expect_output(print(turf(tie_matrix, 2)), "7 of 8 respondents")
 })
+
+test_that("a later stage cannot make an earlier criterion worse", {
+  # lp_solve meets the penetration bound only to within its tolerance. Here
+  # the frequency stage returned products 3 and 4, with a penetration about
+  # 5e-9 below the optimum of products 1 and 2.
+  n <- 20000
+  pattern <- rbind(c(1, 0, 1, 0), c(1, 0, 0, 1), c(0, 1, 1, 0), c(0, 1, 0, 1))
+  a <- pattern[rep(1:4, c(n / 2 - 1, n / 2 + 1, n / 2, n / 2)), ]
+  p <- turf(a, 2, c("penetration", "frequency"))
+  expect_equal(p$products, c(1, 2))
+  expect_identical(p$penetration, 20000)
+})
+
+test_that("turf_simulate() checks its arguments", {
+  expect_error(turf_simulate(10, 2.9), "`n_products` must be")
+  expect_error(turf_simulate(0, 3), "`n_respondents` must be")
+  expect_error(turf_simulate(10, 3, 1.1), "`max_prob` must be")
+  expect_error(turf_simulate(10, 3, NA), "`max_prob` must be")
+})

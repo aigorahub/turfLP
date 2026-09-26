@@ -121,6 +121,8 @@ The first case is an objective with fractional coefficients on the integer varia
 
 The second case is a bound with a small tolerance. In one test, the bound "unreached ≤ 2 + 2e-9" made lp_solve skip the optimum, and the exact bound "unreached ≤ 2" did not. Reach and frequency are whole numbers, so the package fixes them with exact bounds.
 
+The penetration value is not a whole number, so its bound holds only to within the solver tolerance (about 1e-9). With `tiebreak = c("penetration", "frequency")`, a review found a 40,000-respondent case where the frequency stage returned a portfolio with a penetration about 5e-9 below the optimum. After each stage, the package now computes the earlier criteria from the selected products. If the new portfolio is worse on an earlier criterion, it keeps the portfolio from the previous stage. That portfolio is optimal on every earlier criterion, but when this happens, a portfolio that is better on the later criterion can exist. Penetration values within a relative 1e-12 count as equal.
+
 ### Run time
 
 These times are for one `turf()` call with all tie-breaks, on simulated data with correlated products (Apple M5 Pro, R 4.6.0):
