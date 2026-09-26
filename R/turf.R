@@ -121,54 +121,113 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
   on_vars <- function(z = 0, x = 0, pen = 0) {
     c(rep(z, length.out = n), rep(x, length.out = m), pen)
   }
+
+  # Identical products give identical portfolios when swapped. Select them in
+  # column order (x_first >= x_second >= ...), so that each set of equivalent
+  # portfolios is searched once.
+  col_keys <- vapply(seq_len(m), function(j) {
+    paste(which(a[, j] == 1), collapse = ",")
+  }, character(1))
+  for (j in which(duplicated(col_keys))) {
+    prev <- max(which(col_keys[seq_len(j - 1)] == col_keys[j]))
+    model <- add_row(model, coef = on_vars(x = replace(numeric(m), c(prev, j),
+                                                      c(1, -1))),
+                     dir = ">=", rhs = 0)
+  }
   objectives <- list(
     reach = list(
-      direction = "min", coef = on_vars(z = 1),
+      name = "reach", direction = "min", coef = on_vars(z = 1),
       value = function(sel) n - sum(rowSums(a[, sel, drop = FALSE]) > 0)
     ),
     frequency = list(
-      direction = "max", coef = on_vars(x = cand_reach),
+      name = "frequency", direction = "max", coef = on_vars(x = cand_reach),
       value = function(sel) sum(cand_reach[sel])
     ),
     penetration = list(
-      direction = "min", coef = on_vars(pen = 1),
+      name = "penetration", direction = "min", coef = on_vars(pen = 1),
       value = function(sel) sum(pen_coef[sel])
     )
   )
 
-  max_cuts <- 100
+  # Solve one stage, then check the earlier criteria from the selected
+  # products. lp_solve meets bounds only to within its tolerance, so it can
+  # return products that are slightly worse on an earlier criterion. Cut off
+  # those exact products and solve again. The previous products meet every
+  # bound exactly and are never cut, so they stay feasible. Returns NULL
+  # selected products when no other portfolio is feasible.
+  max_solves <- 100
+  exclude <- function(model, selected) {
+    add_row(model, coef = on_vars(x = selected), dir = "<=", rhs = size - 1)
+  }
+  next_valid <- function(model, obj, earlier, previous) {
+    for (i in seq_len(max_solves)) {
+      sol <- solve_lp(obj$direction, obj$coef, model, x_vars, obj$name,
+                      infeasible_ok = !is.null(previous))
+      if (is.null(sol)) {
+        return(list(selected = NULL, model = model, exhausted = FALSE))
+      }
+      selected <- sol[x_vars] > 0.5
+      if (is.null(previous) || !worse_on_earlier(earlier, selected, previous)) {
+        return(list(selected = selected, model = model, exhausted = FALSE))
+      }
+      model <- exclude(model, selected)
+    }
+    list(selected = NULL, model = model, exhausted = TRUE)
+  }
+  retry_warning <- function(stage) {
+    warning(sprintf(paste(
+      "The %s stage stopped after %d solves. The portfolio is optimal on",
+      "the earlier criteria but may not be optimal on %s."
+    ), stage, max_solves, stage), call. = FALSE)
+  }
+
   stages <- c("reach", tiebreak)
+  previous <- NULL
   for (s in seq_along(stages)) {
     obj <- objectives[[stages[s]]]
-    sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
-    selected <- sol[x_vars] > 0.5
+    earlier <- objectives[stages[seq_len(s - 1)]]
+    res <- next_valid(model, obj, earlier, previous)
+    model <- res$model
+    if (is.null(res$selected)) {
+      retry_warning(stages[s])
+      break
+    }
+    selected <- res$selected
 
-    # lp_solve meets the penetration bound and the penetration copy only to
-    # within its tolerance, so a later stage can return products that are
-    # slightly worse on an earlier criterion. Cut off those exact products
-    # and solve again. The previous products meet every bound exactly and
-    # are never cut, so a valid portfolio always remains.
-    if (s > 1) {
-      earlier <- objectives[stages[seq_len(s - 1)]]
-      cuts <- 0
-      while (worse_on_earlier(earlier, selected, previous)) {
-        cuts <- cuts + 1
-        if (cuts > max_cuts) {
-          warning(sprintf(paste(
-            "The %s stage stopped after %d retries. The portfolio is",
-            "optimal on the earlier criteria but may not be optimal on %s."
-          ), stages[s], max_cuts, stages[s]), call. = FALSE)
-          selected <- previous
+    if (stages[s] == "penetration") {
+      # Penetration is not a whole number, and lp_solve works to about 1e-9,
+      # so its optimum is not exact. Collect every valid portfolio whose
+      # penetration sum is within a relative 1e-7 of this one. That window is
+      # far wider than the solver tolerance, so it holds every portfolio that
+      # is optimal on penetration. Then pick the best from the collected
+      # portfolios in R, on penetration and any later criteria.
+      pool <- list(selected)
+      model <- add_row(model, coef = obj$coef, dir = "<=",
+                       rhs = obj$value(selected) * (1 + 1e-7))
+      repeat {
+        model <- exclude(model, pool[[length(pool)]])
+        res <- next_valid(model, obj, earlier, previous)
+        model <- res$model
+        if (res$exhausted) {
+          retry_warning(stages[s])
+        }
+        if (is.null(res$selected)) {
           break
         }
-        model <- add_row(model, coef = on_vars(x = selected),
-                         dir = "<=", rhs = size - 1)
-        sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
-        selected <- sol[x_vars] > 0.5
+        pool <- c(pool, list(res$selected))
+        if (length(pool) >= max_solves) {
+          warning(sprintf(paste(
+            "More than %d portfolios tie on penetration. The portfolio is",
+            "the best of the first %d."
+          ), max_solves, max_solves), call. = FALSE)
+          break
+        }
       }
+      selected <- best_of(pool, objectives[stages[s:length(stages)]])
+      break
     }
-    previous <- selected
 
+    previous <- selected
     if (s < length(stages)) {
       # Fix this criterion at the value that the selected products actually
       # give, not at the solver's value for the continuous variables. Reach
@@ -324,7 +383,8 @@ check_tiebreak <- function(tiebreak) {
 
 # Solve one stage with lpSolve. `model` holds the constraints as triplets
 # (row, column, value) with their directions and right-hand sides.
-solve_lp <- function(direction, objective, model, binary, stage) {
+solve_lp <- function(direction, objective, model, binary, stage,
+                     infeasible_ok = FALSE) {
   res <- lpSolve::lp(
     direction = direction,
     objective.in = objective,
@@ -333,6 +393,9 @@ solve_lp <- function(direction, objective, model, binary, stage) {
     dense.const = model$triplets,
     binary.vec = binary
   )
+  if (res$status == 2 && infeasible_ok) {
+    return(NULL)
+  }
   if (res$status != 0) {
     stop(sprintf(
       "lpSolve did not find a solution in the %s stage (status %d).",
@@ -342,25 +405,39 @@ solve_lp <- function(direction, objective, model, binary, stage) {
   res$solution
 }
 
+# Criterion values within a relative 1e-12 count as equal, so rounding in
+# the penetration sum does not break a true tie. Reach and frequency are
+# whole numbers, so this compares them exactly. Values are signed so that
+# smaller is better.
+signed_value <- function(obj, selected) {
+  (if (obj$direction == "min") 1 else -1) * obj$value(selected)
+}
+tolerance <- function(value) 1e-12 * max(1, abs(value))
+
 # TRUE when the products in `selected` are lexicographically worse than the
-# products in `previous` on the criteria in `objectives`, in order. Values
-# within a relative 1e-12 count as equal, so rounding in the penetration sum
-# does not break a true tie. Reach and frequency are whole numbers and are
-# compared exactly.
+# products in `previous` on the criteria in `objectives`, in order.
 worse_on_earlier <- function(objectives, selected, previous) {
   for (obj in objectives) {
-    sign <- if (obj$direction == "min") 1 else -1
-    new <- sign * obj$value(selected)
-    old <- sign * obj$value(previous)
-    tol <- 1e-12 * max(1, abs(old))
-    if (new > old + tol) {
+    new <- signed_value(obj, selected)
+    old <- signed_value(obj, previous)
+    if (new > old + tolerance(old)) {
       return(TRUE)
     }
-    if (new < old - tol) {
+    if (new < old - tolerance(old)) {
       return(FALSE)
     }
   }
   FALSE
+}
+
+# The lexicographically best portfolio in `pool` on `objectives`, in order.
+best_of <- function(pool, objectives) {
+  keep <- seq_along(pool)
+  for (obj in objectives) {
+    v <- vapply(pool[keep], function(sel) signed_value(obj, sel), numeric(1))
+    keep <- keep[v <= min(v) + tolerance(min(v))]
+  }
+  pool[[keep[1]]]
 }
 
 add_row <- function(model, coef, dir, rhs) {

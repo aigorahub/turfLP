@@ -194,6 +194,17 @@ test_that("a retried stage finds the true optimum on the later criterion", {
   expect_equal(p$frequency, 42720)
 })
 
+test_that("identical products do not flood the penetration stage", {
+  set.seed(3)
+  base <- matrix(rbinom(300 * 4, 1, 0.3), 300)
+  a <- base[, c(rep(1, 12), 2:4)]
+  expect_no_warning(p <- turf(a, 3))
+  b <- brute_force(a, 3, c("frequency", "penetration"))
+  expect_equal(p$reach, b$reach)
+  expect_equal(p$frequency, b$frequency)
+  expect_equal(p$penetration, b$penetration)
+})
+
 test_that("turf_simulate() checks its arguments", {
   expect_error(turf_simulate(10, 2.9), "`n_products` must be")
   expect_error(turf_simulate(0, 3), "`n_respondents` must be")

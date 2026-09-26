@@ -121,7 +121,12 @@ The first case is an objective with fractional coefficients on the integer varia
 
 The second case is a bound with a small tolerance. In one test, the bound "unreached ≤ 2 + 2e-9" made lp_solve skip the optimum, and the exact bound "unreached ≤ 2" did not. Reach and frequency are whole numbers, so the package fixes them with exact bounds.
 
-The penetration value is not a whole number, so lp_solve meets its bound only to within the solver tolerance (about 1e-9). A review found two cases with about 35,000 to 40,000 respondents and `tiebreak = c("penetration", "frequency")` where the frequency stage returned a portfolio with a penetration about 1e-9 (relative) below the optimum. After each stage, the package now computes the earlier criteria from the selected products. If the portfolio is worse on an earlier criterion, the package adds a constraint that excludes that exact portfolio and solves the stage again. Penetration values within a relative 1e-12 count as equal. The penetration optimum itself is exact only to within the solver tolerance, so two portfolios whose penetration differs by less than about 1e-9 (relative) can be treated as a tie.
+The penetration value is not a whole number, and lp_solve meets bounds only to within its tolerance (about 1e-9). A review found two cases with about 35,000 to 40,000 respondents where a stage returned a portfolio about 1e-9 (relative) worse on penetration than the optimum. The package handles this in two steps:
+
+- After each stage, it computes the earlier criteria from the selected products. If the portfolio is worse on an earlier criterion, it adds a constraint that excludes that exact portfolio and solves the stage again.
+- The solver does not decide the penetration stage. The package collects every portfolio whose penetration sum is within a relative 1e-7 of the first solution, which is far wider than the solver tolerance, by excluding each portfolio it finds and solving again. It then picks the best of these on penetration, and on frequency if frequency comes after penetration, in R. Penetration values within a relative 1e-12 count as equal.
+
+Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
 
 ### Run time
 
