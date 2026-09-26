@@ -163,9 +163,9 @@ test_that("print() shows the portfolio", {
 })
 
 test_that("a later stage cannot make an earlier criterion worse", {
-  # lp_solve meets the penetration bound only to within its tolerance. Here
-  # the frequency stage returned products 3 and 4, with a penetration about
-  # 5e-9 below the optimum of products 1 and 2.
+  # With lpSolve, which met the penetration bound only to within its
+  # tolerance, the frequency stage returned products 3 and 4, with a
+  # penetration about 5e-9 below the optimum of products 1 and 2.
   n <- 20000
   pattern <- rbind(c(1, 0, 1, 0), c(1, 0, 0, 1), c(0, 1, 1, 0), c(0, 1, 0, 1))
   a <- pattern[rep(1:4, c(n / 2 - 1, n / 2 + 1, n / 2, n / 2)), ]
@@ -220,8 +220,15 @@ test_that("many exact ties on penetration keep the frequency optimum", {
   }
   a[1:6, 401] <- 1
   a[5:16, 402] <- 1
+  expect_no_warning(p <- turf(a, 2, c("penetration", "frequency")))
+  expect_equal(p$products, c(401, 402))
+
+  # With a smaller pool limit the pool is incomplete, and the frequency
+  # stage goes back to the solver.
+  withr_pool <- options(turfLP.max_pool = 50)
+  on.exit(options(withr_pool))
   expect_warning(p <- turf(a, 2, c("penetration", "frequency")),
-                 "More than 100 portfolios")
+                 "penetration optimum stopped")
   expect_equal(p$products, c(401, 402))
 })
 
@@ -239,9 +246,9 @@ test_that("penetration differences near 1e-13 are not treated as ties", {
   expect_equal(turf(a, 2, c("penetration", "frequency"))$products, c(1, 2))
 })
 
-test_that("the pool warns only when more than 100 portfolios exist", {
-  expect_no_warning(turf(diag(100), 1, "penetration"))
-  expect_warning(turf(diag(101), 1, "penetration"), "More than 100")
+test_that("many tied portfolios give no warning when the pool is complete", {
+  expect_no_warning(p <- turf(diag(101), 1, c("penetration", "frequency")))
+  expect_equal(p$reach, 1)
 })
 
 test_that("turf_simulate() checks its arguments", {
