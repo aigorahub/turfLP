@@ -249,8 +249,15 @@ test_that("penetration differences near 1e-13 are not treated as ties", {
 test_that("the pool time limit gives a warning and a valid portfolio", {
   old <- options(turfLP.max_pool_seconds = 0)
   on.exit(options(old))
-  expect_warning(p <- turf(tie_matrix, 2, c("penetration", "frequency")),
-                 "time limit")
+  warnings <- character(0)
+  p <- withCallingHandlers(
+    turf(tie_matrix, 2, c("penetration", "frequency")),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(length(warnings) > 0 && all(grepl("time limit", warnings)))
   b <- brute_force(tie_matrix, 2, "penetration")
   expect_equal(p$reach, b$reach)
 })
