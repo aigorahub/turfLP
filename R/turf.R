@@ -192,10 +192,15 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
     }
     list(status = "limit", model = model)
   }
-  unfinished <- function(stage, status) {
+  unfinished <- function(stage, status, earlier_exact = TRUE) {
     warning(sprintf(paste(
-      "The %s stage did not finish (%s). The portfolio is optimal on the",
-      "earlier criteria but may not be optimal on %s."
+      "The %s stage did not finish (%s). The portfolio is optimal on",
+      if (earlier_exact) {
+        "the earlier criteria but"
+      } else {
+        "penetration only to within the solver tolerance and"
+      },
+      "may not be optimal on %s."
     ), stage, switch(status,
       limit = sprintf("%d solves", max_solves),
       time = sprintf("time limit of %g seconds", max_pool_seconds),
@@ -277,7 +282,7 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
           if (res$status == "ok") {
             selected <- res$selected
           } else {
-            unfinished(stages[s + 1], res$status)
+            unfinished(stages[s + 1], res$status, earlier_exact = FALSE)
           }
         }
       }
