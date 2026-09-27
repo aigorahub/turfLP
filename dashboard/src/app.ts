@@ -218,6 +218,8 @@ function stopSolver(): void {
     worker.terminate();
     worker = null;
     state.solver = "loading";
+    // Show the loading state now, so Run is disabled until the new worker is ready.
+    render();
     startWorker().then(() => {
       state.solver = "ready";
       render();
@@ -368,7 +370,7 @@ function sizeRange(): { sizes: number[] } | { error: string } {
 
 function startRun(): void {
   const range = sizeRange();
-  if (!state.loaded || !state.reach || !state.summary || "error" in range) return;
+  if (state.solver !== "ready" || !state.loaded || !state.reach || !state.summary || "error" in range) return;
   const t = state.loaded.table;
   const tiebreak = TIEBREAKS.find((x) => x.key === state.tiebreak)!.value;
   state.run = {

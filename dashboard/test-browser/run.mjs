@@ -40,6 +40,21 @@ async function session(workers) {
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
     if (!workers) await page.addInitScript(() => { window.Worker = function () { throw new Error("off"); }; });
+    // With workers, keep each worker, and hold back a "ready" reply while __holdReady is set.
+    if (workers) await page.addInitScript(() => {
+      const Native = window.Worker;
+      window.__workers = [];
+      window.Worker = class extends Native {
+        constructor(...args) { super(...args); window.__workers.push(this); }
+        get onmessage() { return super.onmessage; }
+        set onmessage(fn) {
+          super.onmessage = (e) => {
+            if (e.data?.type === "ready" && window.__holdReady) { window.__release = () => fn.call(this, e); return; }
+            fn.call(this, e);
+          };
+        }
+      };
+    });
     await page.goto(file);
     const wait = (fn, arg) => page.waitForFunction(fn, arg, { timeout: 120_000 });
     const click = (selector) => page.evaluate((s) => document.querySelector(s).click(), selector);
@@ -72,6 +87,27 @@ async function session(workers) {
       title: document.querySelector(".headline-title").textContent,
     }));
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
+
+    // A worker that fails after it starts is replaced. Run stays disabled until the
+    // new worker is ready, and a run after that finishes.
+    if (workers) {
+      await page.evaluate(() => {
+        window.__holdReady = true;
+        window.__workers.at(-1).dispatchEvent(new ErrorEvent("error", { message: "test failure" }));
+      });
+      await wait(() => typeof window.__release === "function");
+      const during = await page.evaluate(() => ({
+        disabled: document.getElementById("run").disabled,
+        status: document.getElementById("solver-status").textContent,
+      }));
+      check(during.disabled && during.status.startsWith("Loading"), `during replacement: ${JSON.stringify(during)}`);
+      await click("#run");
+      await page.evaluate(() => { window.__holdReady = false; window.__release(); });
+      await idle();
+      await click("#run");
+      await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length === 8);
+      await idle();
+    }
 
     // Cancel during the large example keeps the finished sizes; a new run works.
     await clickExample("Cafe");
