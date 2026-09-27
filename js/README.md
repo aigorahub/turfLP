@@ -46,7 +46,7 @@ for (const p of await turfSizes(reach, [1, 2, 3, 4], { names: ham.columns })) {
 turf(reach, size, options?): Promise<Portfolio>
 turfMinCover(reach, options?: { names? }): Promise<Portfolio>
 turfSizes(reach, sizes?, options?): Promise<Portfolio[]>
-loadSolver(options?: { locateFile?, wasmBinary? }): Promise<void>
+loadSolver(options?: { locateFile?, wasmBinary?, wasmModule? }): Promise<void>
 
 interface TurfOptions {
   tiebreak?: ("frequency" | "penetration")[];   // default ["frequency", "penetration"]
@@ -64,7 +64,7 @@ interface Portfolio {
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
 - `turfMinCover` finds the fewest products that together reach every respondent that some product reaches.
 - `turfSizes` solves several sizes. The default is every size from 1 to the minimum cover size.
-- `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` or `wasmBinary` when a bundler moves `highs.wasm`.
+- `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (the bytes of `highs.wasm`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file, for example in a browser worker ([dashboard/](../dashboard/) does this).
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 
 ## The solve blocks the thread

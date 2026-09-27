@@ -259,13 +259,14 @@ interface Portfolio {
   readonly warnings: readonly string[];
 }
 
-function loadSolver(options?: { locateFile?: (file: string) => string; wasmBinary?: ArrayBuffer }): Promise<void>;
+function loadSolver(options?: { locateFile?: (file: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
+                               wasmModule?: WebAssembly.Module }): Promise<void>;
 function turf(reach: ReachMatrix, size: number, options?: TurfOptions): Promise<Portfolio>;
 function turfMinCover(reach: ReachMatrix, options?: { names?: readonly string[] }): Promise<Portfolio>;
 function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null, options?: TurfOptions): Promise<Portfolio[]>;
 ```
 
-- The first call loads the WebAssembly solver; later calls reuse it. Concurrent first calls share one load. A failed load is not cached. `loadSolver` is optional; calling it again with different options after a successful load throws `turflp: the solver is already loaded with other options.`
+- The first call loads the WebAssembly solver; later calls reuse it. Concurrent first calls share one load. A failed load is not cached. With `wasmBinary` or `wasmModule`, the solver loads from those bytes or that module and does not read or fetch `highs.wasm`. `loadSolver` is optional; calling it again with different options after a successful load throws `turflp: the solver is already loaded with other options.`
 - The solve itself is synchronous inside the returned promise and blocks the JavaScript thread until it finishes.
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts in section 1. Missing cells include holes in sparse arrays.
 - Data sets: `load(name)` returns `{ columns: string[]; values: number[][] }`; `datasetNames` lists the seven data sets.

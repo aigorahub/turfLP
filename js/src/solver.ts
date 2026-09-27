@@ -12,7 +12,10 @@ const highsLoader: Loader = ((highsImport as unknown as { default?: Loader }).de
 
 export interface LoadOptions {
   locateFile?: (file: string, prefix: string) => string;
+  /** The bytes of highs.wasm, so that nothing is fetched. */
   wasmBinary?: ArrayBuffer | Uint8Array;
+  /** highs.wasm, already compiled. Takes precedence over `wasmBinary`. */
+  wasmModule?: WebAssembly.Module;
 }
 
 let loading: Promise<Highs> | null = null;
@@ -36,7 +39,7 @@ export async function getSolver(options?: LoadOptions): Promise<Highs> {
     return loading;
   }
   loadedOptions = options;
-  const promise = highsLoader(options as InitOptions | undefined);
+  const promise = loadHighs(options);
   loading = promise;
   try {
     highs = await promise;
@@ -51,7 +54,33 @@ export async function getSolver(options?: LoadOptions): Promise<Highs> {
 }
 
 function sameOptions(a: LoadOptions, b: LoadOptions | undefined): boolean {
-  return a.locateFile === b?.locateFile && a.wasmBinary === b?.wasmBinary;
+  return a.locateFile === b?.locateFile && a.wasmBinary === b?.wasmBinary &&
+    a.wasmModule === b?.wasmModule;
+}
+
+// highs 1.15.3 lists wasmBinary and wasmModule in its types, but its loader
+// ignores them and still reads highs.wasm from disk or the network. Its
+// instantiateWasm hook works, so supply the binary through that hook.
+function loadHighs(options: LoadOptions | undefined): Promise<Highs> {
+  const wasm = options?.wasmModule ?? options?.wasmBinary;
+  if (wasm === undefined) return highsLoader(options as InitOptions | undefined);
+  let fail!: (reason: unknown) => void;
+  const failed = new Promise<never>((_, reject) => { fail = reject; });
+  const init = {
+    // Without locateFile the loader resolves highs.wasm against import.meta.url,
+    // which fails in a bundle that has no URL of its own.
+    locateFile: options?.locateFile ?? ((file: string) => file),
+    instantiateWasm(imports: WebAssembly.Imports,
+                    done: (instance: WebAssembly.Instance) => void): object {
+      const ready = wasm instanceof WebAssembly.Module
+        ? WebAssembly.instantiate(wasm, imports)
+        : WebAssembly.instantiate(wasm as BufferSource, imports).then((r) => r.instance);
+      ready.then(done, fail);
+      return {};
+    },
+  };
+  // The loader never settles if instantiation fails, so race it with the failure.
+  return Promise.race([highsLoader(init as unknown as InitOptions), failed]);
 }
 
 /** The loaded solver, for code that runs after getSolver(). */
