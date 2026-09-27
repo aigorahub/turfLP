@@ -21,3 +21,4 @@ js/dist/
 *.tgz
 .next/
 js/examples/nextjs/out/
+dashboard/dist/

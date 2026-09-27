@@ -1,0 +1,23 @@
+{
+  "name": "turflp-dashboard",
+  "private": true,
+  "type": "module",
+  "description": "A one-file browser dashboard for turfLP",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test:browser": "node test-browser/run.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^24.43.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.11"
+  }
+}
