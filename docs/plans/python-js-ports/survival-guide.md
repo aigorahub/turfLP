@@ -68,11 +68,11 @@ See the plan. Do not change R algorithm behavior. Expected conformance values co
 
 ## Current Phase
 
-executing: B1, B2, and B3 complete.
+ready: B1-B4 complete; final reviews by turflp-astra and turflp-agy clean; CI green on 7bff297.
 
 ## Next Exact Batch
 
-B4: CI workflows, READMEs (with the benchmark numbers from the execution log), NEWS, and the R turf_min_cover issue.
+Landing check, cleanup commit, post-cleanup CI, then regular merge commit.
 
 ## Plan and Log Paths
 

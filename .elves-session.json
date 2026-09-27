@@ -162,38 +162,49 @@
     "default_for_session": true
   },
   "continuation_guard": {
-    "reason": "B2-B4 and final reviews remain",
-    "stop_allowed": false
+    "stop_allowed": false,
+    "reason": "landing check, cleanup, and merge remain"
   },
   "master_acceptance": [
     {
       "criterion": "On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.",
-      "evidence": "",
+      "evidence": "CI on 7bff297 (push and pull_request): conformance-r.yaml (R runner: turf 1629, min_cover 82, sizes 12, bounded 5, comparator 40, format 19), python.yaml (pytest with test_conformance.py, presolve on and off, on ubuntu/macos/windows x 3.10/3.13 and minimum highspy), js.yaml (scripts/conformance.mjs, presolve on and off, on ubuntu/macos/windows x Node.js 20/22) all success.",
       "id": "M-A1",
-      "met": false
+      "met": true
     },
     {
       "criterion": "The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.",
-      "evidence": "",
+      "evidence": "git diff origin/main...HEAD shows no change under R/, tests/testthat/, man/, DESCRIPTION, NAMESPACE, data/, data-raw/; R-CMD-check.yaml success on 7bff297; local R CMD check --as-cran Status 1 NOTE (new submission).",
       "id": "M-A2",
-      "met": false
+      "met": true
     },
     {
       "criterion": "`docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.",
-      "evidence": "",
+      "evidence": "docs/algorithm.md (limits validation, %g, sparse arrays), conformance/README.md (format fixture, size rule, checker self-checks, three runners), README.md section, python/README.md and js/README.md updated with the final-review fixes; README examples match real output.",
       "id": "M-A3",
-      "met": false
+      "met": true
     },
     {
       "criterion": "Final reviews of the cumulative diff by turflp-astra and turflp-agy report no unresolved blocking finding.",
-      "evidence": "",
+      "evidence": "turflp-astra and turflp-agy final review of the cumulative diff (/private/tmp/claude-501/-Users-john-aigora-dev-turfLP/ea7aeaf6-8fd0-4818-85ee-d90f3bf01469/scratchpad/reviews/run-*.md), re-review (rerun-*.md), and last delta check (final-check-*.md): every finding resolved, no new blocking finding.",
       "id": "M-A4",
-      "met": false
+      "met": true
     }
   ],
   "plan_path": "docs/plans/python-js-ports/plan.md",
   "run_id": "turflp-python-js-ports-2026-09-26",
   "start_head": "ebea497080b292cc31e50d7450b92f06b6855ba2",
   "work_driver": "host-native",
-  "worktree_path": "/Users/john/aigora/dev/turfLP-python-js-ports"
+  "worktree_path": "/Users/john/aigora/dev/turfLP-python-js-ports",
+  "review": {
+    "final_reviewers": [
+      "turflp-astra",
+      "turflp-agy"
+    ],
+    "excluded_by_user": [
+      "turflp-grok",
+      "turflp-fugu"
+    ],
+    "reviewed_head": "7bff297"
+  }
 }

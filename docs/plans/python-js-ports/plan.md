@@ -194,10 +194,10 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 
 ## Master Acceptance
 
-- [ ] M-A1: On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.
-- [ ] M-A2: The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.
-- [ ] M-A3: `docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.
-- [ ] M-A4: Final reviews of the cumulative diff by turflp-astra and turflp-agy report no unresolved blocking finding.
+- [x] M-A1: On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.
+- [x] M-A2: The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.
+- [x] M-A3: `docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.
+- [x] M-A4: Final reviews of the cumulative diff by turflp-astra and turflp-agy report no unresolved blocking finding.
 
 ---
 
