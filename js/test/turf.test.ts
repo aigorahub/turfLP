@@ -1,5 +1,6 @@
 // Ports of tests/testthat/test-turf.R. The R simulator and print() tests stay
-// R-only; R-seeded matrices come from the frozen conformance inputs.
+// R-only; R-seeded matrices come from the frozen conformance inputs. The large
+// near-tie and tie-flood cases run in scripts/conformance.mjs.
 import { describe, expect, it } from "vitest";
 import { turf, turfMinCover, turfSizes } from "../src/index.js";
 import { TIE, hasConformance, readInput } from "./helpers.js";
@@ -81,18 +82,6 @@ conf("with conformance inputs", () => {
     expect(rows[2].reach).toBe((await turf(a, 3)).reach);
   });
 
-  it("a later stage cannot make an earlier criterion worse", async () => {
-    const p = await turf(readInput("stage-40000").a, 2, { tiebreak: ["penetration", "frequency"] });
-    expect(p.products).toEqual([0, 1]);
-    expect(p.penetration).toBe(20000);
-  });
-
-  it("a retried stage finds the true optimum on the later criterion", async () => {
-    const p = await turf(readInput("retry-35043").a, 2, { tiebreak: ["penetration", "frequency"] });
-    expect(p.products).toEqual([2, 3]);
-    expect(p.frequency).toBe(42720);
-  });
-
   it("identical products do not flood the penetration stage", async () => {
     const { a } = readInput("identical-300");
     const p = await turf(a, 3);
@@ -100,21 +89,6 @@ conf("with conformance inputs", () => {
     const b = brute(a, 3, ["frequency", "penetration"]);
     expect([p.reach, p.frequency]).toEqual([b.reach, b.frequency]);
     expect(p.penetration).toBeCloseTo(b.penetration, 9);
-  });
-
-  it("many exact ties on penetration keep the frequency optimum", async () => {
-    const { a } = readInput("flood-402");
-    let p = await turf(a, 2, { tiebreak: ["penetration", "frequency"], maxPoolSeconds: Infinity });
-    expect(p.warnings).toEqual([]);
-    expect(p.products).toEqual([400, 401]);
-    p = await turf(a, 2, { tiebreak: ["penetration", "frequency"], maxPool: 50, maxPoolSeconds: Infinity });
-    expect(p.warnings.join(" ")).toMatch(/penetration optimum stopped/);
-    expect(p.products).toEqual([400, 401]);
-  });
-
-  it("penetration differences near 1e-13 are not treated as ties", async () => {
-    const p = await turf(readInput("near-42000").a, 2, { tiebreak: ["penetration", "frequency"] });
-    expect(p.products).toEqual([0, 1]);
   });
 });
 

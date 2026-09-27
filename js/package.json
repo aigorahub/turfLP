@@ -38,7 +38,8 @@
     "prepack": "npm run build",
     "gen:datasets": "node scripts/gen-datasets.mjs",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:conformance": "node scripts/conformance.mjs"
   },
   "dependencies": {
     "highs": ">=1.15.3 <1.16.0"
