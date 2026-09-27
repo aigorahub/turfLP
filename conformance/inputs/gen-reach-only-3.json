@@ -1,0 +1,12 @@
+{
+  "name": "gen-reach-only-3",
+  "source": "reach-only example with two optima of different frequency",
+  "rows": 2,
+  "cols": 3,
+  "names": ["P1", "P2", "P3"],
+  "columns": [
+    "c",
+    "8",
+    "4"
+  ]
+}

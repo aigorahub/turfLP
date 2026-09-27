@@ -1,0 +1,14 @@
+{
+  "name": "random-r-22",
+  "source": "test-turf.R random matrix, set.seed(22)",
+  "rows": 16,
+  "cols": 5,
+  "names": ["P1", "P2", "P3", "P4", "P5"],
+  "columns": [
+    "e684",
+    "3a15",
+    "0007",
+    "3138",
+    "a405"
+  ]
+}

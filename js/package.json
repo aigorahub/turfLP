@@ -1,0 +1,52 @@
+{
+  "name": "turflp",
+  "version": "0.1.0",
+  "description": "TURF analysis (total unduplicated reach and frequency) with integer linear programming",
+  "license": "MIT",
+  "author": "John Ennis <john.m.ennis@aigora.com>",
+  "homepage": "https://github.com/aigorahub/turfLP/tree/main/js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aigorahub/turfLP.git",
+    "directory": "js"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./datasets": {
+      "types": "./dist/datasets.d.ts",
+      "import": "./dist/datasets.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "COPYRIGHTS",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "gen:datasets": "node scripts/gen-datasets.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:conformance": "node scripts/conformance.mjs"
+  },
+  "dependencies": {
+    "highs": ">=1.15.3 <1.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "gen-reach-only-abc",
+  "source": "columns A = 111, B = 100, C = 110",
+  "rows": 3,
+  "cols": 3,
+  "names": ["A", "B", "C"],
+  "columns": [
+    "e",
+    "8",
+    "c"
+  ]
+}

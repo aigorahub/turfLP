@@ -6,3 +6,10 @@
 ^research$
 ^data-raw$
 ^cran-comments\.md$
+^docs$
+^\.elves-session\.json$
+^\.elves$
+^conformance$
+^python$
+^js$
+^\.git$

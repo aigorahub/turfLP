@@ -1,0 +1,539 @@
+{
+ "schema_version": 1,
+ "kind": "sizes",
+ "cases": [
+  {
+   "id": "tie-matrix/sizes/default/frequency+penetration",
+   "input": "tie-matrix",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 5,
+     "frequency": 5,
+     "penetration": {
+      "fraction": "5/1",
+      "value": 5.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 7,
+     "frequency": 8,
+     "penetration": {
+      "fraction": "4/1",
+      "value": 4.0
+     }
+    },
+    {
+     "size": 3,
+     "reach": 8,
+     "frequency": 12,
+     "penetration": {
+      "fraction": "180/47",
+      "value": 3.8297872340425534
+     }
+    }
+   ]
+  },
+  {
+   "id": "tie-matrix/sizes/2-1/frequency+penetration",
+   "input": "tie-matrix",
+   "sizes": [
+    2,
+    1
+   ],
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 2,
+     "reach": 7,
+     "frequency": 8,
+     "penetration": {
+      "fraction": "4/1",
+      "value": 4.0
+     }
+    },
+    {
+     "size": 1,
+     "reach": 5,
+     "frequency": 5,
+     "penetration": {
+      "fraction": "5/1",
+      "value": 5.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "tie-matrix/sizes/2-2/penetration+frequency",
+   "input": "tie-matrix",
+   "sizes": [
+    2,
+    2
+   ],
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "expected": [
+    {
+     "size": 2,
+     "reach": 7,
+     "penetration": {
+      "fraction": "4/1",
+      "value": 4.0
+     },
+     "frequency": 8
+    },
+    {
+     "size": 2,
+     "reach": 7,
+     "penetration": {
+      "fraction": "4/1",
+      "value": 4.0
+     },
+     "frequency": 8
+    }
+   ]
+  },
+  {
+   "id": "tie-matrix-empty/sizes/default/reach",
+   "input": "tie-matrix-empty",
+   "sizes": null,
+   "tiebreak": [],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 5
+    },
+    {
+     "size": 2,
+     "reach": 7
+    },
+    {
+     "size": 3,
+     "reach": 8
+    }
+   ]
+  },
+  {
+   "id": "simulate-1234-300x12/sizes/default/frequency+penetration",
+   "input": "simulate-1234-300x12",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 135,
+     "frequency": 135,
+     "penetration": {
+      "fraction": "135/1",
+      "value": 135.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 193,
+     "frequency": 241,
+     "penetration": {
+      "fraction": "28620/241",
+      "value": 118.7551867219917
+     }
+    },
+    {
+     "size": 3,
+     "reach": 238,
+     "frequency": 336,
+     "penetration": {
+      "fraction": "815670/7441",
+      "value": 109.61833086950679
+     }
+    },
+    {
+     "size": 4,
+     "reach": 262,
+     "frequency": 437,
+     "penetration": {
+      "fraction": "109843560/1023431",
+      "value": 107.32874028635052
+     }
+    },
+    {
+     "size": 5,
+     "reach": 276,
+     "frequency": 532,
+     "penetration": {
+      "fraction": "137304450/1312493",
+      "value": 104.61347222423281
+     }
+    },
+    {
+     "size": 6,
+     "reach": 283,
+     "frequency": 626,
+     "penetration": {
+      "fraction": "1935992745/18854404",
+      "value": 102.68119559759089
+     }
+    },
+    {
+     "size": 7,
+     "reach": 287,
+     "frequency": 717,
+     "penetration": {
+      "fraction": "405885684645/4041395132",
+      "value": 100.4320714475983
+     }
+    },
+    {
+     "size": 8,
+     "reach": 290,
+     "frequency": 811,
+     "penetration": {
+      "fraction": "43603719264720/437874811643",
+      "value": 99.58033233542143
+     }
+    },
+    {
+     "size": 9,
+     "reach": 291,
+     "frequency": 882,
+     "penetration": {
+      "fraction": "3482847076269510/36539576534743",
+      "value": 95.31711657790855
+     }
+    }
+   ]
+  },
+  {
+   "id": "simulate-1234-300x12/sizes/3-1-2/penetration+frequency",
+   "input": "simulate-1234-300x12",
+   "sizes": [
+    3,
+    1,
+    2
+   ],
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "expected": [
+    {
+     "size": 3,
+     "reach": 238,
+     "penetration": {
+      "fraction": "815670/7441",
+      "value": 109.61833086950679
+     },
+     "frequency": 336
+    },
+    {
+     "size": 1,
+     "reach": 135,
+     "penetration": {
+      "fraction": "135/1",
+      "value": 135.0
+     },
+     "frequency": 135
+    },
+    {
+     "size": 2,
+     "reach": 193,
+     "penetration": {
+      "fraction": "28620/241",
+      "value": 118.7551867219917
+     },
+     "frequency": 241
+    }
+   ]
+  },
+  {
+   "id": "data-ham/sizes/default/frequency+penetration",
+   "input": "data-ham",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 60,
+     "frequency": 60,
+     "penetration": {
+      "fraction": "60/1",
+      "value": 60.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 98,
+     "frequency": 118,
+     "penetration": {
+      "fraction": "3480/59",
+      "value": 58.983050847457626
+     }
+    },
+    {
+     "size": 3,
+     "reach": 111,
+     "frequency": 168,
+     "penetration": {
+      "fraction": "1620/29",
+      "value": 55.86206896551724
+     }
+    },
+    {
+     "size": 4,
+     "reach": 119,
+     "frequency": 213,
+     "penetration": {
+      "fraction": "2568240/49321",
+      "value": 52.0719369031447
+     }
+    },
+    {
+     "size": 5,
+     "reach": 122,
+     "frequency": 249,
+     "penetration": {
+      "fraction": "802575/16789",
+      "value": 47.80362141878611
+     }
+    },
+    {
+     "size": 6,
+     "reach": 123,
+     "frequency": 303,
+     "penetration": {
+      "fraction": "1926180/39523",
+      "value": 48.73567289932444
+     }
+    }
+   ]
+  },
+  {
+   "id": "data-pies/sizes/1-3-5/frequency+penetration",
+   "input": "data-pies",
+   "sizes": [
+    1,
+    3,
+    5
+   ],
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 729,
+     "frequency": 729,
+     "penetration": {
+      "fraction": "729/1",
+      "value": 729.0
+     }
+    },
+    {
+     "size": 3,
+     "reach": 876,
+     "frequency": 1585,
+     "penetration": {
+      "fraction": "10679121/22217",
+      "value": 480.6734032497637
+     }
+    },
+    {
+     "size": 5,
+     "reach": 905,
+     "frequency": 1870,
+     "penetration": {
+      "fraction": "996717960/4054447",
+      "value": 245.83326900068
+     }
+    }
+   ]
+  },
+  {
+   "id": "data-lunchbags/sizes/4-2/penetration",
+   "input": "data-lunchbags",
+   "sizes": [
+    4,
+    2
+   ],
+   "tiebreak": [
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 4,
+     "reach": 952,
+     "penetration": {
+      "fraction": "1142746640/2352949",
+      "value": 485.6657071615237
+     }
+    },
+    {
+     "size": 2,
+     "reach": 735,
+     "penetration": {
+      "fraction": "71288/143",
+      "value": 498.5174825174825
+     }
+    }
+   ]
+  },
+  {
+   "id": "random-r-18/sizes/default/frequency",
+   "input": "random-r-18",
+   "sizes": null,
+   "tiebreak": [
+    "frequency"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 3,
+     "frequency": 3
+    },
+    {
+     "size": 2,
+     "reach": 5,
+     "frequency": 6
+    },
+    {
+     "size": 3,
+     "reach": 7,
+     "frequency": 8
+    }
+   ]
+  },
+  {
+   "id": "random-r-16/sizes/default/frequency+penetration",
+   "input": "random-r-16",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 15,
+     "frequency": 15,
+     "penetration": {
+      "fraction": "15/1",
+      "value": 15.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 25,
+     "frequency": 27,
+     "penetration": {
+      "fraction": "364/27",
+      "value": 13.481481481481481
+     }
+    },
+    {
+     "size": 3,
+     "reach": 31,
+     "frequency": 39,
+     "penetration": {
+      "fraction": "3276/253",
+      "value": 12.948616600790514
+     }
+    },
+    {
+     "size": 4,
+     "reach": 34,
+     "frequency": 54,
+     "penetration": {
+      "fraction": "7280/543",
+      "value": 13.406998158379373
+     }
+    },
+    {
+     "size": 5,
+     "reach": 37,
+     "frequency": 60,
+     "penetration": {
+      "fraction": "4095/349",
+      "value": 11.73352435530086
+     }
+    },
+    {
+     "size": 6,
+     "reach": 39,
+     "frequency": 71,
+     "penetration": {
+      "fraction": "945/83",
+      "value": 11.385542168674698
+     }
+    },
+    {
+     "size": 7,
+     "reach": 40,
+     "frequency": 84,
+     "penetration": {
+      "fraction": "28665/2473",
+      "value": 11.59118479579458
+     }
+    }
+   ]
+  },
+  {
+   "id": "cover-r-5/sizes/1-1-2/frequency+penetration",
+   "input": "cover-r-5",
+   "sizes": [
+    1,
+    1,
+    2
+   ],
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 10,
+     "frequency": 10,
+     "penetration": {
+      "fraction": "10/1",
+      "value": 10.0
+     }
+    },
+    {
+     "size": 1,
+     "reach": 10,
+     "frequency": 10,
+     "penetration": {
+      "fraction": "10/1",
+      "value": 10.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 13,
+     "frequency": 16,
+     "penetration": {
+      "fraction": "15/2",
+      "value": 7.5
+     }
+    }
+   ]
+  }
+ ]
+}

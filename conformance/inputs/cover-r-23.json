@@ -1,0 +1,17 @@
+{
+  "name": "cover-r-23",
+  "source": "test-turf.R cover matrix, set.seed(23)",
+  "rows": 20,
+  "cols": 8,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"],
+  "columns": [
+    "0be22",
+    "15016",
+    "00165",
+    "01489",
+    "b9000",
+    "8080a",
+    "40804",
+    "020c1"
+  ]
+}

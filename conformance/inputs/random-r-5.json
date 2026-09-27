@@ -1,0 +1,15 @@
+{
+  "name": "random-r-5",
+  "source": "test-turf.R random matrix, set.seed(5)",
+  "rows": 9,
+  "cols": 6,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6"],
+  "columns": [
+    "2c0",
+    "478",
+    "828",
+    "030",
+    "5f0",
+    "de0"
+  ]
+}
