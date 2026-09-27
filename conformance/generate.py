@@ -65,9 +65,33 @@ def input_json(name, source, columns_bits, names=None):
     return "\n".join(lines) + "\n"
 
 
+def splitmix64(seed):
+    """Deterministic 64-bit generator, so generated inputs never depend on a library."""
+    state = seed & 0xFFFFFFFFFFFFFFFF
+    while True:
+        state = (state + 0x9E3779B97F4A7C15) & 0xFFFFFFFFFFFFFFFF
+        z = state
+        z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & 0xFFFFFFFFFFFFFFFF
+        z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & 0xFFFFFFFFFFFFFFFF
+        yield (z ^ (z >> 31)) / 2.0 ** 64
+
+
+def segment_matrix(seed, rows, cols, segments=3, max_prob=0.5):
+    """Correlated reach matrix: each respondent belongs to a segment with its own
+    product appeal, as in the README timing data."""
+    u = splitmix64(seed)
+    appeal = [[next(u) * max_prob for _ in range(cols)] for _ in range(segments)]
+    seg = [int(next(u) * segments) for _ in range(rows)]
+    return [[1 if next(u) < appeal[seg[i]][j] else 0 for i in range(rows)] for j in range(cols)]
+
+
 def generated_inputs():
     """Inputs that do not need R. Returns {name: json text}."""
     out = {}
+    # Fixed benchmark for the JavaScript and Next.js checks (plan B3-A5).
+    out["gen-bench-200x20"] = input_json(
+        "gen-bench-200x20", "splitmix64 seed 20260926, 3 segments, 200 x 20",
+        segment_matrix(20260926, 200, 20))
     for n in (100, 101):
         cols = [[1 if i == j else 0 for i in range(n)] for j in range(n)]
         out["gen-diag-%d" % n] = input_json(
@@ -214,6 +238,7 @@ def turf_recipes(names):
         ("window-5000", [2], FULL_ORDERS),
         ("gen-diag-100", [1], FULL_ORDERS),
         ("gen-diag-101", [1], FULL_ORDERS),
+        ("gen-bench-200x20", [3, 5], FULL_ORDERS),
         ("data-icecream", "all", FULL_ORDERS),
         ("data-ham", "all", FULL_ORDERS),
         ("data-pies", "all", FULL_ORDERS),

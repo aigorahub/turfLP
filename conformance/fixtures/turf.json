@@ -21394,6 +21394,74 @@
    }
   },
   {
+   "id": "gen-bench-200x20/k3/frequency+penetration",
+   "input": "gen-bench-200x20",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": {
+    "reach": 155,
+    "frequency": 209,
+    "penetration": {
+     "fraction": "504108/7265",
+     "value": 69.3885753613214
+    }
+   }
+  },
+  {
+   "id": "gen-bench-200x20/k3/penetration+frequency",
+   "input": "gen-bench-200x20",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "expected": {
+    "reach": 155,
+    "penetration": {
+     "fraction": "504108/7265",
+     "value": 69.3885753613214
+    },
+    "frequency": 209
+   }
+  },
+  {
+   "id": "gen-bench-200x20/k5/frequency+penetration",
+   "input": "gen-bench-200x20",
+   "size": 5,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "expected": {
+    "reach": 185,
+    "frequency": 357,
+    "penetration": {
+     "fraction": "417569460/5871553",
+     "value": 71.11737899666409
+    }
+   }
+  },
+  {
+   "id": "gen-bench-200x20/k5/penetration+frequency",
+   "input": "gen-bench-200x20",
+   "size": 5,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "expected": {
+    "reach": 185,
+    "penetration": {
+     "fraction": "417569460/5871553",
+     "value": 71.11737899666409
+    },
+    "frequency": 357
+   }
+  },
+  {
    "id": "data-icecream/k1/frequency+penetration",
    "input": "data-icecream",
    "size": 1,

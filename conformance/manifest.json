@@ -267,6 +267,13 @@
    "origin": "export_r.R",
    "source": "200 complementary pairs plus pair 401-402, 16 x 402"
   },
+  "gen-bench-200x20": {
+   "sha256": "98e9830a451c16fd1fe6ecb9b65566de81bb6818d4c77f400b8230acf4ed6f74",
+   "rows": 200,
+   "cols": 20,
+   "origin": "generate.py",
+   "source": "splitmix64 seed 20260926, 3 segments, 200 x 20"
+  },
   "gen-diag-100": {
    "sha256": "1d1e30d350032f26f48556d98dc24c98cbbac3a6b1f09345de9e61b9e5d1e7e3",
    "rows": 100,
@@ -682,7 +689,7 @@
   }
  },
  "counts": {
-  "turf.json": 1625,
+  "turf.json": 1629,
   "min_cover.json": 82,
   "sizes.json": 12,
   "bounded.json": 5,
