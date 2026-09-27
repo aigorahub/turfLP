@@ -92,6 +92,10 @@ def generated_inputs():
     out["gen-bench-200x20"] = input_json(
         "gen-bench-200x20", "splitmix64 seed 20260926, 3 segments, 200 x 20",
         segment_matrix(20260926, 200, 20))
+    # Timing input only (C(40, 8) is too many portfolios to enumerate).
+    out["gen-bench-200x40"] = input_json(
+        "gen-bench-200x40", "splitmix64 seed 20260927, 3 segments, 200 x 40",
+        segment_matrix(20260927, 200, 40))
     for n in (100, 101):
         cols = [[1 if i == j else 0 for i in range(n)] for j in range(n)]
         out["gen-diag-%d" % n] = input_json(

@@ -27,3 +27,11 @@
 - Found during B2: `highspy` 1.15 `getOptionValue` returns (status, value); with presolve on, HiGHS can report "unbounded or infeasible" for an infeasible model, so the port treats it as infeasible (spec section 6 updated).
 - `pytest`: 3557 passed in 164 s. Wheel and sdist contain data, LICENSE, COPYRIGHTS; clean Python 3.10 install works. `uv.lock` added for CI.
 - User instruction: leave turflp-grok out of the rest of the session. M-A4 now names turflp-astra, turflp-agy, and turflp-fugu.
+
+## 2026-09-26 23:16 EDT B3 JavaScript package
+
+- `js/`: npm package `turflp` 0.1.0 on `highs` 1.15.3 (HiGHS 1.15.1, git 04024d7) through `createModel()` / `passModel()`; every model disposed in `finally`.
+- Found during B3: `highs` declares CommonJS but ships ESM, so TypeScript under NodeNext needs a loader shim; `createModel()` rejects `threads`; Vitest's 60 s worker RPC timeout fired while synchronous solves held workers under heavy machine load, fixed with the `forks` pool, per-input test groups, and a yield between cases; Node's `cpSync` rewrote Turbopack's relative `.next/node_modules/turflp-<hash>` symlink, fixed with `verbatimSymlinks`.
+- Added conformance inputs `gen-bench-200x20` (fixtures at sizes 3 and 5) and `gen-bench-200x40` (timing only); Python bench cases pass.
+- Benchmark (`node scripts/benchmark.mjs`, Apple M5 Pro, Node.js 26.3.0, machine heavily loaded by other work): cold solver load 13 ms; 200 x 20 size 5: 450 ms; 200 x 40 size 8: 82 ms; 16 x 402 tie flood, penetration first: 9.4 s.
+- User instruction: leave turflp-fugu out of the rest of the session. M-A4 now names turflp-astra and turflp-agy.

@@ -88,43 +88,43 @@
       "acceptance": [
         {
           "criterion": "`npm test` in `js/` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off.",
-          "evidence": "",
+          "evidence": "cd js && npx vitest run: 4 files, 244 tests (3569 checks) passed, exit 0; test/conformance.test.ts runs every exact (turf 1629, min_cover 82, sizes 12), bounded (5, exact warning texts), and comparator (40) fixture with presolve on and off, penetration compared as an exact BigInt fraction.",
           "id": "B3-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The JavaScript suite has a test for each applicable case in `tests/testthat/test-turf.R`, as in B2-A2.",
-          "evidence": "",
+          "evidence": "js/test/turf.test.ts ports the same applicable R tests as B2-A2 (simulated example, tie-break order, 43 random matrices vs brute force, min cover, sizes, empty rows/columns, logical input and names, bad input, 40000/35043/42000 near ties, identical columns, 402-column flood with and without max_pool 50, pool time limit 0, diag(101)).",
           "id": "B3-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`npm run build` produces ESM output with type declarations, the packed tarball contains `dist/`, `LICENSE`, `COPYRIGHTS`, and the data entry point, and a clean Node.js project that installs the tarball can solve the tie matrix and load a data set.",
-          "evidence": "",
+          "evidence": "npm run build: ESM dist with .d.ts; npm pack tarball lists COPYRIGHTS, LICENSE, README.md, package.json, dist/{core,datasets,datasets-data,index,input,solver}.{js,d.ts}; a clean Node.js project that installed the tarball solved the tie matrix ([1, 2], reach 7, frequency 8, penetration 4) and the ham example (N4, S1, reach 98).",
           "id": "B3-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The main entry point does not import the data sets, `turflp/datasets` returns all seven data sets with the R dimensions, names, and values, and repeated and concurrent calls to `turf` and `loadSolver` give independent correct results with no model left undisposed.",
-          "evidence": "",
+          "evidence": "dist/index.js has no reference to datasets; test/datasets.test.ts: seven data sets equal the R CSV export; test/solver.test.ts: concurrent turf/turfMinCover calls give correct results, every created model is disposed, reloading with other options throws.",
           "id": "B3-A4",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The Next.js example's traced standalone output, copied outside the checkout and started with `node server.js`, answers the fixed 200 x 20 size-5 benchmark request with the expected reach, frequency, and penetration, and loads `highs.wasm` from the traced output; a vitest timing test solves the same fixed benchmark from a warm solver in under 5 seconds.",
-          "evidence": "",
+          "evidence": "js/examples/nextjs/scripts/standalone-test.mjs: next 16.3.6 standalone build with serverExternalPackages, copied outside the checkout (build folder deleted), highs.wasm (3531385 bytes) in the traced output, POST of gen-bench-200x20 size 5 returned reach 185, frequency 357, penetration 71.11737899666409 (exact fixture values), cold 763 ms, warm 624 ms under heavy machine load; test/benchmark.test.ts warm solve 451 ms (< 5000 ms).",
           "id": "B3-A5",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Tests check the effective solver settings of every solve and the timeout, infeasible, invalid-vector, and retry-limit paths, as in B2-A6.",
-          "evidence": "",
+          "evidence": "js/test/solver.test.ts: every solve reads back presolve (on and off), mip_rel_gap 0, mip_abs_gap 0, both feasibility tolerances 1e-9 (threads not set: the WebAssembly API rejects it); timeout, infeasible, invalid-vector, first-stage error, and retry-limit (101 solves) paths give the documented warnings.",
           "id": "B3-A6",
-          "met": false
+          "met": true
         }
       ],
       "id": "B3",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [
@@ -185,7 +185,7 @@
       "met": false
     },
     {
-      "criterion": "Final reviews of the cumulative diff by turflp-astra, turflp-agy, and turflp-fugu report no unresolved blocking finding.",
+      "criterion": "Final reviews of the cumulative diff by turflp-astra and turflp-agy report no unresolved blocking finding.",
       "evidence": "",
       "id": "M-A4",
       "met": false

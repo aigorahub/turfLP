@@ -31,25 +31,41 @@ function checkExpected(a: number[][], p: Portfolio, e: any) {
 const presolveSettings = ["on", "off"] as const;
 const load = (kind: string) => (hasConformance ? fixtures(kind) : []);
 
+/** Group cases by input, so each test runs a handful of solves (fewer runner messages). */
+// Let the test runner's messages through between synchronous solves.
+const yieldToRunner = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+function byInput(kind: string): [string, any[]][] {
+  const groups = new Map<string, any[]>();
+  for (const c of load(kind)) groups.set(c.input, [...(groups.get(c.input) ?? []), c]);
+  return [...groups];
+}
+
 describe.skipIf(!hasConformance)("conformance", () => {
   describe.each(presolveSettings)("presolve %s", (presolve) => {
     beforeAll(() => { settings.presolve = presolve; });
     afterAll(() => { settings.presolve = "on"; });
 
-    it.each(load("turf"))("turf $id", async (c) => {
-      const { a, names } = readInput(c.input);
-      const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
-      expect(p.warnings).toEqual([]);
-      checkFields(a, names, p);
-      checkExpected(a, p, c.expected);
+    it.each(byInput("turf"))("turf %s", async (input, cases) => {
+      const { a, names } = readInput(input);
+      for (const c of cases) {
+        const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
+        expect(p.warnings, c.id).toEqual([]);
+        checkFields(a, names, p);
+        checkExpected(a, p, c.expected);
+        await yieldToRunner();
+      }
     });
 
-    it.each(load("min_cover"))("min_cover $id", async (c) => {
-      const { a, names } = readInput(c.input);
-      const p = await turfMinCover(a, { names });
-      checkFields(a, names, p);
-      expect(p.size).toBe(c.expected.size);
-      expect(p.reach).toBe(c.expected.reachable);
+    it("min_cover", async () => {
+      for (const c of load("min_cover")) {
+        const { a, names } = readInput(c.input);
+        const p = await turfMinCover(a, { names });
+        checkFields(a, names, p);
+        expect(p.size, c.id).toBe(c.expected.size);
+        expect(p.reach, c.id).toBe(c.expected.reachable);
+        await yieldToRunner();
+      }
     });
 
     it.each(load("sizes"))("sizes $id", async (c) => {
@@ -71,8 +87,10 @@ describe.skipIf(!hasConformance)("conformance", () => {
     });
   });
 
-  it.each(load("comparator"))("comparator size $size old $old new $new", (c) => {
+  it("comparator", () => {
     const obj = { name: "x", direction: "min" as const, value: (v: number) => v };
-    expect(worseOnEarlier([obj], c.new, c.old, c.size)).toBe(c.worse);
+    for (const c of load("comparator")) {
+      expect(worseOnEarlier([obj], c.new, c.old, c.size), JSON.stringify(c)).toBe(c.worse);
+    }
   });
 });

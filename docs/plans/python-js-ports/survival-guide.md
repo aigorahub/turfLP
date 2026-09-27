@@ -26,7 +26,7 @@ Add Python (`python/`) and JavaScript/TypeScript (`js/`) ports of turfLP that us
 - **Delegation scope:** none
 - **Git mode:** host_only
 - **Driver monitor mode:** interactive
-- **Driver review policy:** plan review by the four peer agents before implementation (done); final independent review by turflp-astra, turflp-agy, and turflp-fugu, looped until clean. The user removed turflp-grok from further reviews on 2026-09-26 to save its tokens.
+- **Driver review policy:** plan review by the four peer agents before implementation (done); final independent review by turflp-astra and turflp-agy, looped until clean. The user removed turflp-grok and then turflp-fugu from further reviews on 2026-09-26.
 - **Risk posture:** standard (B3 high)
 - **Trust mode:** trusted
 - **Landing outcome:** complete_and_merge
@@ -68,11 +68,11 @@ See the plan. Do not change R algorithm behavior. Expected conformance values co
 
 ## Current Phase
 
-executing: B1 and B2 complete.
+executing: B1, B2, and B3 complete.
 
 ## Next Exact Batch
 
-B3: JavaScript/TypeScript package in `js/`.
+B4: CI workflows, READMEs (with the benchmark numbers from the execution log), NEWS, and the R turf_min_cover issue.
 
 ## Plan and Log Paths
 

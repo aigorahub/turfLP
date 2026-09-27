@@ -132,20 +132,20 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 - **Failure modes / pitfalls:** `.wasm` asset resolution in bundlers (`locateFile`, `serverExternalPackages`); concurrent first calls to `loadSolver`; memory leaks from undisposed models.
 
 **Tasks:**
-- [ ] Package: `package.json` (ESM, `exports` with `.` and `./datasets`, `types`, `files`, `engines.node >=20`, `highs` `>=1.15.3 <1.16`), `tsconfig.json`, `tsc` build, `vitest`, lock file, MIT `LICENSE`, and `COPYRIGHTS` for the data.
-- [ ] `loadSolver`, `turf`, `turfMinCover`, `turfSizes`, `Portfolio`, input validation, warnings.
-- [ ] Conformance runner (exact, comparator, bounded) run with presolve on and off.
-- [ ] Ported regression tests from `tests/testthat/test-turf.R`, using the frozen inputs.
-- [ ] `js/examples/nextjs/`: a route handler with `export const runtime = "nodejs"` and a `maxDuration` above the pool budget, `serverExternalPackages`, installed from the packed tarball, and a script that builds it with `output: "standalone"`, copies the traced output to a temporary folder outside the checkout, starts it, and checks a fixed benchmark request.
-- [ ] Benchmark: cold load and warm solves for fixed inputs (200 x 20 at size 5, 200 x 40 at size 8, and the 402-column tie case), recorded in the README with the machine.
+- [x] Package: `package.json` (ESM, `exports` with `.` and `./datasets`, `types`, `files`, `engines.node >=20`, `highs` `>=1.15.3 <1.16`), `tsconfig.json`, `tsc` build, `vitest`, lock file, MIT `LICENSE`, and `COPYRIGHTS` for the data.
+- [x] `loadSolver`, `turf`, `turfMinCover`, `turfSizes`, `Portfolio`, input validation, warnings.
+- [x] Conformance runner (exact, comparator, bounded) run with presolve on and off.
+- [x] Ported regression tests from `tests/testthat/test-turf.R`, using the frozen inputs.
+- [x] `js/examples/nextjs/`: a route handler with `export const runtime = "nodejs"` and a `maxDuration` above the pool budget, `serverExternalPackages`, installed from the packed tarball, and a script that builds it with `output: "standalone"`, copies the traced output to a temporary folder outside the checkout, starts it, and checks a fixed benchmark request.
+- [x] Benchmark: cold load and warm solves for fixed inputs (200 x 20 at size 5, 200 x 40 at size 8, and the 402-column tie case), recorded in the README with the machine.
 
 **Acceptance criteria:**
-- [ ] B3-A1: `npm test` in `js/` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off.
-- [ ] B3-A2: The JavaScript suite has a test for each applicable case in `tests/testthat/test-turf.R`, as in B2-A2.
-- [ ] B3-A3: `npm run build` produces ESM output with type declarations, the packed tarball contains `dist/`, `LICENSE`, `COPYRIGHTS`, and the data entry point, and a clean Node.js project that installs the tarball can solve the tie matrix and load a data set.
-- [ ] B3-A4: The main entry point does not import the data sets, `turflp/datasets` returns all seven data sets with the R dimensions, names, and values, and repeated and concurrent calls to `turf` and `loadSolver` give independent correct results with no model left undisposed.
-- [ ] B3-A5: The Next.js example's traced standalone output, copied outside the checkout and started with `node server.js`, answers the fixed 200 x 20 size-5 benchmark request with the expected reach, frequency, and penetration, and loads `highs.wasm` from the traced output; a vitest timing test solves the same fixed benchmark from a warm solver in under 5 seconds.
-- [ ] B3-A6: Tests check the effective solver settings of every solve and the timeout, infeasible, invalid-vector, and retry-limit paths, as in B2-A6.
+- [x] B3-A1: `npm test` in `js/` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off.
+- [x] B3-A2: The JavaScript suite has a test for each applicable case in `tests/testthat/test-turf.R`, as in B2-A2.
+- [x] B3-A3: `npm run build` produces ESM output with type declarations, the packed tarball contains `dist/`, `LICENSE`, `COPYRIGHTS`, and the data entry point, and a clean Node.js project that installs the tarball can solve the tie matrix and load a data set.
+- [x] B3-A4: The main entry point does not import the data sets, `turflp/datasets` returns all seven data sets with the R dimensions, names, and values, and repeated and concurrent calls to `turf` and `loadSolver` give independent correct results with no model left undisposed.
+- [x] B3-A5: The Next.js example's traced standalone output, copied outside the checkout and started with `node server.js`, answers the fixed 200 x 20 size-5 benchmark request with the expected reach, frequency, and penetration, and loads `highs.wasm` from the traced output; a vitest timing test solves the same fixed benchmark from a warm solver in under 5 seconds.
+- [x] B3-A6: Tests check the effective solver settings of every solve and the timeout, infeasible, invalid-vector, and retry-limit paths, as in B2-A6.
 
 **Docs likely touched:** `js/README.md`, `js/examples/nextjs/README.md`.
 
@@ -197,7 +197,7 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 - [ ] M-A1: On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.
 - [ ] M-A2: The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.
 - [ ] M-A3: `docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.
-- [ ] M-A4: Final reviews of the cumulative diff by turflp-astra, turflp-agy, and turflp-fugu report no unresolved blocking finding.
+- [ ] M-A4: Final reviews of the cumulative diff by turflp-astra and turflp-agy report no unresolved blocking finding.
 
 ---
 

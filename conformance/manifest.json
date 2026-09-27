@@ -274,6 +274,13 @@
    "origin": "generate.py",
    "source": "splitmix64 seed 20260926, 3 segments, 200 x 20"
   },
+  "gen-bench-200x40": {
+   "sha256": "32da57f6bf4665fd0c0df7e871d589dd246edfde01a902aff110a7bad3efd904",
+   "rows": 200,
+   "cols": 40,
+   "origin": "generate.py",
+   "source": "splitmix64 seed 20260927, 3 segments, 200 x 40"
+  },
   "gen-diag-100": {
    "sha256": "1d1e30d350032f26f48556d98dc24c98cbbac3a6b1f09345de9e61b9e5d1e7e3",
    "rows": 100,
