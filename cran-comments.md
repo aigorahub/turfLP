@@ -6,7 +6,7 @@ This is the first submission of turfLP.
 
 - macOS 26 (arm64), R 4.6.1, local
 - GitHub Actions: macOS (release), Windows (release), Ubuntu (devel, release, oldrel-1)
-- GitHub Actions: Ubuntu 24.04 (release), `R CMD check --as-cran` with the PDF manual
+- GitHub Actions: Ubuntu 24.04 (release and devel), `R CMD check --as-cran` with the PDF manual
 
 ## R CMD check results
 

@@ -51,7 +51,11 @@ jobs:
 
   as-cran:
     runs-on: ubuntu-latest
-    name: CRAN checks with the PDF manual
+    name: CRAN checks with the PDF manual (${{ matrix.r }})
+    strategy:
+      fail-fast: false
+      matrix:
+        r: [release, devel]
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -62,6 +66,8 @@ jobs:
       - uses: r-lib/actions/setup-tinytex@v2
 
       - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
