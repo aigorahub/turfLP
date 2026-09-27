@@ -691,12 +691,15 @@ function renderPreview(host: HTMLElement, l: Loaded, summary: ReachSummary): voi
   });
 }
 
+/** Show the portfolio of one size. Keyboard focus stays on the row or point that was used. */
 function select(size: number): void {
   state.selected = size;
   const focused = document.activeElement;
   const wasRow = focused instanceof HTMLTableRowElement;
+  const wasPoint = focused instanceof SVGElement && focused.classList.contains("hit");
   render();
   if (wasRow) (ui.results.querySelector("tr.is-selected") as HTMLElement | null)?.focus();
+  if (wasPoint) (ui.results.querySelector(`.curve .hit[data-size="${size}"]`) as SVGElement | null)?.focus();
 }
 
 function render(): void {

@@ -17,6 +17,11 @@ describe("loadSolver with a binary", () => {
       .rejects.toThrow();
   });
 
+  it("rejects a valid module that is not highs.wasm", async () => {
+    const empty = await WebAssembly.compile(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
+    await expect(loadSolver({ wasmModule: empty, locateFile: nowhere })).rejects.toThrow();
+  });
+
   it("loads from a compiled module and does not read highs.wasm", async () => {
     const wasmModule = await WebAssembly.compile(bytes);
     await loadSolver({ wasmModule, locateFile: nowhere });

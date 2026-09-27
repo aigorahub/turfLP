@@ -83,7 +83,8 @@ export function reachCurve(host: HTMLElement, o: CurveOptions): void {
   const ih = height - m.top - m.bottom;
   const root = svg("svg", {
     width, height, viewBox: `0 0 ${width} ${height}`, class: "curve",
-    role: "img", "aria-label": "Reach by portfolio size",
+    // A group, not an image: its points are buttons.
+    role: "group", "aria-label": "Reach by portfolio size",
   }, host);
 
   const lo = o.sizes[0];
@@ -137,7 +138,7 @@ export function reachCurve(host: HTMLElement, o: CurveOptions): void {
     const prev = bySize.get(s - 1);
     const hit = svg("rect", {
       x: x(s) - band / 2, y: m.top - 12, width: band, height: ih + 24, class: "hit",
-      tabindex: 0, role: "button",
+      tabindex: 0, role: "button", "data-size": s,
       "aria-label": `${s} products: reach ${percent(p.reachProp)}. Select to show this portfolio.`,
     }, root);
     const show = () => {

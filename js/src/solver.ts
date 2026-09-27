@@ -75,7 +75,8 @@ function loadHighs(options: LoadOptions | undefined): Promise<Highs> {
       const ready = wasm instanceof WebAssembly.Module
         ? WebAssembly.instantiate(wasm, imports)
         : WebAssembly.instantiate(wasm as BufferSource, imports).then((r) => r.instance);
-      ready.then(done, fail);
+      // done() can throw too, for a valid module that is not highs.wasm.
+      ready.then(done).catch(fail);
       return {};
     },
   };

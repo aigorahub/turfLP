@@ -68,6 +68,15 @@ async function session(workers) {
     check(await page.$$eval(".curve .dot", (d) => d.length) === 8, "the reach curve does not have 8 points");
     check(await page.$$eval(".bar-row.is-in", (r) => r.length) === 8, "the bars do not mark 8 products");
 
+    // Keyboard: Enter on a point of the curve selects it and keeps the focus there.
+    await page.evaluate(() => document.querySelector('.curve .hit[data-size="3"]').focus());
+    await page.keyboard.press("Enter");
+    const focus = await page.evaluate(() => ({
+      size: document.activeElement?.getAttribute("data-size"),
+      title: document.querySelector(".headline-title").textContent,
+    }));
+    check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
+
     // Cancel during the large example keeps the finished sizes; a new run works.
     await clickExample("Cafe");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));

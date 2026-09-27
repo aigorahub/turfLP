@@ -27,7 +27,7 @@ respondent,Product A,Product B,Product C
 3,1,1,0
 ```
 
-- The first column can be a respondent ID. The page finds it when its header is empty (as `write.csv()` in R writes row names) or a name such as `id` or `respondent`, when its values are not data, or when its values are distinct whole numbers larger than every data value. A check box under the file summary changes the choice.
+- The first column can be a respondent ID. The page finds it when its header is empty (as `write.csv()` in R writes row names) or a name such as `id` or `respondent`, when every value in it is text, or when its values are distinct whole numbers larger than every data value. A check box under the file summary changes the choice. Name the column `id` when the page does not find it.
 - Values are 0 and 1, TRUE and FALSE, or yes and no, for reach data. Numbers other than 0 and 1 are ratings: choose the rating that counts as reached. The default is the top-2 box (the highest rating minus 1) on a whole-number scale, and the midpoint otherwise.
 - Commas, semicolons, or tabs separate the values. With semicolons or tabs, a decimal comma is read as a decimal point. Quoted values and a byte order mark are read.
 - Every cell needs a value. Empty cells and `NA` are errors: the page gives the line and the product, as it does for text that is not a value.

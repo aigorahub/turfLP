@@ -4,7 +4,7 @@
 //   the product names.
 // - An optional first column of respondent IDs. It is found from its header
 //   (empty, as R's write.csv() writes it, or a name such as "id" or
-//   "respondent"), from values that are not data, or from distinct whole
+//   "respondent"), from values that are all text, or from distinct whole
 //   numbers larger than any data value. The caller can also say.
 // - Commas, semicolons, or tabs between values. Quoted fields. UTF-8, with or
 //   without a byte order mark. With semicolons or tabs, a decimal comma is
@@ -45,14 +45,22 @@ const MISSING = new Set(["", "na", "n/a", "nan", "null", "."]);
 const NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
 
 type Cell = { kind: "number"; value: number } | { kind: "bool"; value: 0 | 1 } |
-  { kind: "missing" } | { kind: "text" };
+  { kind: "missing" } | { kind: "text" } | { kind: "huge" };
 
 /** Split delimited text into records. Each record keeps its first line number. */
 export function parseDelimited(text: string, delimiter: string): { fields: string[]; line: number }[] {
-  const records: { fields: string[]; line: number }[] = [];
+  const records: { fields: string[]; line: number; blank: boolean }[] = [];
   let fields: string[] = [];
   let field = "";
   let quoted = false;
+  let hadQuote = false;
+  // A blank line has one empty field and no quotes. A line such as "," or ""
+  // is a record with missing values, which the caller reports.
+  const push = () => {
+    fields.push(field);
+    records.push({ fields, line: start, blank: fields.length === 1 && field.trim() === "" && !hadQuote });
+    fields = []; field = ""; hadQuote = false;
+  };
   let line = 1;
   let start = 1;
   let i = 0;
@@ -67,12 +75,10 @@ export function parseDelimited(text: string, delimiter: string): { fields: strin
       if (c === "\n") line++;
       field += c; i++; continue;
     }
-    if (c === '"' && field.trim() === "") { quoted = true; field = ""; i++; continue; }
+    if (c === '"' && field.trim() === "") { quoted = true; hadQuote = true; field = ""; i++; continue; }
     if (c === delimiter) { fields.push(field); field = ""; i++; continue; }
     if (c === "\r" || c === "\n") {
-      fields.push(field);
-      records.push({ fields, line: start });
-      fields = []; field = "";
+      push();
       if (c === "\r" && text[i + 1] === "\n") i++;
       i++; line++; start = line;
       continue;
@@ -80,9 +86,9 @@ export function parseDelimited(text: string, delimiter: string): { fields: strin
     field += c; i++;
   }
   if (quoted) throw new DataError(`Line ${start}: a quoted value has no closing quote.`);
-  if (field !== "" || fields.length > 0) { fields.push(field); records.push({ fields, line: start }); }
+  if (field !== "" || fields.length > 0 || hadQuote) push();
   // Blank lines carry no respondent.
-  return records.filter((r) => r.fields.some((f) => f.trim() !== ""));
+  return records.filter((r) => !r.blank).map(({ fields: f, line: l }) => ({ fields: f, line: l }));
 }
 
 /** The delimiter of the first line: tab, semicolon, or comma, whichever is most frequent. */
@@ -106,7 +112,10 @@ function readCell(raw: string, decimalComma: boolean): Cell {
   if (TRUE_WORDS.has(lower)) return { kind: "bool", value: 1 };
   if (FALSE_WORDS.has(lower)) return { kind: "bool", value: 0 };
   const t = decimalComma && /^[+-]?\d+,\d+$/.test(s) ? s.replace(",", ".") : s;
-  if (NUMBER.test(t)) return { kind: "number", value: Number(t) };
+  if (NUMBER.test(t)) {
+    const value = Number(t);
+    return Number.isFinite(value) ? { kind: "number", value } : { kind: "huge" };
+  }
   return { kind: "text" };
 }
 
@@ -117,7 +126,8 @@ function quote(name: string): string {
 /** Does the first column hold respondent IDs? */
 function looksLikeId(header: string, column: Cell[], rest: number): boolean {
   if (header.trim() === "" || ID_NAMES.test(header.trim())) return true;
-  if (column.some((c) => c.kind === "text")) return true;
+  // Text only. A column of data with one typo is data, and the typo an error.
+  if (column.every((c) => c.kind === "text")) return true;
   // Distinct whole numbers larger than every data value: a row number.
   if (column.length < 10 || column.some((c) => c.kind !== "number")) return false;
   const values = column.map((c) => (c as { value: number }).value);
@@ -198,9 +208,16 @@ export function parseTable(text: string, options: { idColumn?: boolean } = {}): 
           `Every cell needs a value, for example 0 when the product does not reach the respondent.`);
       }
       if (c.kind === "text") {
+        const hint = j === 0 && first === 0 && cols > 1
+          ? " If the first column holds respondent IDs, name it \"id\"." : "";
         throw new DataError(
           `Line ${body[i].line}, product ${quote(names[j])}: ${quote(body[i].fields[j + first].trim())} ` +
-          `is not a number, TRUE or FALSE, or yes or no.`);
+          `is not a number, TRUE or FALSE, or yes or no.${hint}`);
+      }
+      if (c.kind === "huge") {
+        throw new DataError(
+          `Line ${body[i].line}, product ${quote(names[j])}: ${quote(body[i].fields[j + first].trim())} ` +
+          `is too large a number.`);
       }
       if (c.kind === "bool") bools = true; else numbers = true;
       const v = c.value;

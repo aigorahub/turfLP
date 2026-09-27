@@ -16,6 +16,13 @@ describe("parseDelimited", () => {
     expect(r.map((x) => x.line)).toEqual([1, 3, 5]);
   });
 
+  it("keeps records whose values are all missing", () => {
+    for (const d of [",", ";", "\t"]) {
+      expect(parseDelimited(`a${d}b\n1${d}0\n${d}\n`, d).map((x) => x.fields)).toEqual([["a", "b"], ["1", "0"], ["", ""]]);
+    }
+    expect(parseDelimited('a\n""\n', ",").map((x) => x.fields)).toEqual([["a"], [""]]);
+  });
+
   it("rejects an open quote", () => {
     expect(() => parseDelimited('a,"b\n1,2', ",")).toThrow(DataError);
   });
@@ -105,6 +112,13 @@ describe("parseTable", () => {
     expect(err("A,B\n1,0\n0,x\n")).toMatch(/Line 3, product "B": "x" is not a number/);
     expect(err("A,A\n1,0\n")).toMatch(/"A" appears 2 times/);
     expect(err("A,B\nTRUE,5\n")).toMatch(/mixes TRUE and FALSE with ratings/);
+    expect(err("A,B\n1,0\n,\n0,1\n")).toMatch(/Line 3, product "A": the value is missing/);
+    expect(err("A;B\n1;0\n;\n")).toMatch(/Line 3, product "A": the value is missing/);
+    expect(err("A\tB\n1\t0\n\t\n")).toMatch(/Line 3, product "A": the value is missing/);
+    expect(err('A,B\n1,0\n"",""\n')).toMatch(/Line 3, product "A": the value is missing/);
+    expect(err("A,B\n1e999,0\n0,1\n")).toMatch(/Line 2, product "A": "1e999" is too large a number/);
+    expect(err("A,B\n-1e999,0\n0,1\n")).toMatch(/too large a number/);
+    expect(err("A,B\n1,0\noops,1\n")).toMatch(/Line 3, product "A": "oops" is not a number.*name it "id"/);
   });
 
   it("reads the template", () => {
