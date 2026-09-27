@@ -101,7 +101,9 @@ export interface SizeResult {
 }
 
 function csvField(s: string): string {
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  // A leading = + - @ makes a spreadsheet read the text as a formula.
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 /** The results as CSV, one row per size. */

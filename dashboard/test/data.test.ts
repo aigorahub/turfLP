@@ -41,6 +41,12 @@ describe("resultsCsv", () => {
       "size,reach,reach_percent,frequency,penetration,products,seconds\n" +
       '2,90,75.00,120,58.5000,"Mint, ""fresh""; Vanilla",0.250\n');
   });
+
+  it("keeps a spreadsheet from reading product names as a formula", () => {
+    const p = { products: [0, 1], names: ["=1+1", "B"], size: 2, reach: 2, reachProp: 1,
+                frequency: 2, penetration: 1, respondents: 2, warnings: [] };
+    expect(resultsCsv([{ portfolio: p, seconds: 0 }]).split("\n")[1]).toBe("2,2,100.00,2,1.0000,'=1+1; B,0.000");
+  });
 });
 
 describe("format", () => {

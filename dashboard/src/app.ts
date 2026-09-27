@@ -145,8 +145,11 @@ function startWorker(): Promise<void> {
     };
     w.onerror = (e) => {
       e.preventDefault();
-      if (!ready) { w.terminate(); reject(new Error(e.message || "The solver worker did not start.")); }
-      else if (w === worker) onReply({ type: "error", id: null, message: e.message || "The solver stopped." });
+      if (!ready) { w.terminate(); reject(new Error(e.message || "The solver worker did not start.")); return; }
+      if (w !== worker) return;
+      // The worker failed after it started: stop the run and start a new worker.
+      onReply({ type: "error", id: null, message: e.message || "The solver stopped." });
+      stopSolver();
     };
     const copy = wasm!.slice();
     w.postMessage({ type: "load", wasm: copy } satisfies Request, [copy.buffer]);
@@ -241,7 +244,8 @@ function onReply(r: Reply): void {
   if (r.type === "cover") {
     if (r.id !== state.coverId) return;
     state.cover = r.portfolio;
-    if (!state.sizesTouched && state.loaded) {
+    // Do not change the sizes of a run in progress.
+    if (!state.sizesTouched && state.loaded && state.run?.status !== "running") {
       ui.sizeFrom.value = "1";
       ui.sizeTo.value = String(Math.min(r.portfolio.size, DEFAULT_MAX_SIZE, state.loaded.table.cols));
     }
@@ -657,7 +661,7 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
     const prev = run.results.get(s - 1)?.portfolio;
     tr.tabIndex = 0;
     if (s === shown) tr.className = "is-selected";
-    tr.setAttribute("aria-selected", String(s === shown));
+    if (s === shown) tr.setAttribute("aria-current", "true");
     el("td", "num", String(s), tr);
     const reach = el("td", "num", undefined, tr);
     reach.append(percent(p.reachProp), " ");

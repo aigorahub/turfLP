@@ -179,7 +179,8 @@ export function productBars(host: HTMLElement, o: BarsOptions): void {
   const tooltip = new Tooltip(host);
   const order = o.names.map((_, j) => j)
     .sort((a, b) => o.productReach[b] - o.productReach[a] || o.names[a].localeCompare(o.names[b]));
-  const max = Math.max(1, ...o.productReach);
+  let max = 1;
+  for (const r of o.productReach) if (r > max) max = r;
   const listEl = html("div", "bars", undefined, host);
   listEl.setAttribute("role", "list");
   for (const j of order) {

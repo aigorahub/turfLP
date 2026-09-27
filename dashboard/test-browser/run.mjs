@@ -7,7 +7,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import puppeteer from "puppeteer-core";
+import { chromium } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const file = pathToFileURL(join(here, "..", "dist", "turflp-dashboard.html")).href;
@@ -33,19 +33,15 @@ function check(ok, message) {
 }
 
 async function session(workers) {
-  const browser = await puppeteer.launch({
-    executablePath: chrome,
-    headless: true,
-    args: ["--no-first-run", ...(process.env.CI ? ["--no-sandbox"] : [])],
-  });
+  const browser = await chromium.launch({ executablePath: chrome, headless: true });
   try {
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-    if (!workers) await page.evaluateOnNewDocument(() => { window.Worker = function () { throw new Error("off"); }; });
+    if (!workers) await page.addInitScript(() => { window.Worker = function () { throw new Error("off"); }; });
     await page.goto(file);
-    const wait = (fn, arg) => page.waitForFunction(fn, { timeout: 120_000 }, arg);
+    const wait = (fn, arg) => page.waitForFunction(fn, arg, { timeout: 120_000 });
     const click = (selector) => page.evaluate((s) => document.querySelector(s).click(), selector);
     const clickExample = (title) => page.evaluate((t) =>
       [...document.querySelectorAll(".example")].find((b) => b.textContent.includes(t)).click(), title);
@@ -96,13 +92,13 @@ async function session(workers) {
     await idle();
 
     // A file with an ID column and ratings, then a file with an error.
-    const load = (name, text) => page.evaluate((n, t) => {
+    const load = (name, text) => page.evaluate(([n, t]) => {
       const dt = new DataTransfer();
       dt.items.add(new File([t], n, { type: "text/csv" }));
       const input = document.getElementById("file");
       input.files = dt.files;
       input.dispatchEvent(new Event("change"));
-    }, name, text);
+    }, [name, text]);
     await load("ratings.csv", "id;A;B;C\n1;5;1;2\n2;1;4;1\n3;2;2;5\n4;4;1;1\n");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
     const info = await page.$eval("#data-info", (e) => e.textContent);

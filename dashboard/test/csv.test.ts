@@ -121,6 +121,16 @@ describe("parseTable", () => {
     expect(err("A,B\n1,0\noops,1\n")).toMatch(/Line 3, product "A": "oops" is not a number.*name it "id"/);
   });
 
+  it("reads a long ID column without spreading it into arguments", () => {
+    const rows = Array.from({ length: 150_000 }, (_, i) => `${i + 1},${i % 2},${(i + 1) % 2}`);
+    const t = parseTable(["seq,A,B", ...rows].join("\n"));
+    expect(t).toMatchObject({ idColumn: "seq", rows: 150_000, cols: 2 });
+  });
+
+  it("reports a file with no records as empty", () => {
+    expect(() => parseTable('""')).toThrow(/no respondents|empty/);
+  });
+
   it("reads the template", () => {
     const t = parseTable(templateCsv());
     expect(t).toMatchObject({ rows: 8, cols: 5, kind: "binary", idColumn: "respondent" });

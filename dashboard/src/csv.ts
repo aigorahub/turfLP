@@ -132,7 +132,10 @@ function looksLikeId(header: string, column: Cell[], rest: number): boolean {
   if (column.length < 10 || column.some((c) => c.kind !== "number")) return false;
   const values = column.map((c) => (c as { value: number }).value);
   if (!values.every(Number.isInteger)) return false;
-  return new Set(values).size === values.length && Math.max(...values) > rest;
+  // A loop, not Math.max(...values): spreading a long column overflows the stack.
+  let max = -Infinity;
+  for (const v of values) if (v > max) max = v;
+  return new Set(values).size === values.length && max > rest;
 }
 
 /**
@@ -144,6 +147,7 @@ export function parseTable(text: string, options: { idColumn?: boolean } = {}): 
   if (text.trim() === "") throw new DataError("The file is empty.");
   const delimiter = detectDelimiter(text);
   const records = parseDelimited(text, delimiter);
+  if (records.length === 0) throw new DataError("The file is empty.");
   const header = records[0].fields.map((f) => f.trim());
   const body = records.slice(1);
   if (body.length === 0) {
