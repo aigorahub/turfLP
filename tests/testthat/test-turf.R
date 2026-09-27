@@ -161,3 +161,119 @@ test_that("print() shows the portfolio", {
   expect_output(print(turf(tie_matrix, 2)), "P2, P3")
   expect_output(print(turf(tie_matrix, 2)), "7 of 8 respondents")
 })
+
+test_that("a later stage cannot make an earlier criterion worse", {
+  # With lpSolve, which met the penetration bound only to within its
+  # tolerance, the frequency stage returned products 3 and 4, with a
+  # penetration about 5e-9 below the optimum of products 1 and 2.
+  n <- 20000
+  pattern <- rbind(c(1, 0, 1, 0), c(1, 0, 0, 1), c(0, 1, 1, 0), c(0, 1, 0, 1))
+  a <- pattern[rep(1:4, c(n / 2 - 1, n / 2 + 1, n / 2, n / 2)), ]
+  p <- turf(a, 2, c("penetration", "frequency"))
+  expect_equal(p$products, c(1, 2))
+  expect_identical(p$penetration, 20000)
+})
+
+test_that("a retried stage finds the true optimum on the later criterion", {
+  # Pairs 1-2 and 3-4 tie exactly on penetration, and pair 5-6 is about 1e-9
+  # (relative) worse. The frequency stage returned pair 5-6. Keeping the
+  # earlier pair 1-2 would lose frequency; the optimum is pair 3-4.
+  set.seed(1)
+  n <- 35043L
+  r <- c(20025L, 20025L, 16020L, 26700L, 14953L, 30304L)
+  a <- matrix(1, n, 6)
+  for (pair in 0:2) {
+    ids <- sample.int(n)
+    j <- 2 * pair + 1
+    miss <- n - r[j]
+    a[ids[seq_len(miss)], j] <- 0
+    a[ids[miss + seq_len(n - r[j + 1])], j + 1] <- 0
+  }
+  p <- turf(a, 2, c("penetration", "frequency"))
+  expect_equal(p$products, c(3, 4))
+  expect_equal(p$frequency, 42720)
+})
+
+test_that("identical products do not flood the penetration stage", {
+  set.seed(3)
+  base <- matrix(rbinom(300 * 4, 1, 0.3), 300)
+  a <- base[, c(rep(1, 12), 2:4)]
+  expect_no_warning(p <- turf(a, 3))
+  b <- brute_force(a, 3, c("frequency", "penetration"))
+  expect_equal(p$reach, b$reach)
+  expect_equal(p$frequency, b$frequency)
+  expect_equal(p$penetration, b$penetration)
+})
+
+test_that("many exact ties on penetration keep the frequency optimum", {
+  # 200 complementary pairs of 8-hit columns and the pair 401-402 all reach
+  # the 16 respondents with penetration 8. Only 401-402 has frequency 18.
+  comb <- combn(16, 8)
+  comb <- comb[, colSums(comb <= 4) %in% 1:3, drop = FALSE]
+  comb <- comb[, apply(comb, 2, function(x) 1 %in% x), drop = FALSE]
+  set.seed(1)
+  chosen <- sample.int(ncol(comb), 200)
+  a <- matrix(0, 16, 402)
+  for (j in 1:200) {
+    a[comb[, chosen[j]], 2 * j - 1] <- 1
+    a[, 2 * j] <- 1 - a[, 2 * j - 1]
+  }
+  a[1:6, 401] <- 1
+  a[5:16, 402] <- 1
+  # The pool needs about 200 solves here. Remove the time limit so that the
+  # test does not depend on the speed of the machine.
+  old <- options(turfLP.max_pool_seconds = Inf)
+  on.exit(options(old), add = TRUE)
+  expect_no_warning(p <- turf(a, 2, c("penetration", "frequency")))
+  expect_equal(p$products, c(401, 402))
+
+  # With a smaller pool limit the pool is incomplete, and the frequency
+  # stage goes back to the solver.
+  old_pool <- options(turfLP.max_pool = 50)
+  on.exit(options(old_pool), add = TRUE)
+  expect_warning(p <- turf(a, 2, c("penetration", "frequency")),
+                 "penetration optimum stopped")
+  expect_equal(p$products, c(401, 402))
+})
+
+test_that("penetration differences near 1e-13 are not treated as ties", {
+  set.seed(20260926)
+  n <- 42000L
+  r <- c(26318L, 27898L, 25803L, 28501L)
+  a <- matrix(1, n, 4)
+  for (i in c(1, 3)) {
+    ids <- sample.int(n)
+    miss <- n - r[i]
+    a[ids[seq_len(miss)], i] <- 0
+    a[ids[miss + seq_len(n - r[i + 1])], i + 1] <- 0
+  }
+  expect_equal(turf(a, 2, c("penetration", "frequency"))$products, c(1, 2))
+})
+
+test_that("the pool time limit gives a warning and a valid portfolio", {
+  old <- options(turfLP.max_pool_seconds = 0)
+  on.exit(options(old))
+  warnings <- character(0)
+  p <- withCallingHandlers(
+    turf(tie_matrix, 2, c("penetration", "frequency")),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(length(warnings) > 0 && all(grepl("time limit", warnings)))
+  b <- brute_force(tie_matrix, 2, "penetration")
+  expect_equal(p$reach, b$reach)
+})
+
+test_that("many tied portfolios give no warning when the pool is complete", {
+  expect_no_warning(p <- turf(diag(101), 1, c("penetration", "frequency")))
+  expect_equal(p$reach, 1)
+})
+
+test_that("turf_simulate() checks its arguments", {
+  expect_error(turf_simulate(10, 2.9), "`n_products` must be")
+  expect_error(turf_simulate(0, 3), "`n_respondents` must be")
+  expect_error(turf_simulate(10, 3, 1.1), "`max_prob` must be")
+  expect_error(turf_simulate(10, 3, NA), "`max_prob` must be")
+})

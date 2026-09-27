@@ -31,6 +31,6 @@ the results as one table.
 }
 \examples{
 set.seed(1234)
-reach <- turf_simulate()
-turf_sizes(reach, sizes = 1:6)
+reach <- turf_simulate(n_respondents = 300, n_products = 15)
+turf_sizes(reach, sizes = 1:4)
 }

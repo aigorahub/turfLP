@@ -20,9 +20,9 @@ returns one of them.
 \description{
 \code{turf_min_cover()} solves the set cover problem: it finds the fewest
 products such that every respondent that some product reaches is reached
-by at least one selected product. The size of this portfolio is the
-largest size worth passing to \code{\link[=turf]{turf()}}, because larger portfolios cannot
-add reach.
+by at least one selected product. Larger portfolios cannot add reach, so
+for reach this is the largest size worth passing to \code{\link[=turf]{turf()}}. Larger
+portfolios can still add frequency.
 }
 \examples{
 set.seed(1234)

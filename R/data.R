@@ -64,7 +64,8 @@
 #' describe real customers or products.
 #'
 #' Run time grows with the portfolio size. On this data, one [turf()] call
-#' takes less than a second for sizes up to about 8 on a recent laptop.
+#' takes about 0.3 seconds for size 2 and about 4 to 6 seconds for sizes 3
+#' to 8 on a recent laptop.
 #'
 #' @format A data frame with 2500 rows (customers) and 40 integer columns
 #'   (drinks), with values 0 and 1 and no missing values.
@@ -72,9 +73,7 @@
 #' @seealso [icecream] and [chips] for smaller data sets.
 #' @examples
 #' sort(colMeans(cafe), decreasing = TRUE)[1:10]
-#' \donttest{
-#' turf(cafe, size = 5)
-#' }
+#' turf(cafe, size = 2)
 "cafe"
 
 #' Cured ham liking data

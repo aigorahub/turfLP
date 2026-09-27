@@ -102,11 +102,8 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
   cand_reach <- prod_reach[cand]
   pen_coef <- max(cand_reach) / cand_reach
 
-  # Variable n + m + 1 is a continuous copy of the penetration sum. If the
-  # objective put these fractional coefficients on the binary variables
-  # directly, lp_solve could take the GCD of only the whole-number
-  # coefficients as the smallest possible gain (MIP_stepOF in lp_lib.c) and
-  # prune the optimum. With the copy, it uses no such step.
+  # Variable n + m + 1 is a continuous copy of the penetration sum, so that
+  # one row can bound penetration.
   model <- list(
     triplets = rbind(
       cbind(seq_len(n), seq_len(n), 1),
@@ -121,33 +118,182 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
   on_vars <- function(z = 0, x = 0, pen = 0) {
     c(rep(z, length.out = n), rep(x, length.out = m), pen)
   }
+
+  # Identical products give identical portfolios when swapped. Select them in
+  # column order (x_first >= x_second >= ...), so that each set of equivalent
+  # portfolios is searched once.
+  col_keys <- vapply(seq_len(m), function(j) {
+    paste(which(a[, j] == 1), collapse = ",")
+  }, character(1))
+  for (j in which(duplicated(col_keys))) {
+    prev <- max(which(col_keys[seq_len(j - 1)] == col_keys[j]))
+    model <- add_row(model, coef = on_vars(x = replace(numeric(m), c(prev, j),
+                                                      c(1, -1))),
+                     dir = ">=", rhs = 0)
+  }
   objectives <- list(
     reach = list(
-      direction = "min", coef = on_vars(z = 1),
+      name = "reach", direction = "min", coef = on_vars(z = 1),
       value = function(sel) n - sum(rowSums(a[, sel, drop = FALSE]) > 0)
     ),
     frequency = list(
-      direction = "max", coef = on_vars(x = cand_reach),
+      name = "frequency", direction = "max", coef = on_vars(x = cand_reach),
       value = function(sel) sum(cand_reach[sel])
     ),
     penetration = list(
-      direction = "min", coef = on_vars(pen = 1),
+      name = "penetration", direction = "min", coef = on_vars(pen = 1),
       value = function(sel) sum(pen_coef[sel])
     )
   )
 
+  # Solve one stage, then check the result from the selected products.
+  # The solver meets bounds only to within its tolerance, so it can return
+  # products that are slightly worse on an earlier criterion. Cut off those
+  # exact products and solve again. The previous products meet every bound
+  # exactly and are never cut, so they stay feasible. `status` is "ok",
+  # "none" (no other valid portfolio is feasible), "limit" (`max_solves`
+  # solves), "time" (past `deadline`), or "invalid" (the solver returned a
+  # vector that does not select `size` products; a cut built from it could
+  # remove valid portfolios).
+  max_solves <- 100
+  exclude <- function(model, selected) {
+    add_row(model, coef = on_vars(x = selected), dir = "<=", rhs = size - 1)
+  }
+  next_valid <- function(model, obj, earlier, previous, deadline = Inf) {
+    for (i in seq_len(max_solves)) {
+      remaining <- deadline - proc.time()[["elapsed"]]
+      if (remaining <= 0) {
+        return(list(status = "time", model = model))
+      }
+      sol <- solve_lp(obj$direction, obj$coef, model, x_vars, obj$name,
+                      soft = !is.null(previous), time_limit = remaining)
+      if (is.null(sol)) {
+        return(list(status = "none", model = model))
+      }
+      if (identical(sol, "time")) {
+        return(list(status = "time", model = model))
+      }
+      x <- sol[x_vars]
+      selected <- x > 0.5
+      if (anyNA(x) || sum(selected) != size || any(abs(x - selected) > 1e-6)) {
+        if (is.null(previous)) {
+          stop(sprintf(
+            "HiGHS returned an invalid solution in the %s stage.",
+            obj$name
+          ), call. = FALSE)
+        }
+        return(list(status = "invalid", model = model))
+      }
+      if (is.null(previous) ||
+          !worse_on_earlier(earlier, selected, previous, size)) {
+        return(list(status = "ok", selected = selected, model = model))
+      }
+      model <- exclude(model, selected)
+    }
+    list(status = "limit", model = model)
+  }
+  unfinished <- function(stage, status, earlier_exact = TRUE) {
+    warning(sprintf(paste(
+      "The %s stage did not finish (%s). The portfolio is optimal on",
+      if (earlier_exact) {
+        "the earlier criteria but"
+      } else {
+        "penetration only to within the solver tolerance and"
+      },
+      "may not be optimal on %s."
+    ), stage, switch(status,
+      limit = sprintf("%d solves", max_solves),
+      time = sprintf("time limit of %g seconds", max_pool_seconds),
+      invalid = "HiGHS returned an invalid solution",
+      none = "HiGHS found no valid portfolio"
+    ), stage), call. = FALSE)
+  }
+
+  # The pool limits are options only so that the tests can reach them.
+  max_pool <- getOption("turfLP.max_pool", 1000)
+  max_pool_seconds <- getOption("turfLP.max_pool_seconds", 30)
   stages <- c("reach", tiebreak)
+  previous <- NULL
   for (s in seq_along(stages)) {
     obj <- objectives[[stages[s]]]
-    sol <- solve_lp(obj$direction, obj$coef, model, x_vars, stages[s])
-    selected <- sol[x_vars] > 0.5
+    earlier <- objectives[stages[seq_len(s - 1)]]
+    res <- next_valid(model, obj, earlier, previous)
+    if (res$status != "ok") {
+      unfinished(stages[s], res$status)
+      break
+    }
+    model <- res$model
+    selected <- res$selected
 
+    if (stages[s] == "penetration") {
+      # Penetration is not a whole number, and HiGHS works to about 1e-9,
+      # so its optimum is not exact. The optimum is no worse than these
+      # products, so bound penetration by their value and collect every
+      # valid portfolio that meets the bound, excluding each one found and
+      # solving again. When no other portfolio is feasible, the pool holds
+      # every portfolio that is optimal on penetration, and R picks the best
+      # on penetration and any later criterion.
+      without_pool <- model
+      bound <- obj$value(selected)
+      pool <- list(selected)
+      last <- selected
+      model <- add_row(model, coef = obj$coef, dir = "<=", rhs = bound)
+      status <- "full"
+      deadline <- proc.time()[["elapsed"]] + max_pool_seconds
+      for (i in seq_len(max_pool)) {
+        model <- exclude(model, last)
+        res <- next_valid(model, obj, earlier, previous, deadline)
+        model <- res$model
+        if (res$status != "ok") {
+          status <- if (res$status == "none") "complete" else res$status
+          break
+        }
+        last <- res$selected
+        # Skip products that meet the bound only within the solver tolerance.
+        if (obj$value(last) <= bound + tolerance(bound, size)) {
+          pool <- c(pool, list(last))
+        }
+      }
+
+      if (status == "complete") {
+        selected <- best_of(pool, objectives[stages[s:length(stages)]], size)
+      } else {
+        warning(sprintf(paste(
+          "The search for the penetration optimum stopped (%s). The",
+          "penetration is optimal only to within the solver tolerance",
+          "(about 1e-9)."
+        ), switch(status,
+          full = sprintf("more than %d portfolios are within the solver tolerance", max_pool),
+          time = sprintf("time limit of %g seconds", max_pool_seconds),
+          limit = sprintf("%d solves", max_solves),
+          invalid = "HiGHS returned an invalid solution"
+        )), call. = FALSE)
+        selected <- best_of(pool, list(obj), size)
+        # The pool may miss the best portfolio on a later criterion
+        # (frequency), so that stage goes back to the solver, with
+        # penetration bounded by the value of the best portfolio.
+        if (s < length(stages)) {
+          res <- next_valid(
+            add_row(without_pool, coef = obj$coef, dir = "<=",
+                    rhs = obj$value(selected)),
+            objectives[[stages[s + 1]]], objectives[stages[seq_len(s)]],
+            selected, proc.time()[["elapsed"]] + max_pool_seconds
+          )
+          if (res$status == "ok") {
+            selected <- res$selected
+          } else {
+            unfinished(stages[s + 1], res$status, earlier_exact = FALSE)
+          }
+        }
+      }
+      break
+    }
+
+    previous <- selected
     if (s < length(stages)) {
       # Fix this criterion at the value that the selected products actually
       # give, not at the solver's value for the continuous variables. Reach
-      # and frequency are whole numbers, so the bound needs no tolerance. A
-      # small tolerance near the solver's own epsilon made lp_solve prune the
-      # optimum in testing.
+      # and frequency are whole numbers, so the bound needs no tolerance.
       model <- add_row(
         model,
         coef = obj$coef,
@@ -164,9 +310,9 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
 #'
 #' `turf_min_cover()` solves the set cover problem: it finds the fewest
 #' products such that every respondent that some product reaches is reached
-#' by at least one selected product. The size of this portfolio is the
-#' largest size worth passing to [turf()], because larger portfolios cannot
-#' add reach.
+#' by at least one selected product. Larger portfolios cannot add reach, so
+#' for reach this is the largest size worth passing to [turf()]. Larger
+#' portfolios can still add frequency.
 #'
 #' @inheritParams turf
 #' @return An object of class `turf_portfolio`. See [turf()] for its
@@ -211,8 +357,8 @@ turf_min_cover <- function(reach) {
 #'   by commas.
 #' @examples
 #' set.seed(1234)
-#' reach <- turf_simulate()
-#' turf_sizes(reach, sizes = 1:6)
+#' reach <- turf_simulate(n_respondents = 300, n_products = 15)
+#' turf_sizes(reach, sizes = 1:4)
 #' @export
 turf_sizes <- function(reach, sizes = NULL,
                        tiebreak = c("frequency", "penetration")) {
@@ -295,24 +441,92 @@ check_tiebreak <- function(tiebreak) {
   unique(match.arg(tiebreak, c("frequency", "penetration"), several.ok = TRUE))
 }
 
-# Solve one stage with lpSolve. `model` holds the constraints as triplets
-# (row, column, value) with their directions and right-hand sides.
-solve_lp <- function(direction, objective, model, binary, stage) {
-  res <- lpSolve::lp(
-    direction = direction,
-    objective.in = objective,
-    const.dir = model$dir,
-    const.rhs = model$rhs,
-    dense.const = model$triplets,
-    binary.vec = binary
+# Solve one stage with HiGHS. `model` holds the constraints as triplets
+# (row, column, value) with their directions and right-hand sides. Variables
+# are at least 0, and the variables in `binary` are 0 or 1. With
+# `soft = TRUE`, an infeasible model gives NULL, the time limit gives "time",
+# and any other failure gives NA; otherwise all stop with an error.
+solve_lp <- function(direction, objective, model, binary, stage,
+                     soft = FALSE, time_limit = Inf) {
+  n_vars <- length(objective)
+  types <- rep("C", n_vars)
+  types[binary] <- "I"
+  upper <- rep(Inf, n_vars)
+  upper[binary] <- 1
+  res <- highs::highs_solve(
+    L = objective,
+    lower = rep(0, n_vars),
+    upper = upper,
+    A = Matrix::sparseMatrix(
+      i = model$triplets[, 1], j = model$triplets[, 2],
+      x = model$triplets[, 3], dims = c(length(model$rhs), n_vars)
+    ),
+    lhs = ifelse(model$dir == "<=", -Inf, model$rhs),
+    rhs = ifelse(model$dir == ">=", Inf, model$rhs),
+    types = types,
+    maximum = direction == "max",
+    # HiGHS 1.14 presolve returned a wrong optimum on a 7 by 4 test matrix
+    # (5 unreached respondents where 4 is optimal), so presolve is off.
+    control = highs::highs_control(
+      time_limit = time_limit,
+      presolve = "off",
+      mip_rel_gap = 0,
+      mip_abs_gap = 0,
+      primal_feasibility_tolerance = 1e-9,
+      mip_feasibility_tolerance = 1e-9
+    )
   )
-  if (res$status != 0) {
-    stop(sprintf(
-      "lpSolve did not find a solution in the %s stage (status %d).",
-      stage, res$status
-    ), call. = FALSE)
+  if (res$status_message == "Optimal") {
+    return(res$primal_solution)
   }
-  res$solution
+  if (soft) {
+    return(switch(res$status_message,
+      "Infeasible" = NULL,
+      "Time limit reached" = "time",
+      NA
+    ))
+  }
+  stop(sprintf(
+    "HiGHS did not find a solution in the %s stage (%s).",
+    stage, res$status_message
+  ), call. = FALSE)
+}
+
+# Criterion values count as equal when they differ by less than the
+# rounding error of a sum of `size` doubles, 16 * size * machine epsilon
+# (relative). Reach and frequency are whole numbers, so this compares them
+# exactly. Values are signed so that smaller is better.
+signed_value <- function(obj, selected) {
+  (if (obj$direction == "min") 1 else -1) * obj$value(selected)
+}
+tolerance <- function(value, size) {
+  16 * size * .Machine$double.eps * max(1, abs(value))
+}
+
+# TRUE when the products in `selected` are lexicographically worse than the
+# products in `previous` on the criteria in `objectives`, in order.
+worse_on_earlier <- function(objectives, selected, previous, size) {
+  for (obj in objectives) {
+    new <- signed_value(obj, selected)
+    old <- signed_value(obj, previous)
+    if (new > old + tolerance(old, size)) {
+      return(TRUE)
+    }
+    if (new < old - tolerance(old, size)) {
+      return(FALSE)
+    }
+  }
+  FALSE
+}
+
+# The lexicographically best portfolio in `pool` on `objectives`, in order.
+best_of <- function(pool, objectives, size) {
+  keep <- seq_along(pool)
+  for (obj in objectives) {
+    v <- vapply(pool[keep], function(sel) signed_value(obj, sel), numeric(1))
+    keep <- keep[v <= min(v) + tolerance(min(v), size)]
+  }
+  pool[[keep[1]]]
 }
 
 add_row <- function(model, coef, dir, rhs) {

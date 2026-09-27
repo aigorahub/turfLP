@@ -13,7 +13,7 @@ turfLP is an R package for TURF analysis (total unduplicated reach and frequency
 remotes::install_github("aigorahub/turfLP")
 ```
 
-The only dependency is [lpSolve](https://cran.r-project.org/package=lpSolve).
+The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
 
 ## Usage
 
@@ -101,7 +101,7 @@ z_i + sum_j a_ij x_j >= 1    for each respondent i
 sum_j x_j = k                 (portfolio size)
 ```
 
-For integer x, the smallest feasible z<sub>i</sub> is 0 when a selected product reaches respondent i and 1 when none does. So only the product variables must be integer. This keeps the branch and bound search small: on the example above, one solve takes about 0.3 seconds. An earlier version made all the respondent variables binary, and the same solve took about 8 minutes.
+For integer x, the smallest feasible z<sub>i</sub> is 0 when a selected product reaches respondent i and 1 when none does. So only the product variables must be integer. This keeps the branch and bound search small: the example above takes about 1.4 seconds. An earlier version made all the respondent variables binary, and one solve with lpSolve took about 8 minutes.
 
 `turf()` then solves up to three stages in sequence. Each later stage keeps the earlier criteria at their optimal values.
 
@@ -115,23 +115,28 @@ Respondents that no product reaches stay in the denominator of `reach_prop` but 
 
 ### Solver notes
 
-In testing, lp_solve 5.5 (the solver in lpSolve) returned solutions that were not optimal in two situations. The package avoids both, and the tests compare its results with brute-force enumeration.
+turfLP uses HiGHS. Earlier versions used lp_solve 5.5 through lpSolve, and testing and review found three lp_solve problems. With fractional objective coefficients on the integer variables, lp_solve could take the GCD of only the whole-number coefficients as the smallest possible improvement (`MIP_stepOF` in `lp_lib.c`) and skip the optimum. A bound with a small tolerance ("unreached ≤ 2 + 2e-9") made it skip the optimum where the exact bound did not. After many added constraints, it reported points that broke a constraint by 1 as optimal. HiGHS avoids all three. HiGHS 1.14 presolve returned a wrong optimum on a 7 by 4 test matrix, so the package turns presolve off.
 
-The first case is an objective with fractional coefficients on the integer variables. If some of these coefficients are whole numbers, lp_solve takes the GCD of only those whole-number coefficients as the smallest possible improvement (`MIP_stepOF` in `lp_lib.c`). It then skips branches that improve less than that step. The penetration stage has such coefficients. The package therefore puts the penetration sum in a continuous variable and optimizes that variable.
+Reach and frequency are whole numbers, so the package fixes them with exact bounds. The penetration value is not a whole number, and a solver meets bounds only to within its tolerance (about 1e-9). A review found cases with 35,000 to 60,000 respondents where a stage returned a portfolio slightly worse on penetration than the optimum. The package therefore decides penetration in R:
 
-The second case is a bound with a small tolerance. In one test, the bound "unreached ≤ 2 + 2e-9" made lp_solve skip the optimum, and the exact bound "unreached ≤ 2" did not. Reach and frequency are whole numbers, so the package fixes them with exact bounds.
+- After each stage, it computes the earlier criteria from the selected products. If the portfolio is worse on an earlier criterion, it adds a constraint that excludes that exact portfolio and solves the stage again.
+- In the penetration stage, the optimum is no worse than the first solution. The package bounds penetration by that value and collects every portfolio that meets the bound, by excluding each portfolio it finds and solving again until no other portfolio is feasible. It then picks the best in R, on penetration and on frequency if frequency comes after penetration.
+
+In R, two values count as equal when they differ by less than the rounding error of the sum, 16 × size × machine epsilon (relative, about 7e-15 for a portfolio of two products). Values that differ by less than that are treated as a tie.
+
+The collection stops after 1000 portfolios or 30 seconds. This happens only when very many portfolios have almost the same penetration. The package then warns that the penetration is optimal only to within the solver tolerance, and the solver finds the best frequency with penetration bounded by the best value found, with another 30 seconds. If that search also stops, the package warns and returns the best portfolio on penetration. The time limits apply inside each solve, but the reach stage, a frequency stage before penetration, and the first penetration solve have no time limit. Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
 
 ### Run time
 
-These times are for one `turf()` call with all tie-breaks, on simulated data with correlated products (Apple M5 Pro, R 4.6.0):
+These times are for one `turf()` call with all tie-breaks, on simulated data with correlated products (Apple M5 Pro, R 4.6.1, HiGHS 1.14):
 
 | Respondents | Products | Size 3 | Size 5 | Size 8 |
 |---:|---:|---:|---:|---:|
-| 500 | 18 | < 0.1 s | < 0.1 s | < 0.1 s |
-| 1000 | 30 | 0.2 s | 0.5 s | 0.8 s |
-| 2000 | 40 | 1.3 s | 7.7 s | 76 s |
+| 500 | 18 | 0.2 s | 0.4 s | 0.5 s |
+| 1000 | 30 | 7.5 s | 1.4 s | 1.3 s |
+| 2000 | 40 | 3.0 s | 6.6 s | 19 s |
 
-Time grows with the number of respondents, products, and the portfolio size.
+Time depends on the data as well as on the numbers of respondents and products and the portfolio size. Most of the time goes to the solve that proves no other portfolio has the same penetration.
 
 ## Background
 
@@ -187,7 +192,7 @@ This package started in 2021 as a prototype script. The package fixes these prob
 - The reach values after the tie-break stages came from the solver's respondent variables, which are only a lower bound in those stages. They now come from the selected products.
 - The solver status was not checked. A failed solve now stops with an error.
 - Solutions were read with an exact test (`== 1`), which fails on values such as 0.9999999.
-- The penetration stage could be affected by the lp_solve issue in the solver notes if a product reached exactly one respondent.
+- The penetration stage could be affected by the first lp_solve problem in the solver notes if a product reached exactly one respondent.
 - The code ran only for one portfolio size, on simulated data, with no functions.
 
 ## License
