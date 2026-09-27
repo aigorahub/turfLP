@@ -6,13 +6,15 @@ The solver is [HiGHS](https://highs.dev) through `highspy`. The dependencies are
 
 ## Installation
 
-The package is not on PyPI yet. Install it from the repository:
+```sh
+pip install turfLP
+```
+
+Python 3.10 or later. The package is `turfLP` on PyPI, and the module is `turflp` (`import turflp`). To install the development version from the repository:
 
 ```sh
 pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
 ```
-
-Python 3.10 or later.
 
 ## Usage
 

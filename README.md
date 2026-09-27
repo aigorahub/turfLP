@@ -23,14 +23,11 @@ The package solves the integer programs with the HiGHS solver through the [highs
 The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), use HiGHS with the same settings, limits, and warning texts, and pass one shared conformance suite, [conformance/](conformance/), whose 1,787 fixture cases take their expected values from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push.
 
 ```sh
-# Python 3.10 or later
-pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
-
-# JavaScript (Node.js 20 or later, or a browser): build a tarball from a clone, then install it
-cd turfLP/js && npm ci && npm pack && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
+pip install turfLP     # Python 3.10 or later; import turflp
+npm install turflp     # JavaScript: Node.js 20 or later, or a browser
 ```
 
-See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server. Neither package is on PyPI or npm yet.
+See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server.
 
 ## Browser dashboard
 
