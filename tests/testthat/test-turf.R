@@ -120,6 +120,32 @@ test_that("turf_min_cover() rejects a solver result that does not cover everyone
   expect_error(turf_min_cover(tie_matrix), "invalid solution in the set cover stage")
 })
 
+test_that("turf_min_cover() checks that the solver's result is integral", {
+  both <- matrix(c(1, 1), 1, 2)
+  mock_solution <- function(sol) {
+    local_mocked_bindings(
+      solve_lp = function(direction, objective, model, binary, stage, ...) sol,
+      .env = parent.frame()
+    )
+  }
+
+  # A fractional value can select a full cover and must still fail.
+  mock_solution(c(1, 0.8))
+  expect_error(turf_min_cover(both), "invalid solution in the set cover stage")
+
+  mock_solution(c(NA, 1))
+  expect_error(turf_min_cover(both), "invalid solution in the set cover stage")
+
+  mock_solution(c(1 - 1e-5, 0))
+  expect_error(turf_min_cover(both), "invalid solution in the set cover stage")
+
+  # Values within 1e-6 of 0 or 1 are integral.
+  mock_solution(c(1 - 1e-7, 1e-7))
+  cover <- turf_min_cover(both)
+  expect_equal(cover$products, 1L)
+  expect_equal(cover$reach, 1L)
+})
+
 test_that("turf_sizes() returns one row per size", {
   set.seed(1234)
   reach <- turf_simulate(n_respondents = 300, n_products = 12)
