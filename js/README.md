@@ -86,7 +86,7 @@ Run time depends on the data as well as its size: many portfolios that tie on pe
 
 The same package runs in a browser. [dashboard/](../dashboard/) in the repository is a complete example. Three things differ from Node.js:
 
-- The browser cannot read `highs.wasm` from `node_modules`. Serve the file (`node_modules/highs/build/highs.wasm`, 3.5 MB, about 1.2 MB with gzip) and pass its URL as `locateFile`, or fetch its bytes and pass them as `wasmBinary`.
+- The browser cannot read `highs.wasm` from `node_modules`. Serve the file (`node_modules/highs/build/highs.wasm`, 3.5 MB, about 1.2 MB with gzip) and pass a function that returns its URL, such as `loadSolver({ locateFile: () => wasmUrl })`, or fetch its bytes and pass them as `wasmBinary`.
 - The `highs` loader has branches for Node.js that import `node:module`, `node:fs`, and other built-in modules. They never run in a browser, but the bundler must leave them out. With esbuild, mark `node:*` as external, as `dashboard/build.mjs` does; other bundlers need the same setting.
 - The solve blocks the thread, so run it in a Web Worker. To cancel a solve, call `terminate()` on the worker and start a new one.
 
@@ -94,7 +94,7 @@ The same package runs in a browser. [dashboard/](../dashboard/) in the repositor
 // solver-worker.ts, bundled as a worker script
 import { loadSolver, turf, type ReachMatrix } from "turflp";
 
-// Serve highs.wasm next to the page.
+// Serve highs.wasm next to the worker script, or use an absolute URL.
 const ready = fetch("highs.wasm").then((r) => r.arrayBuffer()).then((wasmBinary) => loadSolver({ wasmBinary }));
 
 self.onmessage = async (e: MessageEvent<{ reach: ReachMatrix; size: number }>) => {
@@ -107,7 +107,7 @@ Chrome does not start a module worker from a page opened as a local file (`file:
 
 ## Browser or server
 
-A server does not make a solve much faster. Node.js runs the same WebAssembly as the browser: on four cases of 1,000 to 5,000 respondents, the dashboard in Chrome took 7 to 15 s, within the run-to-run variation of Node.js on the same inputs. Native HiGHS through the Python package was at most about 1.5 times faster. Move a problem to a server when it takes too long for someone to wait at the page, when the device is slow (a phone), or when the run must continue after the page closes.
+On the same computer, the browser and Node.js had similar times, because both run the same WebAssembly: on four cases of 1,000 to 5,000 respondents, the dashboard in Chrome took 7 to 15 s, within the run-to-run variation of Node.js on the same inputs. In those four cases, the Node.js time was 1.07 to 1.61 times the time of native HiGHS through the Python package. Move a problem to a server when it takes too long for someone to wait at the page, when the device is slow (a phone), or when the run must continue after the page closes.
 
 Times for one `turf()` call with both tie-breaks, on random data where each product reaches each respondent independently with a probability between 0 and 0.5 (Node.js 26, Apple M5 Pro). Data of this kind is a hard case: real consumer data, where products form groups, solved much faster in these tests.
 
@@ -121,19 +121,21 @@ Times for one `turf()` call with both tie-breaks, on random data where each prod
 | 1000 | 80 | 8.2 s | 31 s | 12 s |
 | 5000 | 20 | 15 s | 10 s | 3.0 s |
 | 5000 | 40 | 52 s | 56 s | 33 s |
-| 5000 | 80 | over 150 s | over 150 s | over 150 s |
+| 5000 | 80 | timeout* | timeout* | timeout* |
 
-A 20,000 by 20 problem of size 5 took 147 s. For comparison, each size from 1 to 8 of the `icecream` data (120 by 10) takes less than 0.1 s, and each size of the `cafe` data (2,500 by 40) takes 0.5 to 7 s in the browser.
+*The process exceeded a limit of 150 s that covered loading the solver, the solve, and the enumeration check. No solve time was recorded.
+
+A 20,000 by 20 problem of size 5 took 147 s; 20,000 by 40 at size 5 also exceeded the limit. The example data sets solved faster than random data of the same size: in the dashboard in Chrome, each size from 1 to 8 of `icecream` (120 by 10) took 0.1 s or less, and sizes 1 to 3 of `cafe` (2,500 by 40) took 1.3, 0.5, and 2.3 s. Sizes 1 to 8 of `cafe` took 44 s in total in Node.js.
 
 `turfSizes()` solves each size in turn, so its time is the sum over the sizes. Times of one case varied between runs by up to a factor of about 1.6, and data with many ties on penetration can take up to the 30-second pool budget more.
 
 A rule to start from, to be checked on your own data:
 
 - Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel, as the dashboard does.
-- Server, in the request: up to 200 respondents and 40 products and size 8 (the rule of the Next.js example below). These solve in less than a second.
+- Server, in the request: up to 200 respondents and 40 products and size 8 (the rule of the Next.js example below). The three measured 200 by 40 cases took less than a second; check your own data before you solve in a request.
 - Server, as a background job: problems of 1,000 respondents and 80 products, 5,000 respondents and 40 products, or larger; many sizes at once; and any problem whose run time you cannot predict.
 
-These times were checked for optimality: for every case with fewer than 3 million portfolios to enumerate, an enumeration of every portfolio gave the same reach, frequency, and penetration.
+All 18 completed cases with fewer than 3 million portfolios were checked against an enumeration of every portfolio: reach and frequency matched exactly, and penetration matched to within 1e-9 (relative). Cases that timed out have no result and no check.
 
 ## Next.js on Vercel
 

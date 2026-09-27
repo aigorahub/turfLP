@@ -4,8 +4,8 @@
 #' product gets a reach probability drawn uniformly from 0 to `max_prob`. The
 #' number of respondents that the product reaches is drawn from a binomial
 #' distribution with that probability, and those respondents are chosen at
-#' random. Products are generated independently, so sample correlations
-#' between products are small.
+#' random. Products are generated independently. Sample correlations
+#' between products can differ from zero.
 #'
 #' Call [set.seed()] first for reproducible results.
 #'
