@@ -29,11 +29,20 @@ fail <- function(id, ...) failures <<- c(failures, paste0(id, ": ", ...))
 
 near <- function(x, y, size) abs(x - y) <= 16 * size * .Machine$double.eps * max(1, abs(y))
 
-# Every reported field must equal its recomputation from the returned indices.
-check_fields <- function(id, a, p) {
+# Rules 1 and 2 of conformance/README.md: the result selects `size` distinct,
+# valid products that reach someone, and every reported field equals its
+# recomputation from the returned indices. `size` is NULL for a minimum cover.
+check_fields <- function(id, a, p, size = NULL) {
   sel <- p$products
+  if (!is.numeric(sel) || any(sel != round(sel)) || any(sel < 1 | sel > ncol(a)) ||
+      anyDuplicated(sel) > 0 || any(colSums(a)[sel] == 0) ||
+      (!is.null(size) && (length(sel) != size || p$size != size))) {
+    fail(id, "selected products are not ", if (is.null(size)) "valid" else
+         sprintf("%d distinct valid products", size))
+    return(invisible(FALSE))
+  }
   r <- colSums(a)[sel]
-  ok <- length(unique(sel)) == length(sel) && p$size == length(sel) &&
+  ok <- p$size == length(sel) &&
     identical(p$names, colnames(a)[sel]) &&
     p$reach == sum(rowSums(a[, sel, drop = FALSE]) > 0) &&
     p$respondents == nrow(a) &&
@@ -41,7 +50,23 @@ check_fields <- function(id, a, p) {
     p$frequency == sum(r) &&
     near(p$penetration, length(sel) / sum(1 / r), length(sel))
   if (!ok) fail(id, "reported fields do not match the selected products")
+  invisible(ok)
 }
+
+# The checker must reject bad results (conformance/README.md): a self-consistent
+# result of the wrong size, a duplicate index, and an index out of range.
+local({
+  a <- matrix(c(1, 1, 1, 0, 0, 1), 2, 3, dimnames = list(NULL, c("P1", "P2", "P3")))
+  wrong <- list(products = 1:3, names = c("P1", "P2", "P3"), size = 3L, reach = 2L,
+                reach_prop = 1, frequency = 4, penetration = 3 / (1 / 2 + 1 + 1),
+                respondents = 2L)
+  before <- length(failures)
+  check_fields("self-check wrong size", a, wrong, size = 2)
+  check_fields("self-check duplicate", a, modifyList(wrong, list(products = c(1L, 1L))), 2)
+  check_fields("self-check range", a, modifyList(wrong, list(products = c(1L, 4L))), 2)
+  if (length(failures) - before != 3) stop("the conformance checker accepts bad results")
+  failures <<- failures[seq_len(before)]
+})
 
 check_expected <- function(id, p, expected, keys = names(expected)) {
   for (key in keys) {
@@ -76,7 +101,7 @@ for (case in fixtures("turf")) {
     fail(case$id, conditionMessage(p))
     next
   }
-  check_fields(case$id, a, p)
+  check_fields(case$id, a, p, case$size)
   check_expected(case$id, p, case$expected)
   counts["turf"] <- counts["turf"] + 1
 }
@@ -104,6 +129,11 @@ for (case in fixtures("sizes")) {
   for (i in seq_along(case$expected)) {
     e <- case$expected[[i]]
     row <- as.list(tab[i, ])
+    rid <- sprintf("%s[%d]", case$id, i)
+    # The R result has names, not indices; recompute each row with turf().
+    p <- turf(a, e$size, tb)
+    check_fields(rid, a, p, e$size)
+    if (p$reach != row$reach) fail(rid, "sizes row differs from turf()")
     check_expected(sprintf("%s[%d]", case$id, i), row, e[setdiff(names(e), "size")])
   }
   counts["sizes"] <- counts["sizes"] + 1
@@ -127,7 +157,7 @@ for (case in fixtures("bounded")) {
   if (!identical(warnings, as.character(unlist(case$warnings)))) {
     fail(case$id, "warnings: ", paste(warnings, collapse = " | "))
   }
-  check_fields(case$id, a, p)
+  check_fields(case$id, a, p, case$size)
   check_expected(case$id, p, case$expected)
   counts["bounded"] <- counts["bounded"] + 1
 }
@@ -140,6 +170,13 @@ for (case in fixtures("comparator")) {
          "worse = ", got)
   }
   counts["comparator"] <- counts["comparator"] + 1
+}
+
+counts["format"] <- 0
+for (case in fixtures("format")) {
+  got <- sprintf("%g", case$value)
+  if (got != case$text) fail(sprintf("format %.17g", case$value), got)
+  counts["format"] <- counts["format"] + 1
 }
 
 cat(sprintf("%s: %d cases\n", names(counts), counts), sep = "")

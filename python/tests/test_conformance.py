@@ -1,17 +1,22 @@
 """The shared conformance suite (conformance/README.md), with presolve on and off."""
 
+import dataclasses
 import math
 import warnings
 from fractions import Fraction
 from functools import lru_cache
 
+import numpy as np
 import pytest
 
 from turflp import TurfWarning, _core, turf, turf_min_cover, turf_sizes
 
-from conftest import fixtures, needs_conformance, read_input
+from conftest import CONFORMANCE, fixtures, read_input
 
-pytestmark = needs_conformance
+if not (CONFORMANCE / "fixtures").exists():
+    # An unpacked sdist has no conformance/ folder. In the repository CI the
+    # folder exists, so a missing fixture there still fails.
+    pytest.skip("conformance/ is not available", allow_module_level=True)
 INF = math.inf
 
 
@@ -20,10 +25,16 @@ def matrix(name):
     return read_input(name)
 
 
-def check_fields(a, names, p):
-    """Rule 2: every reported field equals its recomputation from the indices."""
+def check_fields(a, names, p, size=None):
+    """Rules 1 and 2: `size` distinct valid products that reach someone, and
+    every reported field equals its recomputation from the indices. `size` is
+    None for a minimum cover."""
     sel = list(p.products)
+    assert all(isinstance(j, int) and 0 <= j < a.shape[1] for j in sel)
+    assert all(a[:, j].sum() > 0 for j in sel)
     assert len(set(sel)) == len(sel) == p.size
+    if size is not None:
+        assert p.size == size
     assert list(p.names) == [names[j] for j in sel]
     r = a[:, sel].sum(axis=0)
     reached = int((a[:, sel].sum(axis=1) > 0).sum())
@@ -57,7 +68,7 @@ def test_turf(case, presolve):
     with warnings.catch_warnings():
         warnings.simplefilter("error", TurfWarning)
         p = turf(a, case["size"], case["tiebreak"], names=names, max_pool_seconds=INF)
-    check_fields(a, names, p)
+    check_fields(a, names, p, case["size"])
     check_expected(a, p, case["expected"])
 
 
@@ -76,7 +87,7 @@ def test_sizes(case, presolve):
     rows = turf_sizes(a, case["sizes"], case["tiebreak"], names=names, max_pool_seconds=INF)
     assert [p.size for p in rows] == [e["size"] for e in case["expected"]]
     for p, e in zip(rows, case["expected"]):
-        check_fields(a, names, p)
+        check_fields(a, names, p, e["size"])
         check_expected(a, p, e)
 
 
@@ -90,8 +101,29 @@ def test_bounded(case, presolve):
                  max_pool=case["max_pool"], max_pool_seconds=seconds)
     texts = [str(w.message) for w in caught if issubclass(w.category, TurfWarning)]
     assert texts == case["warnings"]
-    check_fields(a, names, p)
+    check_fields(a, names, p, case["size"])
     check_expected(a, p, case["expected"])
+
+
+@pytest.mark.parametrize("case", fixtures("format"), ids=lambda c: repr(c["value"]))
+def test_format(case):
+    assert _core._format_seconds(case["value"]) == case["text"]
+
+
+def test_checker_rejects_bad_results():
+    """The checker must reject a self-consistent result of the wrong size, a
+    duplicate index, and an index out of range."""
+    a = np.array([[1, 1, 0], [1, 0, 1]])
+    names = ["P1", "P2", "P3"]
+    wrong = _core.Portfolio(products=(0, 1, 2), names=("P1", "P2", "P3"), size=3, reach=2,
+                            reach_prop=1.0, frequency=4, penetration=3 / (1 / 2 + 1 + 1),
+                            respondents=2)
+    check_fields(a, names, wrong)          # consistent in itself
+    for bad in (wrong,
+                dataclasses.replace(wrong, products=(0, 0), names=("P1", "P1"), size=2),
+                dataclasses.replace(wrong, products=(0, 3), size=2)):
+        with pytest.raises((AssertionError, IndexError)):
+            check_fields(a, names, bad, 2)
 
 
 @pytest.mark.parametrize("case", fixtures("comparator"))

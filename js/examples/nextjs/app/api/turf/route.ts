@@ -4,7 +4,10 @@ import { loadSolver, turf, type TurfOptions } from "turflp";
 
 // The solver is WebAssembly; a Node.js function can load it, the Edge runtime cannot.
 export const runtime = "nodejs";
-// Above the 30-second penetration budget, so a warning is returned instead of a timeout.
+// An operational ceiling with headroom, not a guarantee: the penetration pool
+// and a later frequency search each have a 30-second budget, the first solves
+// of a call have none, and nothing can interrupt a running solve. The size
+// rule below keeps request-time problems far from these limits.
 export const maxDuration = 60;
 
 // Start loading once per function instance; later requests reuse the solver.

@@ -12,7 +12,7 @@ from fractions import Fraction  # noqa: F401  (used by tests through this module
 import numpy as np
 
 from . import _solver
-from ._input import as_reach_matrix, check_size, check_tiebreak
+from ._input import as_reach_matrix, check_limits, check_size, check_tiebreak
 
 EPS = 2.0 ** -52
 MAX_SOLVES = 100
@@ -100,7 +100,9 @@ def turf(reach, size, tiebreak=DEFAULT_TIEBREAK, *, names=None, max_pool=1000,
     Returns a Portfolio. Emits TurfWarning when a search stops early.
     """
     reach, names = as_reach_matrix(reach, names)
-    return _turf(reach, names, size, check_tiebreak(tiebreak), max_pool, max_pool_seconds)
+    tiebreak = check_tiebreak(tiebreak)
+    check_limits(max_pool, max_pool_seconds)
+    return _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds)
 
 
 def _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds):
@@ -314,6 +316,7 @@ def turf_sizes(reach, sizes=None, tiebreak=DEFAULT_TIEBREAK, *, names=None, max_
     """
     reach, names = as_reach_matrix(reach, names)
     tiebreak = check_tiebreak(tiebreak)
+    check_limits(max_pool, max_pool_seconds)
     if sizes is None:
         sizes = range(1, _min_cover(reach, names).size + 1)
     return [_turf(reach, names, k, tiebreak, max_pool, max_pool_seconds) for k in sizes]

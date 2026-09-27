@@ -700,7 +700,8 @@
   "min_cover.json": 82,
   "sizes.json": 12,
   "bounded.json": 5,
-  "comparator.json": 40
+  "comparator.json": 40,
+  "format.json": 18
  },
  "excluded": [
   {

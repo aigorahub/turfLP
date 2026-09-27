@@ -137,7 +137,7 @@ Mirrors `new_portfolio()`.
 
 ## 10. Warnings
 
-Texts are identical in every implementation. `<limit>` is 100, `<pool>` is 1000, and `<seconds>` is 30, formatted as R's `%g` (`30`, `0`, `0.5`).
+Texts are identical in every implementation. `<limit>` is 100, `<pool>` is 1000, and `<seconds>` is 30 by default. `<seconds>` is formatted with C's `%g` (R `sprintf("%g")`, Python `"%g"`): six significant digits, round half to even, trailing zeros removed, exponent form below 1e-4 and from 1e6 (`30`, `0`, `0.5`, `1e-05`, `1.23457e+06`). The conformance fixture `format.json` tests this.
 
 W1, stage did not finish:
 
@@ -187,7 +187,7 @@ Presolve is the one named difference. Each port's test suite runs the conformanc
 
 The reach stage, a frequency stage before penetration, and the first penetration solve have no time limit. Deadlines use a monotonic clock: R `proc.time()[["elapsed"]]`, Python `time.monotonic()`, JavaScript `performance.now() / 1000`. The budgets bound solver time inside the stages that have them, not the total wall time of a call.
 
-R exposes `max_pool` and `max_pool_seconds` as the options `turfLP.max_pool` and `turfLP.max_pool_seconds`. The ports take them as arguments (section 15). `max_solves` is fixed.
+R exposes `max_pool` and `max_pool_seconds` as the options `turfLP.max_pool` and `turfLP.max_pool_seconds`. The ports take them as arguments (section 15) and check them before any solve: `max_pool` must be a whole number of 0 or more, and `max_pool_seconds` a number of 0 or more, with positive infinity meaning no limit (NaN is rejected). With `max_pool = 0` the pool loop does not run and the pool is incomplete (reason `full`). `max_solves` is fixed.
 
 ## 15. Public API
 
@@ -267,5 +267,5 @@ function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null, options
 
 - The first call loads the WebAssembly solver; later calls reuse it. Concurrent first calls share one load. A failed load is not cached. `loadSolver` is optional; calling it again with different options after a successful load throws `turflp: the solver is already loaded with other options.`
 - The solve itself is synchronous inside the returned promise and blocks the JavaScript thread until it finishes.
-- Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts in section 1.
+- Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts in section 1. Missing cells include holes in sparse arrays.
 - Data sets: `load(name)` returns `{ columns: string[]; values: number[][] }`; `datasetNames` lists the seven data sets.

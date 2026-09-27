@@ -42,3 +42,10 @@
 - First CI run: `js.yaml` failed on 5 of 6 test jobs with Vitest's fixed 60 s worker message timeout (synchronous solves on the 40,000-respondent inputs). Fix: the conformance fixtures and large regression cases run in `js/scripts/conformance.mjs` against the built package (like the R runner); Vitest keeps 70 fast unit tests.
 - All four workflows pass on a200d40 (push and pull_request). Local: R runner passes all fixtures; R CMD check 1 NOTE; tarball excludes the new folders.
 - Filed issue #3 (R `turf_min_cover()` does not check the solver's cover; out of scope for this run).
+
+## 2026-09-27 00:17 EDT final review round 1 (turflp-astra, turflp-agy)
+
+- Reviews: `/private/tmp/claude-501/-Users-john-aigora-dev-turfLP/ea7aeaf6-8fd0-4818-85ee-d90f3bf01469/scratchpad/reviews/run-turflp-astra.md` (2 blocking, 4 advisory), `/private/tmp/claude-501/-Users-john-aigora-dev-turfLP/ea7aeaf6-8fd0-4818-85ee-d90f3bf01469/scratchpad/reviews/run-turflp-agy.md` (0 blocking, 4 advisory). Grok and Fugu excluded by the user.
+- Fixed (blocking): JavaScript holes in sparse arrays now raise the missing-value error; all three runners now require exactly the requested size of distinct, valid, reaching products, and each runner self-checks that its checker rejects a wrong-size, duplicate-index, or out-of-range result.
+- Fixed (advisory): limits validated before any solve in both ports (NaN, negative, wrong type; Infinity allowed for seconds; 0 allowed for the pool); JavaScript `formatG` implements C's `%g` (round half to even) and a new `format.json` fixture (18 cases) is checked in R, Python, and JavaScript; the Python sdist tests collect without `conformance/` (18 passed, 53 skipped when unpacked); `maxDuration` described as an operational ceiling, not a guarantee; JavaScript `TypeError` for wrong-typed `size` and `tiebreak`; GitHub Actions updated (setup-node v7, setup-uv v10, setup-python v7).
+- Local: pytest 3585 passed; Vitest 75 passed; JS conformance script passes; R runner passes (turf 1629, min_cover 82, sizes 12, bounded 5, comparator 40, format 18); spelling clean.

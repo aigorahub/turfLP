@@ -194,6 +194,21 @@ def test_penetration_differences_near_1e_13_are_not_treated_as_ties():
     assert turf(a, 2, ["penetration", "frequency"]).products == (0, 1)
 
 
+def test_limits_are_checked_before_solving():
+    for bad in (float("nan"), -1, 1.5):
+        with pytest.raises((ValueError, TypeError)):
+            turf(TIE, 2, max_pool=bad)
+    with pytest.raises(TypeError):
+        turf(TIE, 2, max_pool="5")
+    for bad in (float("nan"), -0.5):
+        with pytest.raises(ValueError):
+            turf(TIE, 2, max_pool_seconds=bad)
+        with pytest.raises(ValueError):
+            turf_sizes(TIE, [1], max_pool_seconds=bad)
+    with pytest.warns(TurfWarning, match="more than 0 portfolios"):
+        assert turf(TIE, 2, max_pool=0, max_pool_seconds=math.inf).reach == 7
+
+
 def test_the_pool_time_limit_gives_a_warning_and_a_valid_portfolio():
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

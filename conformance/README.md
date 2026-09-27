@@ -54,6 +54,8 @@ Every fixture file has `schema_version` (1), `kind`, and `cases`. Product indice
 
 **`bounded.json`**: `{"id", "input", "size", "tiebreak", "max_pool", "max_pool_seconds", "warnings", "expected"}`. `max_pool_seconds` is a number or `null` (no limit). These cases force the pool or time limits, so the result is not a full optimum.
 
+**`format.json`**: `{"value", "text"}`, the `%g` formatting of a time budget in warning texts (`docs/algorithm.md` section 10).
+
 **`comparator.json`**: `{"size", "old", "new", "worse"}`, the comparison rule of `docs/algorithm.md` section 5 for one minimized criterion: `worse` is true when `new > old + 16 * size * epsilon * max(1, |old|)`. The values sit below, at, and one representable double above the threshold.
 
 ## Pass rule
@@ -62,7 +64,7 @@ Exact fixtures (`turf`, `min_cover`, `sizes`) run with no pool time limit (`max_
 
 **turf.** The result passes when:
 
-1. It selects `size` distinct products.
+1. It selects exactly the requested `size` of distinct products, each a valid column index that reaches at least one respondent, and reports that size.
 2. Every reported field equals its recomputation from the returned indices and the input: `names`, `size`, `reach` (respondents reached by at least one selected product), `respondents` (all rows), `reach_prop`, `frequency` (sum of the selected column sums), and `penetration` (`size / sum(1 / r_j)`).
 3. `reach` equals `expected.reach`, and each criterion present in `expected` equals it: `frequency` exactly, and `penetration` either exactly as a fraction recomputed from the selected column sums (Python, JavaScript) or as a double within `16 * size * epsilon * max(1, |value|)` of `expected.penetration.value` (R). Criteria that the call did not request are recomputed (rule 2) but not compared with an optimum.
 
@@ -71,6 +73,10 @@ Exact fixtures (`turf`, `min_cover`, `sizes`) run with no pool time limit (`max_
 **sizes.** The result has one row per requested size, in order, and each row passes the `turf` rule against its expected row.
 
 **bounded.** The call is made with the given limits. The warnings are exactly `warnings`, in order. Rule 2 holds, and the values in `expected` (the criteria that the limits cannot affect) are equal as in the `turf` rule.
+
+**format.** The implementation's warning number format of `value` equals `text`.
+
+**Checkers.** Each runner first checks that its own checker rejects a self-consistent result of the wrong size, a duplicate index, and an index out of range.
 
 **comparator.** The implementation's comparison of `new` with `old` for a minimized criterion returns `worse`.
 

@@ -6,7 +6,7 @@
 // Run from js/ after `npm run build`: node scripts/conformance.mjs
 import { readFileSync } from "node:fs";
 import { turf, turfMinCover, turfSizes } from "../dist/index.js";
-import { worseOnEarlier } from "../dist/core.js";
+import { formatG, worseOnEarlier } from "../dist/core.js";
 import { loadedSolver, settings } from "../dist/solver.js";
 
 const root = new URL("../../conformance/", import.meta.url);
@@ -47,8 +47,20 @@ function reduced(s) {
   return `${p / g}/${q / g}`;
 }
 
-function checkFields(id, a, names, p) {
+// Rules 1 and 2 of conformance/README.md: the result selects `size` distinct,
+// valid products that reach someone, and every reported field equals its
+// recomputation from the returned indices. `size` is undefined for a cover.
+function checkFields(id, a, names, p, size) {
   const sel = [...p.products];
+  const cols = a[0].length;
+  const valid = sel.every((j) => Number.isInteger(j) && j >= 0 && j < cols &&
+                                 a.some((row) => row[j] === 1)) &&
+    new Set(sel).size === sel.length &&
+    (size === undefined || (sel.length === size && p.size === size));
+  if (!valid) {
+    check(false, id, `selected products are not ${size === undefined ? "valid" : `${size} distinct valid products`}`);
+    return;
+  }
   const r = sel.map((j) => a.reduce((s, row) => s + row[j], 0));
   const reached = a.filter((row) => sel.some((j) => row[j] === 1)).length;
   const h = sel.length / r.reduce((s, x) => s + 1 / x, 0);
@@ -67,6 +79,21 @@ function checkExpected(id, a, p, e) {
   }
 }
 
+// The checker must reject bad results: a self-consistent result of the wrong
+// size, a duplicate index, and an index out of range.
+{
+  const a = [[1, 1, 0], [1, 0, 1]];
+  const names = ["P1", "P2", "P3"];
+  const wrong = { products: [0, 1, 2], names, size: 3, reach: 2, reachProp: 1, frequency: 4,
+                  penetration: 3 / (1 / 2 + 1 + 1), respondents: 2, warnings: [] };
+  const before = failures.length;
+  checkFields("self-check wrong size", a, names, wrong, 2);
+  checkFields("self-check duplicate", a, names, { ...wrong, products: [0, 0] }, 2);
+  checkFields("self-check range", a, names, { ...wrong, products: [0, 3] }, 2);
+  if (failures.length - before !== 3) throw new Error("the conformance checker accepts bad results");
+  failures.length = before;
+}
+
 const counts = {};
 const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
@@ -76,7 +103,7 @@ for (const presolve of ["on", "off"]) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
     check(p.warnings.length === 0, c.id, `warnings ${JSON.stringify(p.warnings)}`);
-    checkFields(c.id, a, names, p);
+    checkFields(c.id, a, names, p, c.size);
     checkExpected(c.id, a, p, c.expected);
     count(`turf (presolve ${presolve})`);
   }
@@ -93,7 +120,10 @@ for (const presolve of ["on", "off"]) {
     const rows = await turfSizes(a, c.sizes, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
     check(JSON.stringify(rows.map((p) => p.size)) === JSON.stringify(c.expected.map((e) => e.size)),
           c.id, "sizes");
-    rows.forEach((p, i) => { checkFields(c.id, a, names, p); checkExpected(`${c.id}[${i}]`, a, p, c.expected[i]); });
+    rows.forEach((p, i) => {
+      checkFields(`${c.id}[${i}]`, a, names, p, c.expected[i].size);
+      checkExpected(`${c.id}[${i}]`, a, p, c.expected[i]);
+    });
     count(`sizes (presolve ${presolve})`);
   }
   for (const c of read("fixtures/bounded.json").cases) {
@@ -102,7 +132,7 @@ for (const presolve of ["on", "off"]) {
                                       maxPoolSeconds: c.max_pool_seconds ?? Infinity });
     check(JSON.stringify(p.warnings) === JSON.stringify(c.warnings), c.id,
           `warnings ${JSON.stringify(p.warnings)}`);
-    checkFields(c.id, a, names, p);
+    checkFields(c.id, a, names, p, c.size);
     checkExpected(c.id, a, p, c.expected);
     count(`bounded (presolve ${presolve})`);
   }
@@ -113,6 +143,11 @@ const obj = { name: "x", direction: "min", value: (v) => v };
 for (const c of read("fixtures/comparator.json").cases) {
   check(worseOnEarlier([obj], c.new, c.old, c.size) === c.worse, JSON.stringify(c), "comparator");
   count("comparator");
+}
+
+for (const c of read("fixtures/format.json").cases) {
+  check(formatG(c.value) === c.text, `format ${c.value}`, formatG(c.value));
+  count("format");
 }
 
 // Large regression cases from tests/testthat/test-turf.R.

@@ -90,3 +90,16 @@ def check_tiebreak(tiebreak):
         if t not in out:
             out.append(t)
     return out
+
+
+def check_limits(max_pool, max_pool_seconds):
+    """Check the limits of docs/algorithm.md section 14 before any solve."""
+    if (not isinstance(max_pool, numbers.Integral) or isinstance(max_pool, (bool, np.bool_))):
+        raise TypeError("`max_pool` must be a whole number of 0 or more.")
+    if max_pool < 0:
+        raise ValueError("`max_pool` must be a whole number of 0 or more.")
+    if (not isinstance(max_pool_seconds, numbers.Real)
+            or isinstance(max_pool_seconds, (bool, np.bool_))):
+        raise TypeError("`max_pool_seconds` must be a number of 0 or more (math.inf for no limit).")
+    if math.isnan(max_pool_seconds) or max_pool_seconds < 0:
+        raise ValueError("`max_pool_seconds` must be a number of 0 or more (math.inf for no limit).")

@@ -1,7 +1,7 @@
 // The turfLP algorithm. Mirrors R/turf.R; docs/algorithm.md is the spec.
 // Section numbers in comments refer to docs/algorithm.md.
 
-import { asReach, checkSize, checkTiebreak, type Criterion, type Reach, type ReachMatrix } from "./input.js";
+import { asReach, checkLimits, checkSize, checkTiebreak, type Criterion, type Reach, type ReachMatrix } from "./input.js";
 import * as solver from "./solver.js";
 
 const EPS = 2 ** -52;
@@ -80,10 +80,49 @@ function fsum(xs: Iterable<number>): number {
   return sum + c;
 }
 
+/**
+ * C's %g with precision 6, as R's sprintf("%g") and Python's "%g" format the
+ * budget: 6 significant digits, round half to even, trailing zeros removed,
+ * exponent form when the exponent is below -4 or at least 6.
+ */
+export function formatG(x: number): string {
+  if (Number.isNaN(x)) return "NaN";
+  if (!Number.isFinite(x)) return x > 0 ? "Inf" : "-Inf";
+  if (x === 0) return "0";
+  const sign = x < 0 ? "-" : "";
+  // Exact enough decimal digits of |x|: 100 significant digits.
+  const [mant, expText] = Math.abs(x).toExponential(99).split("e");
+  const digits = mant.replace(".", "");
+  let exp = Number(expText);
+  let head = digits.slice(0, 6);
+  const rest = digits.slice(6);
+  const tie = /^50*$/.test(rest);
+  const up = rest[0] > "5" || (rest[0] === "5" && (!tie || Number(head[5]) % 2 === 1));
+  if (up) {
+    head = String(Number(head) + 1);
+    if (head.length > 6) { head = head.slice(0, 6); exp += 1; }
+  }
+  if (exp < -4 || exp >= 6) {
+    const m = stripZeros(head[0] + "." + head.slice(1));
+    const e = Math.abs(exp) < 10 ? `0${Math.abs(exp)}` : String(Math.abs(exp));
+    return `${sign}${m}e${exp < 0 ? "-" : "+"}${e}`;
+  }
+  let s: string;
+  if (exp >= 0) {
+    s = head.slice(0, exp + 1) + "." + head.slice(exp + 1);
+  } else {
+    s = "0." + "0".repeat(-exp - 1) + head;
+  }
+  return sign + stripZeros(s);
+}
+
+/** Remove trailing zeros after a decimal point, then a trailing point. */
+function stripZeros(s: string): string {
+  return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s;
+}
+
 function formatSeconds(x: number): string {
-  // R formats the budget with %g.
-  if (x === Infinity) return "Inf";
-  return Number.isInteger(x) ? String(x) : String(Number(x.toPrecision(6)));
+  return formatG(x);
 }
 
 function columnSums(r: Reach): Int32Array {
@@ -127,6 +166,7 @@ type Sel = Uint8Array; // 0/1 over the candidates
 export async function turf(reach: ReachMatrix, size: number, options: TurfOptions = {}): Promise<Portfolio> {
   const r = asReach(reach, options.names);
   const tiebreak = checkTiebreak(options.tiebreak);
+  checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
   await solver.getSolver();
   return turfSync(r, size, tiebreak, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
 }
@@ -385,6 +425,7 @@ export async function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | 
                                 options: TurfOptions = {}): Promise<Portfolio[]> {
   const r = asReach(reach, options.names);
   const tiebreak = checkTiebreak(options.tiebreak);
+  checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
   await solver.getSolver();
   const list = sizes ?? Array.from({ length: minCoverSync(r).size }, (_, i) => i + 1);
   return list.map((k) => turfSync(r, k, tiebreak, options.maxPool ?? 1000,

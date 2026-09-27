@@ -131,6 +131,33 @@ describe("without conformance inputs", () => {
     await expect(turf(TIE, 2, { names: ["x"] })).rejects.toThrow(/one name per column/);
   });
 
+  it("holes in sparse arrays are missing values", async () => {
+    // eslint-disable-next-line no-sparse-arrays
+    await expect(turf([[1, , 0], [0, 1, 1]] as any, 1)).rejects.toThrow(/missing values/);
+    const sparseRow = [1, 0];
+    sparseRow.length = 3;
+    await expect(turf([sparseRow, [0, 1, 1]], 1)).rejects.toThrow(/missing values/);
+  });
+
+  it("wrong types give TypeError and bad values RangeError", async () => {
+    await expect(turf(TIE, "2" as any)).rejects.toThrow(TypeError);
+    await expect(turf(TIE, 1.5)).rejects.toThrow(RangeError);
+    await expect(turf(TIE, 2, { tiebreak: 3 as any })).rejects.toThrow(TypeError);
+    await expect(turf(TIE, 2, { tiebreak: ["reach" as any] })).rejects.toThrow(RangeError);
+  });
+
+  it("limits are checked before solving", async () => {
+    for (const bad of [NaN, -1, 1.5]) {
+      await expect(turf(TIE, 2, { maxPool: bad })).rejects.toThrow(RangeError);
+    }
+    await expect(turf(TIE, 2, { maxPool: "5" as any })).rejects.toThrow(TypeError);
+    for (const bad of [NaN, -0.5]) {
+      await expect(turf(TIE, 2, { maxPoolSeconds: bad })).rejects.toThrow(RangeError);
+      await expect(turfSizes(TIE, [1], { maxPoolSeconds: bad })).rejects.toThrow(RangeError);
+    }
+    expect((await turf(TIE, 2, { maxPool: 0, maxPoolSeconds: Infinity })).reach).toBe(7);
+  });
+
   it("the pool time limit gives a warning and a valid portfolio", async () => {
     const p = await turf(TIE, 2, { tiebreak: ["penetration", "frequency"], maxPoolSeconds: 0 });
     expect(p.warnings.length).toBeGreaterThan(0);

@@ -65,7 +65,7 @@ interface Portfolio {
 - `turfMinCover` finds the fewest products that together reach every respondent that some product reaches.
 - `turfSizes` solves several sizes. The default is every size from 1 to the minimum cover size.
 - `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` or `wasmBinary` when a bundler moves `highs.wasm`.
-- Errors are thrown as `TypeError` or `RangeError` with the texts of the R package.
+- Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 
 ## The solve blocks the thread
 
@@ -89,8 +89,8 @@ Run time depends on the data, not only on its size: many portfolios that tie on 
 - Use the Node.js runtime (`export const runtime = "nodejs"`). The Edge runtime cannot load the solver.
 - Add `serverExternalPackages: ["turflp", "highs"]` to `next.config`, so that `highs` finds `highs.wasm` next to its own module.
 - Start `loadSolver()` at module level and await it in the handler, so that each function instance loads the solver once.
-- Set `maxDuration` above the 30-second penetration budget, so that a slow search returns a warning instead of a timeout.
-- Solve in the request only below a size limit that fits your latency budget (the example accepts up to 200 x 40 cells and size 8, which took well under a second in the tests above). Send larger problems, and any problem whose time you cannot predict, to a background job (for example an Inngest function) that calls the same `turf()`.
+- Set `maxDuration` with headroom (the example uses 60 seconds), as an operational ceiling, not a guarantee. The penetration pool and a later frequency search each have a 30-second budget, the reach stage and the first penetration solve have none, and a running solve cannot be interrupted. A request only stays within the ceiling because the size rule below keeps it small.
+- Solve in the request only below a size limit that fits your latency budget (the example accepts up to 200 x 40 cells and size 8, which took well under a second in the tests above). Decide before the solve: send larger problems, and any problem whose time you cannot predict (for example data with many near-identical products), to a background job (for example an Inngest function) that calls the same `turf()`.
 
 The example's `scripts/standalone-test.mjs` builds it against the packed package with `output: "standalone"`, copies the traced output outside the checkout, starts it, and checks a fixed benchmark request against the exact expected values. That checks the file tracing that Vercel uses; it is not a Vercel deployment.
 

@@ -314,6 +314,15 @@ EXCLUDED_CASES = [
 ]
 
 
+FORMAT_VALUES = [0, 0.5, 30, 1e-05, 0.0001, 0.0001234, 123456, 1234567, 2.5e-07, 100000.5,
+                 1.5, 999999.5, 0.1 + 0.2, 100, 1e6, 10, 0.25, 0.00001234567]
+
+
+def format_cases():
+    """Warning texts format the time budget with C's %g (R sprintf, Python %)."""
+    return [{"value": float(x), "text": "%g" % x} for x in FORMAT_VALUES]
+
+
 def comparator_cases():
     cases = []
     for size in (1, 2, 3, 8):
@@ -394,6 +403,8 @@ def build(input_texts):
                          "cases": bounded_cases},
         "comparator.json": {"schema_version": SCHEMA_VERSION, "kind": "comparator",
                             "cases": comparator_cases()},
+        "format.json": {"schema_version": SCHEMA_VERSION, "kind": "format",
+                        "cases": format_cases()},
     }
     manifest = {
         "schema_version": SCHEMA_VERSION,

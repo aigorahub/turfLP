@@ -23,8 +23,11 @@ export function asReach(reach: unknown, names?: readonly string[]): Reach {
   if (reach.some((row) => (row as unknown[]).length !== cols)) {
     throw new RangeError(NOT_TABLE);
   }
+  // Index every cell: forEach and for...of skip the holes of sparse arrays,
+  // which would otherwise read as 0.
   for (const row of reach as unknown[][]) {
-    for (const v of row) {
+    for (let j = 0; j < cols; j++) {
+      const v = row[j];
       if (v !== null && v !== undefined && typeof v !== "number" && typeof v !== "boolean") {
         throw new TypeError(NOT_TABLE);
       }
@@ -36,8 +39,10 @@ export function asReach(reach: unknown, names?: readonly string[]): Reach {
   const data = new Uint8Array(rows * cols);
   let missing = false;
   let bad = false;
-  (reach as unknown[][]).forEach((row, i) => {
-    row.forEach((v, j) => {
+  for (let i = 0; i < rows; i++) {
+    const row = (reach as unknown[][])[i];
+    for (let j = 0; j < cols; j++) {
+      const v = row[j];
       if (v === null || v === undefined || (typeof v === "number" && Number.isNaN(v))) {
         missing = true;
       } else if (v === true || v === 1) {
@@ -45,8 +50,8 @@ export function asReach(reach: unknown, names?: readonly string[]): Reach {
       } else if (!(v === false || v === 0)) {
         bad = true;
       }
-    });
-  });
+    }
+  }
   if (missing) throw new RangeError("`reach` must not contain missing values.");
   if (bad) throw new RangeError("`reach` must contain only 0 and 1, or FALSE and TRUE.");
 
@@ -63,7 +68,10 @@ export function asReach(reach: unknown, names?: readonly string[]): Reach {
 }
 
 export function checkSize(size: unknown, maxSize: number): number {
-  if (typeof size !== "number" || !Number.isFinite(size) || size < 1 || !Number.isInteger(size)) {
+  if (typeof size !== "number") {
+    throw new TypeError("`size` must be a single whole number of 1 or more.");
+  }
+  if (!Number.isFinite(size) || size < 1 || !Number.isInteger(size)) {
     throw new RangeError("`size` must be a single whole number of 1 or more.");
   }
   if (size > maxSize) {
@@ -79,7 +87,7 @@ export function checkTiebreak(tiebreak: unknown): Criterion[] {
   if (tiebreak === null) return [];
   const list = typeof tiebreak === "string" ? [tiebreak] : tiebreak;
   if (!Array.isArray(list)) {
-    throw new RangeError('`tiebreak` must contain only "frequency" and "penetration".');
+    throw new TypeError('`tiebreak` must contain only "frequency" and "penetration".');
   }
   const out: Criterion[] = [];
   for (const t of list) {
@@ -89,4 +97,20 @@ export function checkTiebreak(tiebreak: unknown): Criterion[] {
     if (!out.includes(t)) out.push(t);
   }
   return out;
+}
+
+/** Check the limits of docs/algorithm.md section 14 before any solve. */
+export function checkLimits(maxPool: unknown, maxPoolSeconds: unknown): void {
+  if (typeof maxPool !== "number") {
+    throw new TypeError("`maxPool` must be a whole number of 0 or more.");
+  }
+  if (!Number.isInteger(maxPool) || maxPool < 0) {
+    throw new RangeError("`maxPool` must be a whole number of 0 or more.");
+  }
+  if (typeof maxPoolSeconds !== "number") {
+    throw new TypeError("`maxPoolSeconds` must be a number of 0 or more (Infinity for no limit).");
+  }
+  if (Number.isNaN(maxPoolSeconds) || maxPoolSeconds < 0) {
+    throw new RangeError("`maxPoolSeconds` must be a number of 0 or more (Infinity for no limit).");
+  }
 }
