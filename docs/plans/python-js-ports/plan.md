@@ -8,7 +8,7 @@ The main JavaScript target is a full-stack Next.js app on Vercel Pro (Node.js ru
 
 ## Plan review
 
-Four agents reviewed the first version of this plan (commit `b153c51`): turflp-astra, turflp-agy, turflp-fugu, and turflp-grok. This version resolves their blocking findings: explicit solver settings instead of HiGHS defaults, a pass rule that accepts every correct result, `turf_sizes` and bounded-run fixtures, portable fixture inputs, a specified public API, the synchronous solve in JavaScript, a traced Next.js production test, license files in the npm package, and build hygiene from the first batch. The review files are listed in the execution log.
+Four agents reviewed the first version of this plan (commit `b153c51`): turflp-astra, turflp-agy, turflp-fugu, and turflp-grok. This version resolves their blocking findings: explicit solver settings instead of HiGHS defaults, a pass rule that accepts every correct result, `turf_sizes` and bounded-run fixtures, portable fixture inputs, a specified public API, the synchronous solve in JavaScript, a traced Next.js production test, license files in the npm package, and build hygiene from the first batch. After implementation, turflp-astra and turflp-agy reviewed the finished run in three rounds until no finding remained (the user excluded turflp-grok and turflp-fugu from those rounds); the pull request lists the fixes.
 
 ## Design decisions (settled at planning)
 
