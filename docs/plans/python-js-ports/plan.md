@@ -169,16 +169,16 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 - **Failure modes / pitfalls:** Windows paths in the fixture loaders; dependency caches; the R workflow must not start running the other suites.
 
 **Tasks:**
-- [ ] Workflow `python.yaml` (push and pull request): Ubuntu, macOS, and Windows with Python 3.10 and 3.13, from the lock file, plus one job at the minimum supported `highspy`.
-- [ ] Workflow `js.yaml` (push and pull request): Ubuntu, macOS, and Windows with Node.js 20 and 22, from the lock file, plus the Next.js standalone test on Ubuntu.
-- [ ] Workflow `conformance-r.yaml` (push and pull request): `conformance/generate.py --check` and `conformance/run_r.R`.
-- [ ] Root README section on the three implementations; package READMEs; NEWS entry; file the R `turf_min_cover()` check issue.
+- [x] Workflow `python.yaml` (push and pull request): Ubuntu, macOS, and Windows with Python 3.10 and 3.13, from the lock file, plus one job at the minimum supported `highspy`.
+- [x] Workflow `js.yaml` (push and pull request): Ubuntu, macOS, and Windows with Node.js 20 and 22, from the lock file (Vitest unit tests, then the conformance suite as a plain Node.js script), plus the Next.js standalone test on Ubuntu.
+- [x] Workflow `conformance-r.yaml` (push and pull request): `conformance/generate.py --check` and `conformance/run_r.R`.
+- [x] Root README section on the three implementations; package READMEs; NEWS entry; file the R `turf_min_cover()` check issue.
 
 **Acceptance criteria:**
-- [ ] B4-A1: The three new workflows and the existing R workflow pass on the final pull request head.
-- [ ] B4-A2: The root README describes the three implementations, the shared conformance suite, and how to install each package from the repository.
-- [ ] B4-A3: `python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, `serverExternalPackages`, solver reuse, the synchronous solve, the measured admission rule, and when to use a background job).
-- [ ] B4-A4: The R package check still gives only the new-submission NOTE, and the R spelling check passes.
+- [x] B4-A1: The three new workflows and the existing R workflow pass on the final pull request head.
+- [x] B4-A2: The root README describes the three implementations, the shared conformance suite, and how to install each package from the repository.
+- [x] B4-A3: `python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, `serverExternalPackages`, solver reuse, the synchronous solve, the measured admission rule, and when to use a background job).
+- [x] B4-A4: The R package check still gives only the new-submission NOTE, and the R spelling check passes.
 
 **Docs likely touched:** `README.md`, `NEWS.md`, `python/README.md`, `js/README.md`.
 

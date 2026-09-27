@@ -35,3 +35,10 @@
 - Added conformance inputs `gen-bench-200x20` (fixtures at sizes 3 and 5) and `gen-bench-200x40` (timing only); Python bench cases pass.
 - Benchmark (`node scripts/benchmark.mjs`, Apple M5 Pro, Node.js 26.3.0, machine heavily loaded by other work): cold solver load 13 ms; 200 x 20 size 5: 450 ms; 200 x 40 size 8: 82 ms; 16 x 402 tie flood, penetration first: 9.4 s.
 - User instruction: leave turflp-fugu out of the rest of the session. M-A4 now names turflp-astra and turflp-agy.
+
+## 2026-09-26 23:50 EDT B4 CI and documentation
+
+- Workflows `python.yaml`, `js.yaml`, `conformance-r.yaml`; root README section and badges; `python/README.md`, `js/README.md`, `js/examples/nextjs/README.md`; NEWS; `inst/WORDLIST` (+6 words).
+- First CI run: `js.yaml` failed on 5 of 6 test jobs with Vitest's fixed 60 s worker message timeout (synchronous solves on the 40,000-respondent inputs). Fix: the conformance fixtures and large regression cases run in `js/scripts/conformance.mjs` against the built package (like the R runner); Vitest keeps 70 fast unit tests.
+- All four workflows pass on a200d40 (push and pull_request). Local: R runner passes all fixtures; R CMD check 1 NOTE; tarball excludes the new folders.
+- Filed issue #3 (R `turf_min_cover()` does not check the solver's cover; out of scope for this run).

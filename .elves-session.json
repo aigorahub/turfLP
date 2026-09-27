@@ -130,31 +130,31 @@
       "acceptance": [
         {
           "criterion": "The three new workflows and the existing R workflow pass on the final pull request head.",
-          "evidence": "",
+          "evidence": "On PR #2 head a200d40: R-CMD-check.yaml, conformance-r.yaml, python.yaml (8 jobs: ubuntu/macos/windows x Python 3.10/3.13, minimum highspy 1.15.1, clean wheel install), and js.yaml (7 jobs: ubuntu/macos/windows x Node.js 20/22 with typecheck, build, Vitest, and scripts/conformance.mjs; Next.js standalone test) all pass for push and pull_request.",
           "id": "B4-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The root README describes the three implementations, the shared conformance suite, and how to install each package from the repository.",
-          "evidence": "",
+          "evidence": "README.md section 'Python and JavaScript': the three implementations, docs/algorithm.md, the shared conformance suite (1,768 fixture cases from exact enumeration, run by CI against all three), install commands for Python and JavaScript, links to the package READMEs; CI badges for all four workflows.",
           "id": "B4-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, `serverExternalPackages`, solver reuse, the synchronous solve, the measured admission rule, and when to use a background job).",
-          "evidence": "",
+          "evidence": "python/README.md and js/README.md: installation, the ham example whose printed output matches a real run, functions, limits and warnings, differences from R; js/README.md 'The solve blocks the thread' with measured times and 'Next.js on Vercel' (Node.js runtime, serverExternalPackages, module-level loadSolver, maxDuration, request size rule, background job); js/examples/nextjs/README.md.",
           "id": "B4-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The R package check still gives only the new-submission NOTE, and the R spelling check passes.",
-          "evidence": "",
+          "evidence": "R CMD build tarball has 0 entries under python/, js/, conformance/, docs/; R CMD check --as-cran: Status 1 NOTE (new submission); spelling::spell_check_package(): No spelling errors found (6 words added to inst/WORDLIST).",
           "id": "B4-A4",
-          "met": false
+          "met": true
         }
       ],
       "id": "B4",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "branch": "feat/python-js-ports",

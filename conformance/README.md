@@ -14,6 +14,8 @@ One set of fixtures binds the R, Python, and JavaScript implementations of turfL
 | `test_generate.py` | Hand-checked tests of the generator. |
 | `fixtures/*.json` | The fixtures (below). |
 | `run_r.R` | Runs every fixture against the R package. |
+| `../python/tests/test_conformance.py` | Runs every fixture against the Python package (`pytest`), with presolve on and off. |
+| `../js/scripts/conformance.mjs` | Runs every fixture against the built JavaScript package (`npm run test:conformance`), with presolve on and off. |
 
 Commands, from the repository root:
 
