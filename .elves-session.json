@@ -3,33 +3,39 @@
     {
       "acceptance": [
         {
-          "criterion": "`docs/algorithm.md` specifies inputs, the model, every stage, cut-and-retry, the penetration pool, limits, the tolerance rule, warning texts, and result fields, and each rule names the R function it mirrors.",
+          "criterion": "`docs/algorithm.md` specifies inputs and error texts, the model, every stage, cut-and-retry, the penetration pool, the comparison rule, limits and their scopes, monotonic deadlines, explicit solver settings with presolve as the one named difference, warning texts, result fields, and the public Python and TypeScript API, and each algorithm rule names the R function it mirrors.",
           "evidence": "",
           "id": "B1-A1",
           "met": false
         },
         {
-          "criterion": "`python3 conformance/generate.py --check` regenerates every fixture byte for byte from the committed recipes and exits 0, and the generator self-test passes.",
+          "criterion": "`python3 conformance/generate.py --check` verifies the input digests, regenerates every fixture byte for byte, and exits 0, and `python3 conformance/test_generate.py` passes its hand-checked cases.",
           "evidence": "",
           "id": "B1-A2",
           "met": false
         },
         {
-          "criterion": "The fixtures cover at least 150 `turf` cases and 40 `turf_min_cover` cases, both tie-break orders and each single criterion, the 7 by 4 presolve matrix, every reviewer counterexample from `tests/testthat/test-turf.R`, and all seven package data sets.",
+          "criterion": "The exact fixtures cover at least 150 `turf` cases (reach only, each single criterion, and both orders), at least 40 `turf_min_cover` cases, and at least 10 `turf_sizes` cases (default sizes, explicit order, repeated sizes); they include the 7 by 4 presolve matrix, the status-5 permutation, the window case, the 402-column tie flood, the 80 by 202 run-time case, the 35,043, 40,000, 42,000, 15,000, and 60,000 respondent near-tie cases, identical columns, empty rows and columns, `diag(100)` and `diag(101)`, and all seven package data sets (sizes 1 to 3 for `cafe`, `chips`, and `coffee`; every size for the others).",
           "evidence": "",
           "id": "B1-A3",
           "met": false
         },
         {
-          "criterion": "`Rscript conformance/run_r.R` passes every fixture against the R package.",
+          "criterion": "`conformance/manifest.json` lists every input with its SHA-256 digest and source, and lists each excluded case with its reason (the 2,600 by 202 run-time cases are excluded because their results depend on machine speed).",
           "evidence": "",
           "id": "B1-A4",
           "met": false
         },
         {
-          "criterion": "`R CMD check --as-cran` still gives only the new-submission NOTE, which proves that the new folders are excluded from the R build.",
+          "criterion": "`Rscript conformance/run_r.R` passes every exact, comparator, and bounded fixture against the R package.",
           "evidence": "",
           "id": "B1-A5",
+          "met": false
+        },
+        {
+          "criterion": "The built R tarball contains none of `docs/`, `conformance/`, `python/`, `js/`, or the run documents (checked by listing the tarball with placeholder files present in `python/` and `js/`), and `R CMD check --as-cran` gives only the new-submission NOTE.",
+          "evidence": "",
+          "id": "B1-A6",
           "met": false
         }
       ],
@@ -39,33 +45,39 @@
     {
       "acceptance": [
         {
-          "criterion": "`pytest python` passes, including every conformance fixture, with no unexpected warning.",
+          "criterion": "`pytest python` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off, with no unexpected warning.",
           "evidence": "",
           "id": "B2-A1",
           "met": false
         },
         {
-          "criterion": "The Python suite contains a test for each regression case in `tests/testthat/test-turf.R`, including the 40,000, 35,043, and 42,000 respondent near ties, the 402-column tie flood, `diag(101)`, the pool limits, and the zero time limit.",
+          "criterion": "The Python suite has a test for each applicable case in `tests/testthat/test-turf.R` (every test except the `turf_simulate()` argument test and the R `print()` test), including the near-tie cases, the 402-column tie flood, `diag(101)`, the pool limit, and the zero time limit.",
           "evidence": "",
           "id": "B2-A2",
           "met": false
         },
         {
-          "criterion": "Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the R message texts.",
+          "criterion": "Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the texts in `docs/algorithm.md`.",
           "evidence": "",
           "id": "B2-A3",
           "met": false
         },
         {
-          "criterion": "`turflp.datasets.load` returns all seven data sets with the R dimensions and values.",
+          "criterion": "`turflp.datasets.load` returns all seven data sets with the R dimensions, column names, and values.",
           "evidence": "",
           "id": "B2-A4",
           "met": false
         },
         {
-          "criterion": "`python -m build python` produces a wheel and an sdist that install into a clean virtual environment and import.",
+          "criterion": "The built wheel and sdist contain the data, `LICENSE`, and `COPYRIGHTS`, and a clean virtual environment that installs the wheel can solve the tie matrix and load a data set.",
           "evidence": "",
           "id": "B2-A5",
+          "met": false
+        },
+        {
+          "criterion": "Tests check the effective solver settings of every solve (gaps 0, tolerances 1e-9, one thread, presolve as configured) and the timeout, infeasible, invalid-vector, and retry-limit paths.",
+          "evidence": "",
+          "id": "B2-A6",
           "met": false
         }
       ],
@@ -75,33 +87,39 @@
     {
       "acceptance": [
         {
-          "criterion": "`npm test` in `js/` passes, including every conformance fixture.",
+          "criterion": "`npm test` in `js/` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off.",
           "evidence": "",
           "id": "B3-A1",
           "met": false
         },
         {
-          "criterion": "The JavaScript suite contains a test for each regression case in `tests/testthat/test-turf.R`, as in B2-A2.",
+          "criterion": "The JavaScript suite has a test for each applicable case in `tests/testthat/test-turf.R`, as in B2-A2.",
           "evidence": "",
           "id": "B3-A2",
           "met": false
         },
         {
-          "criterion": "`npm run build` produces ESM output with type declarations, and a clean Node.js project can install the packed tarball and solve the tie matrix.",
+          "criterion": "`npm run build` produces ESM output with type declarations, the packed tarball contains `dist/`, `LICENSE`, `COPYRIGHTS`, and the data entry point, and a clean Node.js project that installs the tarball can solve the tie matrix and load a data set.",
           "evidence": "",
           "id": "B3-A3",
           "met": false
         },
         {
-          "criterion": "The main entry point does not import the data sets, and `turflp/datasets` returns all seven data sets with the R dimensions and values.",
+          "criterion": "The main entry point does not import the data sets, `turflp/datasets` returns all seven data sets with the R dimensions, names, and values, and repeated and concurrent calls to `turf` and `loadSolver` give independent correct results with no model left undisposed.",
           "evidence": "",
           "id": "B3-A4",
           "met": false
         },
         {
-          "criterion": "The Next.js example builds with `next build` and its route handler returns a portfolio for a 200-respondent problem in under 5 seconds with `next start` on the development machine.",
+          "criterion": "The Next.js example's traced standalone output, copied outside the checkout and started with `node server.js`, answers the fixed 200 x 20 size-5 benchmark request with the expected reach, frequency, and penetration, and loads `highs.wasm` from the traced output; a vitest timing test solves the same fixed benchmark from a warm solver in under 5 seconds.",
           "evidence": "",
           "id": "B3-A5",
+          "met": false
+        },
+        {
+          "criterion": "Tests check the effective solver settings of every solve and the timeout, infeasible, invalid-vector, and retry-limit paths, as in B2-A6.",
+          "evidence": "",
+          "id": "B3-A6",
           "met": false
         }
       ],
@@ -111,7 +129,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The three new workflows and the existing R workflow pass on the pull request.",
+          "criterion": "The three new workflows and the existing R workflow pass on the final pull request head.",
           "evidence": "",
           "id": "B4-A1",
           "met": false
@@ -123,7 +141,7 @@
           "met": false
         },
         {
-          "criterion": "`python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, solver reuse, when to move work to a background job).",
+          "criterion": "`python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, `serverExternalPackages`, solver reuse, the synchronous solve, the measured admission rule, and when to use a background job).",
           "evidence": "",
           "id": "B4-A3",
           "met": false
