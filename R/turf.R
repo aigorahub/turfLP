@@ -339,8 +339,18 @@ turf_min_cover <- function(reach) {
   )
   x_vars <- seq_len(ncol(a))
   sol <- solve_lp("min", rep(1, ncol(a)), model, x_vars, "set cover")
+  selected <- sol > 0.5
 
-  new_portfolio(reach, cand[sol > 0.5])
+  # Check the solver's result from the selected products, as turf() does
+  # (docs/algorithm.md section 11): every model respondent is covered and
+  # the solution is integral.
+  covered <- rowSums(a[, selected, drop = FALSE]) > 0
+  if (anyNA(sol) || !all(covered) || any(abs(sol - selected) > 1e-6)) {
+    stop("HiGHS returned an invalid solution in the set cover stage.",
+         call. = FALSE)
+  }
+
+  new_portfolio(reach, cand[selected])
 }
 
 #' Find the best portfolio for each of several sizes

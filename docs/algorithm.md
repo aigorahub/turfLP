@@ -155,7 +155,7 @@ W2, penetration search stopped:
 
 Mirrors `turf_min_cover()`.
 
-Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent, with `x` binary over the candidates. The result is built as in section 9. Implementations must check that the selection covers every model respondent and raise `HiGHS returned an invalid solution in the set cover stage.` when it does not.
+Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent, with `x` binary over the candidates. The result is built as in section 9. Implementations must check that the selection covers every model respondent and that every `x_j` is within `1e-6` of 0 or 1, and raise `HiGHS returned an invalid solution in the set cover stage.` when either check fails.
 
 ## 12. Portfolio sizes
 

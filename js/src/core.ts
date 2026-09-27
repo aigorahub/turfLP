@@ -408,7 +408,7 @@ function minCoverSync(r: Reach): Portfolio {
   const sol = solver.solve("min", new Float64Array(m).fill(1), model,
                            Int32Array.from({ length: m }, (_, k) => k), "set cover") as Float64Array;
   const products = cand.filter((_, k) => sol[k] > 0.5);
-  // Section 11: check the cover (the R package does not).
+  // Section 11: check the cover.
   const covered = rowsKept.every((i) => products.some((j) => r.data[i * r.cols + j] === 1));
   const integral = Array.from(sol).every((x) => Math.abs(x - (x > 0.5 ? 1 : 0)) <= 1e-6);
   if (!covered || !integral) {
