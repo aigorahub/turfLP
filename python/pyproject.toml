@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "turflp"
+name = "turfLP"
 version = "0.2.0"
 description = "TURF analysis (total unduplicated reach and frequency) with integer linear programming"
 readme = "README.md"

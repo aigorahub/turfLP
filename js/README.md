@@ -6,7 +6,11 @@ The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm packag
 
 ## Installation
 
-The package is not on npm yet. Build a tarball from the repository and install it:
+```sh
+npm install turflp
+```
+
+npm package names are lower case, so the package is `turflp`. To install the development version, build a tarball from the repository:
 
 ```sh
 git clone https://github.com/aigorahub/turfLP.git
