@@ -7,7 +7,6 @@ import math
 import time
 import warnings
 from dataclasses import dataclass
-from fractions import Fraction  # noqa: F401  (used by tests through this module)
 
 import numpy as np
 

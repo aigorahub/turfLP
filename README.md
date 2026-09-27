@@ -26,11 +26,11 @@ The repository also has a Python package (`python/`) and a JavaScript/TypeScript
 # Python 3.10 or later
 pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
 
-# JavaScript (Node.js 20 or later): build a tarball from a clone, then install it
+# JavaScript (Node.js 20 or later, or a browser): build a tarball from a clone, then install it
 cd turfLP/js && npm ci && npm pack && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
 ```
 
-See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel. Neither package is on PyPI or npm yet.
+See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server. Neither package is on PyPI or npm yet.
 
 ## Browser dashboard
 
@@ -136,9 +136,9 @@ Respondents that no product reaches stay in the denominator of `reach_prop` but 
 
 ### Solver notes
 
-turfLP uses HiGHS. Earlier versions used lp_solve 5.5 through lpSolve, and testing and review found three lp_solve problems. With fractional objective coefficients on the integer variables, lp_solve could take the GCD of only the whole-number coefficients as the smallest possible improvement (`MIP_stepOF` in `lp_lib.c`) and skip the optimum. A bound with a small tolerance ("unreached ≤ 2 + 2e-9") made it skip the optimum where the exact bound did not. After many added constraints, it reported points that broke a constraint by 1 as optimal. HiGHS avoids all three. HiGHS 1.14 presolve returned a wrong optimum on a 7 by 4 test matrix, so the package turns presolve off.
+turfLP uses HiGHS. Earlier versions used lp_solve 5.5 through lpSolve, and testing found three lp_solve problems. With fractional objective coefficients on the integer variables, lp_solve could take the GCD of only the whole-number coefficients as the smallest possible improvement (`MIP_stepOF` in `lp_lib.c`) and skip the optimum. A bound with a small tolerance ("unreached ≤ 2 + 2e-9") made it skip the optimum where the exact bound did not. After many added constraints, it reported points that broke a constraint by 1 as optimal. HiGHS avoids all three. HiGHS 1.14 presolve returned a wrong optimum on a 7 by 4 test matrix, so the package turns presolve off.
 
-Reach and frequency are whole numbers, so the package fixes them with exact bounds. The penetration value is not a whole number, and a solver meets bounds only to within its tolerance (about 1e-9). A review found cases with 35,000 to 60,000 respondents where a stage returned a portfolio slightly worse on penetration than the optimum. The package therefore decides penetration in R:
+Reach and frequency are whole numbers, so the package fixes them with exact bounds. The penetration value is not a whole number, and a solver meets bounds only to within its tolerance (about 1e-9). In test cases with 35,000 to 60,000 respondents, a stage returned a portfolio slightly worse on penetration than the optimum. The package therefore decides penetration in R:
 
 - After each stage, it computes the earlier criteria from the selected products. If the portfolio is worse on an earlier criterion, it adds a constraint that excludes that exact portfolio and solves the stage again.
 - In the penetration stage, the optimum is no worse than the first solution. The package bounds penetration by that value and collects every portfolio that meets the bound, by excluding each portfolio it finds and solving again until no other portfolio is feasible. It then picks the best in R, on penetration and on frequency if frequency comes after penetration.

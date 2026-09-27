@@ -22,7 +22,7 @@ const TIEBREAKS: { key: string; label: string; value: Criterion[] }[] = [
   { key: "none", label: "None (reach only)", value: [] },
 ];
 
-// ---- Elements -------------------------------------------------------------
+// Elements
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -62,7 +62,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return e;
 }
 
-// ---- State ----------------------------------------------------------------
+// State
 
 interface Loaded {
   label: string;
@@ -109,7 +109,7 @@ function settingsKey(): string {
   return `${state.threshold}|${state.tiebreak}`;
 }
 
-// ---- Solver ---------------------------------------------------------------
+// Solver
 
 const workerUrl = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
 let wasm: Uint8Array | null = null;
@@ -278,7 +278,7 @@ function onReply(r: Reply): void {
   render();
 }
 
-// ---- Data -----------------------------------------------------------------
+// Data
 
 function setData(loaded: Loaded, threshold: number): void {
   if (state.run?.status === "running") stopSolver();
@@ -354,7 +354,7 @@ function download(name: string, text: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ---- Run ------------------------------------------------------------------
+// Run
 
 function sizeRange(): { sizes: number[] } | { error: string } {
   const cols = state.loaded?.table.cols ?? 0;
@@ -392,7 +392,7 @@ function cancelRun(): void {
   render();
 }
 
-// ---- Rendering ------------------------------------------------------------
+// Rendering
 
 function renderStatus(): void {
   if (state.solver === "failed") return;
@@ -433,7 +433,7 @@ function renderDataInfo(): void {
   el("p", "data-name", l.label, ui.dataInfo);
   const kind = t.kind === "binary" ? "0/1 values"
     : `ratings from ${formatValue(t.min)} to ${formatValue(t.max)}`;
-  el("p", "muted", `${count(t.rows)} respondents, ${t.cols} products, ${kind}.`, ui.dataInfo);
+  el("p", "muted", `${count(t.rows)} ${t.rows === 1 ? "respondent" : "respondents"}, ${t.cols} ${t.cols === 1 ? "product" : "products"}, ${kind}.`, ui.dataInfo);
   if (l.example) {
     el("p", "muted", l.example.description, ui.dataInfo);
     if (l.example.source) {
@@ -450,7 +450,7 @@ function renderDataInfo(): void {
     box.type = "checkbox";
     box.checked = t.idColumn !== null;
     label.append(t.idColumn !== null
-      ? ` First column (${t.idColumn === "" ? "no name" : `“${t.idColumn}”`}) is a respondent ID`
+      ? ` First column (${t.idColumn === "" ? "no name" : `"${t.idColumn}"`}) is a respondent ID`
       : " First column is a respondent ID");
     box.addEventListener("change", () => parseAndLoad(l.fileName!, l.fileText!, box.checked));
   }
@@ -478,7 +478,6 @@ function renderSettings(): void {
     ui.thresholdHint.textContent = `Ratings run from ${formatValue(t.min)} to ${formatValue(t.max)}.${top2}`;
   }
 
-  // Sizes
   ui.sizeHint.classList.remove("is-error");
   const range = l ? sizeRange() : null;
   if (!l) {
@@ -498,7 +497,6 @@ function renderSettings(): void {
     ui.sizeHint.textContent = "Finding the smallest full cover…";
   }
 
-  // Run button
   const running = state.run?.status === "running";
   ui.run.textContent = running ? "Cancel" : "Run";
   ui.run.classList.toggle("is-cancel", running);
@@ -561,7 +559,6 @@ function renderResults(): void {
   }
   if (run.status === "error" && run.message) el("p", "error", run.message, head);
 
-  // Reach curve
   const curveSection = el("section", "panel-block", undefined, host);
   const curveHead = el("div", "block-head", undefined, curveSection);
   el("h3", undefined, "Reach by portfolio size", curveHead);
@@ -582,7 +579,6 @@ function renderResults(): void {
   draw();
   lastDraw = draw;
 
-  // Table
   const tableSection = el("section", "panel-block", undefined, host);
   const tableHead = el("div", "block-head", undefined, tableSection);
   el("h3", undefined, "Best portfolio for each size", tableHead);
@@ -603,7 +599,6 @@ function renderResults(): void {
     for (const text of warnings) el("li", undefined, text, ul);
   }
 
-  // Product bars
   const selectedSet = shown === null ? null : new Set(run.results.get(shown)!.portfolio.products);
   const bars = el("section", "panel-block", undefined, host);
   const barsHead = el("div", "block-head", undefined, bars);
@@ -729,7 +724,7 @@ new ResizeObserver(() => {
   lastDraw?.();
 }).observe(ui.results);
 
-// ---- Events ---------------------------------------------------------------
+// Events
 
 for (const t of TIEBREAKS) {
   const o = el("option", undefined, t.label, ui.tiebreak);

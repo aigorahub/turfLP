@@ -31,7 +31,7 @@ respondent,Product A,Product B,Product C
 - Values are 0 and 1, TRUE and FALSE, or yes and no, for reach data. Numbers other than 0 and 1 are ratings: choose the rating that counts as reached. The default is the top-2 box (the highest rating minus 1) on a whole-number scale, and the midpoint otherwise.
 - Commas, semicolons, or tabs separate the values. With semicolons or tabs, a decimal comma is read as a decimal point. Quoted values and a byte order mark are read.
 - Every cell needs a value. Empty cells and `NA` are errors: the page gives the line and the product, as it does for text that is not a value.
-- Files up to 50 MB and 2,000,000 values.
+- The page reads files up to 50 MB and 2,000,000 values.
 
 "Download a template" on the page gives a small example file.
 

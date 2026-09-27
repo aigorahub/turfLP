@@ -139,7 +139,7 @@ export function reachCurve(host: HTMLElement, o: CurveOptions): void {
     const hit = svg("rect", {
       x: x(s) - band / 2, y: m.top - 12, width: band, height: ih + 24, class: "hit",
       tabindex: 0, role: "button", "data-size": s,
-      "aria-label": `${s} products: reach ${percent(p.reachProp)}. Select to show this portfolio.`,
+      "aria-label": `${s} ${s === 1 ? "product" : "products"}: reach ${percent(p.reachProp)}. Select to show this portfolio.`,
     }, root);
     const show = () => {
       crosshair.setAttribute("x1", String(x(s)));

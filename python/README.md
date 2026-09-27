@@ -53,7 +53,7 @@ turf_sizes(reach, sizes=None, tiebreak=("frequency", "penetration"), *,
 
 ## Limits and warnings
 
-The penetration tie-break is decided in Python, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. That search stops after `max_pool` portfolios (1000) or `max_pool_seconds` seconds (30), and then a later frequency tie-break gets another `max_pool_seconds`. When a search stops early, the package emits a `turflp.TurfWarning` that says which result is not proved optimal. `max_pool` must be a whole number of 0 or more and `max_pool_seconds` a number of 0 or more (`math.inf` for no limit); they are checked before any solve. The reach stage and the first penetration solve have no time limit.
+The penetration tie-break is decided in Python, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `max_pool` more portfolios (1000 by default) within `max_pool_seconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `max_pool_seconds`. When a search stops early, the package emits a `turflp.TurfWarning` that says which result is not proved optimal. `max_pool` must be a whole number of 0 or more and `max_pool_seconds` a number of 0 or more (`math.inf` for no limit); they are checked before any solve. The reach stage and the first penetration solve have no time limit.
 
 ## Differences from R
 
@@ -61,10 +61,10 @@ The penetration tie-break is decided in Python, not by the solver: the package c
 - `turf_sizes` returns a list of `Portfolio` values instead of a data frame.
 - Warnings are `TurfWarning` warnings with the same texts as the R warnings.
 - The limits are keyword arguments instead of the R options `turfLP.max_pool` and `turfLP.max_pool_seconds`.
-- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on; HiGHS 1.15 does not.
+- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on in a test case. HiGHS 1.15 solves that case correctly.
 - There is no `turf_simulate()`.
 
-When several portfolios are optimal, R, Python, and JavaScript can return different ones. The values of the requested criteria are the same.
+When several portfolios are optimal, R, Python, and JavaScript can return different ones, with the same values of the requested criteria. When a search stops early, the warning says which value is not proved optimal.
 
 ## Data sets
 

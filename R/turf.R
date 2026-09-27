@@ -72,7 +72,8 @@
 #' approach for product line extensions. *Marketing Research*, 2(1), 28-40.
 #'
 #' @seealso [turf_sizes()] to solve several portfolio sizes,
-#'   [turf_min_cover()] for the smallest portfolio that reaches everyone.
+#'   [turf_min_cover()] for the smallest portfolio that reaches every
+#'   reachable respondent.
 #'
 #' @examples
 #' set.seed(1234)
@@ -291,9 +292,9 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
 
     previous <- selected
     if (s < length(stages)) {
-      # Fix this criterion at the value that the selected products actually
-      # give, not at the solver's value for the continuous variables. Reach
-      # and frequency are whole numbers, so the bound needs no tolerance.
+      # Fix this criterion at the value that the selected products give, not
+      # at the solver's value for the continuous variables. Reach and
+      # frequency are whole numbers, so the bound needs no tolerance.
       model <- add_row(
         model,
         coef = obj$coef,

@@ -95,5 +95,6 @@ approach for product line extensions. \emph{Marketing Research}, 2(1), 28-40.
 }
 \seealso{
 \code{\link[=turf_sizes]{turf_sizes()}} to solve several portfolio sizes,
-\code{\link[=turf_min_cover]{turf_min_cover()}} for the smallest portfolio that reaches everyone.
+\code{\link[=turf_min_cover]{turf_min_cover()}} for the smallest portfolio that reaches every
+reachable respondent.
 }

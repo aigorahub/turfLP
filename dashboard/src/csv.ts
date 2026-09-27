@@ -156,7 +156,7 @@ export function parseTable(text: string, options: { idColumn?: boolean } = {}): 
   for (const r of body) {
     if (r.fields.length !== header.length) {
       throw new DataError(
-        `Line ${r.line} has ${r.fields.length} values, but the header row has ${header.length}. ` +
+        `Line ${r.line} has ${r.fields.length} ${r.fields.length === 1 ? "value" : "values"}, but the header row has ${header.length}. ` +
         `Every row needs one value for each column.`);
     }
   }

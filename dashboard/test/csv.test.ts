@@ -106,7 +106,7 @@ describe("parseTable", () => {
     };
     expect(err("")).toMatch(/empty/);
     expect(err("A,B\n")).toMatch(/no respondents/);
-    expect(err("A,B\n1,0\n1\n")).toMatch(/Line 3 has 1 values, but the header row has 2/);
+    expect(err("A,B\n1,0\n1\n")).toMatch(/Line 3 has 1 value, but the header row has 2/);
     expect(err("A,B\n1,\n")).toMatch(/Line 2, product "B": the value is missing/);
     expect(err("A,B\n1,NA\n")).toMatch(/missing/);
     expect(err("A,B\n1,0\n0,x\n")).toMatch(/Line 3, product "B": "x" is not a number/);

@@ -80,7 +80,7 @@ Times for one `turf()` call with both tie-breaks (`node scripts/benchmark.mjs`, 
 | 200 respondents x 40 products | 8 | 0.08 s |
 | 16 x 402, 201 portfolios tied on penetration | 2 | 9.4 s |
 
-Run time depends on the data, not only on its size: many portfolios that tie on penetration make the penetration search slow, up to its 30-second budget.
+Run time depends on the data as well as its size: many portfolios that tie on penetration make the penetration search slow, up to its 30-second budget.
 
 ## Next.js on Vercel
 
@@ -96,7 +96,7 @@ The example's `scripts/standalone-test.mjs` builds it against the packed package
 
 ## Limits and warnings
 
-The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. That search stops after `maxPool` portfolios (1000) or `maxPoolSeconds` seconds (30), and then a later frequency tie-break gets another `maxPoolSeconds`. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
+The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `maxPool` more portfolios (1000 by default) within `maxPoolSeconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `maxPoolSeconds`. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
 
 ## Differences from R
 
@@ -104,10 +104,10 @@ The penetration tie-break is decided in JavaScript, not by the solver: the packa
 - The functions are asynchronous and return plain objects; `reachProp` is camelCase.
 - Warnings are returned in `warnings`, with the same texts as the R warnings.
 - The limits are options instead of the R options `turfLP.max_pool` and `turfLP.max_pool_seconds`.
-- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on; HiGHS 1.15 does not.
+- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on in a test case. HiGHS 1.15 solves that case correctly.
 - There is no `turf_simulate()`.
 
-When several portfolios are optimal, R, Python, and JavaScript can return different ones. The values of the requested criteria are the same.
+When several portfolios are optimal, R, Python, and JavaScript can return different ones, with the same values of the requested criteria. When a search stops early, the warning says which value is not proved optimal.
 
 ## Data sets
 

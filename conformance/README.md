@@ -52,7 +52,7 @@ Every fixture file has `schema_version` (1), `kind`, and `cases`. Product indice
 
 **`sizes.json`**: `{"id", "input", "sizes", "tiebreak", "expected"}`. `sizes` is a list or `null` (the default: 1 to the minimum cover size). `expected` is one object per result row, in order, with `size` and the `turf` fields.
 
-**`bounded.json`**: `{"id", "input", "size", "tiebreak", "max_pool", "max_pool_seconds", "warnings", "expected"}`. `max_pool_seconds` is a number or `null` (no limit). These cases force the pool or time limits, so the result is not a full optimum.
+**`bounded.json`**: `{"id", "input", "size", "tiebreak", "max_pool", "max_pool_seconds", "warnings", "expected"}`. `max_pool_seconds` is a number or `null` (no limit). These cases test the pool and time limits. A stopped search can still return a full optimum; `expected` holds only the criteria that the limits cannot affect.
 
 **`format.json`**: `{"value", "text"}`, the `%g` formatting of a time budget in warning texts (`docs/algorithm.md` section 10).
 
