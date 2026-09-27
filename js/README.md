@@ -2,7 +2,7 @@
 
 TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the JavaScript port of the [turfLP R package](https://github.com/aigorahub/turfLP). It uses the same algorithm, solver settings, limits, and warning texts, and it passes the same conformance suite (`conformance/` in the repository), whose expected values come from exact enumeration of every portfolio.
 
-The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm package `highs`). The package is ESM with TypeScript types and runs on Node.js 20 or later.
+The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm package `highs`). The package is ESM with TypeScript types. It runs on Node.js 20 or later and in browsers; see "In the browser" and "Browser or server" below.
 
 ## Installation
 
@@ -81,6 +81,59 @@ Times for one `turf()` call with both tie-breaks (`node scripts/benchmark.mjs`, 
 | 16 x 402, 201 portfolios tied on penetration | 2 | 9.4 s |
 
 Run time depends on the data as well as its size: many portfolios that tie on penetration make the penetration search slow, up to its 30-second budget.
+
+## In the browser
+
+The same package runs in a browser. [dashboard/](../dashboard/) in the repository is a complete example. Three things differ from Node.js:
+
+- The browser cannot read `highs.wasm` from `node_modules`. Serve the file (`node_modules/highs/build/highs.wasm`, 3.5 MB, about 1.2 MB with gzip) and pass its URL as `locateFile`, or fetch its bytes and pass them as `wasmBinary`.
+- The `highs` loader has branches for Node.js that import `node:module`, `node:fs`, and other built-in modules. They never run in a browser, but the bundler must leave them out. With esbuild, mark `node:*` as external, as `dashboard/build.mjs` does; other bundlers need the same setting.
+- The solve blocks the thread, so run it in a Web Worker. To cancel a solve, call `terminate()` on the worker and start a new one.
+
+```ts
+// solver-worker.ts, bundled as a worker script
+import { loadSolver, turf, type ReachMatrix } from "turflp";
+
+// Serve highs.wasm next to the page.
+const ready = fetch("highs.wasm").then((r) => r.arrayBuffer()).then((wasmBinary) => loadSolver({ wasmBinary }));
+
+self.onmessage = async (e: MessageEvent<{ reach: ReachMatrix; size: number }>) => {
+  await ready;
+  self.postMessage(await turf(e.data.reach, e.data.size));
+};
+```
+
+Chrome does not start a module worker from a page opened as a local file (`file://`), so bundle the worker as a classic script if the page must work that way.
+
+## Browser or server
+
+A server does not make a solve much faster. Node.js runs the same WebAssembly as the browser: on four cases of 1,000 to 5,000 respondents, the dashboard in Chrome took 7 to 15 s, within the run-to-run variation of Node.js on the same inputs. Native HiGHS through the Python package was at most about 1.5 times faster. Move a problem to a server when it takes too long for someone to wait at the page, when the device is slow (a phone), or when the run must continue after the page closes.
+
+Times for one `turf()` call with both tie-breaks, on random data where each product reaches each respondent independently with a probability between 0 and 0.5 (Node.js 26, Apple M5 Pro). Data of this kind is a hard case: real consumer data, where products form groups, solved much faster in these tests.
+
+| Respondents | Products | Size 3 | Size 5 | Size 8 |
+|---:|---:|---:|---:|---:|
+| 200 | 20 | 0.2 s | 0.1 s | 0.1 s |
+| 200 | 40 | 0.5 s | 0.8 s | 0.1 s |
+| 200 | 80 | 3.3 s | 2.8 s | 0.1 s |
+| 1000 | 20 | 1.7 s | 2.5 s | 0.3 s |
+| 1000 | 40 | 5.4 s | 6.3 s | 6.2 s |
+| 1000 | 80 | 8.2 s | 31 s | 12 s |
+| 5000 | 20 | 15 s | 10 s | 3.0 s |
+| 5000 | 40 | 52 s | 56 s | 33 s |
+| 5000 | 80 | over 150 s | over 150 s | over 150 s |
+
+A 20,000 by 20 problem of size 5 took 147 s. For comparison, each size from 1 to 8 of the `icecream` data (120 by 10) takes less than 0.1 s, and each size of the `cafe` data (2,500 by 40) takes 0.5 to 7 s in the browser.
+
+`turfSizes()` solves each size in turn, so its time is the sum over the sizes. Times of one case varied between runs by up to a factor of about 1.6, and data with many ties on penetration can take up to the 30-second pool budget more.
+
+A rule to start from, to be checked on your own data:
+
+- Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel, as the dashboard does.
+- Server, in the request: up to 200 respondents and 40 products and size 8 (the rule of the Next.js example below). These solve in less than a second.
+- Server, as a background job: problems of 1,000 respondents and 80 products, 5,000 respondents and 40 products, or larger; many sizes at once; and any problem whose run time you cannot predict.
+
+These times were checked for optimality: for every case with fewer than 3 million portfolios to enumerate, an enumeration of every portfolio gave the same reach, frequency, and penetration.
 
 ## Next.js on Vercel
 
