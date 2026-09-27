@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "turflp"
+version = "0.1.0"
+description = "TURF analysis (total unduplicated reach and frequency) with integer linear programming"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "COPYRIGHTS"]
+authors = [{ name = "John Ennis", email = "john.m.ennis@aigora.com" }]
+requires-python = ">=3.10"
+dependencies = ["highspy>=1.15.1,<1.16", "numpy>=1.23"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pandas>=2"]
+
+[project.urls]
+Homepage = "https://github.com/aigorahub/turfLP"
+Source = "https://github.com/aigorahub/turfLP/tree/main/python"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/turflp", "tests", "README.md", "LICENSE", "COPYRIGHTS"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/turflp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error::turflp.TurfWarning"]
