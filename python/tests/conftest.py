@@ -32,11 +32,11 @@ def read_input(name):
 
 
 def fixtures(kind):
-    """Cases of one fixture file, or none when conformance/ is absent (sdist)."""
-    path = CONFORMANCE / "fixtures" / (kind + ".json")
-    if not path.exists():
+    """Cases of one fixture file. When the whole fixtures folder is absent (an
+    unpacked sdist) there are none; a missing file in a present folder fails."""
+    if not (CONFORMANCE / "fixtures").exists():
         return []
-    return json.loads(path.read_text())["cases"]
+    return json.loads((CONFORMANCE / "fixtures" / (kind + ".json")).read_text())["cases"]
 
 
 needs_conformance = pytest.mark.skipif(

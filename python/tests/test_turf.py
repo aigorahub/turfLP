@@ -141,6 +141,8 @@ def test_bad_input_gives_clear_errors():
         turf(TIE, True)
     with pytest.raises(ValueError, match="frequency"):
         turf(TIE, 2, ["reach"])
+    with pytest.raises(TypeError, match="frequency"):
+        turf(TIE, 2, 3)
     with pytest.raises(ValueError, match="only 0 products"):
         turf(np.zeros((3, 3)), 1)
     with pytest.raises(ValueError, match="No product"):

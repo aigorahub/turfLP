@@ -83,6 +83,10 @@ def check_tiebreak(tiebreak):
         return []
     if isinstance(tiebreak, str):
         tiebreak = [tiebreak]
+    try:
+        tiebreak = list(tiebreak)
+    except TypeError:
+        raise TypeError('`tiebreak` must contain only "frequency" and "penetration".') from None
     out = []
     for t in tiebreak:
         if t not in CRITERIA:

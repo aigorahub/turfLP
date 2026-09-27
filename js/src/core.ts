@@ -88,7 +88,7 @@ function fsum(xs: Iterable<number>): number {
 export function formatG(x: number): string {
   if (Number.isNaN(x)) return "NaN";
   if (!Number.isFinite(x)) return x > 0 ? "Inf" : "-Inf";
-  if (x === 0) return "0";
+  if (x === 0) return Object.is(x, -0) ? "-0" : "0";
   const sign = x < 0 ? "-" : "";
   // Exact enough decimal digits of |x|: 100 significant digits.
   const [mant, expText] = Math.abs(x).toExponential(99).split("e");

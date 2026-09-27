@@ -15,13 +15,15 @@ export interface Reach {
 const NOT_TABLE = "`reach` must be a numeric or logical matrix or data frame.";
 
 export function asReach(reach: unknown, names?: readonly string[]): Reach {
-  if (!Array.isArray(reach) || !reach.every((row) => Array.isArray(row))) {
-    throw new TypeError(NOT_TABLE);
-  }
+  if (!Array.isArray(reach)) throw new TypeError(NOT_TABLE);
   const rows = reach.length;
+  // Index every row: every() and some() skip the holes of a sparse array.
+  for (let i = 0; i < rows; i++) {
+    if (!Array.isArray(reach[i])) throw new TypeError(NOT_TABLE);
+  }
   const cols = rows > 0 ? (reach[0] as unknown[]).length : 0;
-  if (reach.some((row) => (row as unknown[]).length !== cols)) {
-    throw new RangeError(NOT_TABLE);
+  for (let i = 0; i < rows; i++) {
+    if ((reach[i] as unknown[]).length !== cols) throw new RangeError(NOT_TABLE);
   }
   // Index every cell: forEach and for...of skip the holes of sparse arrays,
   // which would otherwise read as 0.

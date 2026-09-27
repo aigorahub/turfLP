@@ -50,3 +50,9 @@
 - Fixed (advisory): limits validated before any solve in both ports (NaN, negative, wrong type; Infinity allowed for seconds; 0 allowed for the pool); JavaScript `formatG` implements C's `%g` (round half to even) and a new `format.json` fixture (18 cases) is checked in R, Python, and JavaScript; the Python sdist tests collect without `conformance/` (18 passed, 53 skipped when unpacked); `maxDuration` described as an operational ceiling, not a guarantee; JavaScript `TypeError` for wrong-typed `size` and `tiebreak`; GitHub Actions updated (setup-node v7, setup-uv v10, setup-python v7).
 - Local: pytest 3585 passed; Vitest 75 passed; JS conformance script passes; R runner passes (turf 1629, min_cover 82, sizes 12, bounded 5, comparator 40, format 18); spelling clean.
 - CI on f3d37f9: `python.yaml` failed at job setup because `astral-sh/setup-uv` publishes no `v10` major tag (only `v10.0.0` to `v10.2.0`). Pinned `astral-sh/setup-uv@v10.2.0`.
+
+## 2026-09-27 00:33 EDT re-review round 1
+
+- `/private/tmp/claude-501/-Users-john-aigora-dev-turfLP/ea7aeaf6-8fd0-4818-85ee-d90f3bf01469/scratchpad/reviews/rerun-turflp-astra.md`: both blocking findings resolved; advisory: `formatG(-0)` gave "0" (R and Python give "-0"); a missing single fixture file returned no Python cases.
+- `/private/tmp/claude-501/-Users-john-aigora-dev-turfLP/ea7aeaf6-8fd0-4818-85ee-d90f3bf01469/scratchpad/reviews/rerun-turflp-agy.md`: both blocking findings resolved; the setup-uv `v10` tag (already fixed in a33684b); advisory: sparse outer arrays in JavaScript crashed with an unspecified error; Python `tiebreak` of a non-iterable type.
+- Fixed all four; `format.json` gains -0 (19 cases). Local: pytest 3586 passed; Vitest 75 passed; JS conformance script passes; R runner passes. CI on a33684b: all push runs and R-CMD-check pass.

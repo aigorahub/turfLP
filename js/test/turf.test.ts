@@ -137,6 +137,11 @@ describe("without conformance inputs", () => {
     const sparseRow = [1, 0];
     sparseRow.length = 3;
     await expect(turf([sparseRow, [0, 1, 1]], 1)).rejects.toThrow(/missing values/);
+    const sparseOuter: number[][] = [[1, 0]];
+    sparseOuter.length = 2;
+    await expect(turf(sparseOuter, 1)).rejects.toThrow(TypeError);
+    // eslint-disable-next-line no-sparse-arrays
+    await expect(turf([[1, 0], , [0, 1]] as any, 1)).rejects.toThrow(/numeric or logical/);
   });
 
   it("wrong types give TypeError and bad values RangeError", async () => {
