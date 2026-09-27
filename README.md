@@ -2,6 +2,9 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/aigorahub/turfLP/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/aigorahub/turfLP/actions/workflows/R-CMD-check.yaml)
+[![python](https://github.com/aigorahub/turfLP/actions/workflows/python.yaml/badge.svg)](https://github.com/aigorahub/turfLP/actions/workflows/python.yaml)
+[![js](https://github.com/aigorahub/turfLP/actions/workflows/js.yaml/badge.svg)](https://github.com/aigorahub/turfLP/actions/workflows/js.yaml)
+[![conformance](https://github.com/aigorahub/turfLP/actions/workflows/conformance-r.yaml/badge.svg)](https://github.com/aigorahub/turfLP/actions/workflows/conformance-r.yaml)
 <!-- badges: end -->
 
 turfLP is an R package for TURF analysis (total unduplicated reach and frequency) with integer linear programming. You give it a respondent by product matrix that shows which products reach which respondents. It returns the portfolio of a given size that reaches the most respondents. The result is an exact optimum, and the package does not enumerate every possible portfolio.
@@ -14,6 +17,20 @@ remotes::install_github("aigorahub/turfLP")
 ```
 
 The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
+
+## Python and JavaScript
+
+The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), use HiGHS with the same settings, limits, and warning texts, and pass one shared conformance suite, [conformance/](conformance/), whose 1,768 fixture cases take their expected values from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push.
+
+```sh
+# Python 3.10 or later
+pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
+
+# JavaScript (Node.js 20 or later): build a tarball from a clone, then install it
+cd turfLP/js && npm ci && npm pack && npm install /path/to/turfLP/js/turflp-0.1.0.tgz
+```
+
+See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel. Neither package is on PyPI or npm yet.
 
 ## Usage
 

@@ -5,19 +5,37 @@
   "license": "MIT",
   "author": "John Ennis <john.m.ennis@aigora.com>",
   "homepage": "https://github.com/aigorahub/turfLP/tree/main/js",
-  "repository": { "type": "git", "url": "git+https://github.com/aigorahub/turfLP.git", "directory": "js" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aigorahub/turfLP.git",
+    "directory": "js"
+  },
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./datasets": { "types": "./dist/datasets.d.ts", "import": "./dist/datasets.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./datasets": {
+      "types": "./dist/datasets.d.ts",
+      "import": "./dist/datasets.js"
+    }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "LICENSE", "COPYRIGHTS", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "COPYRIGHTS",
+    "README.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "gen:datasets": "node scripts/gen-datasets.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
