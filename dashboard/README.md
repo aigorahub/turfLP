@@ -14,7 +14,7 @@ cd ../dashboard && npm ci && npm run build
 open dist/turflp-dashboard.html     # or double-click the file
 ```
 
-`npm run build` writes `dist/turflp-dashboard.html` (about 1.9 MB). The file can be copied, sent, or put on any static web host. The CI workflow `js.yaml` also builds it and keeps it as the `turflp-dashboard` artifact of each run.
+`npm run build` writes `dist/turflp-dashboard.html` (about 1.9 MB). The file can be copied, sent, or put on any static web host. Each [GitHub release](https://github.com/aigorahub/turfLP/releases) from 0.2.0 on has the built file, so you can download it there and skip the build. The CI workflow `js.yaml` also builds it and keeps it as the `turflp-dashboard` artifact of each run.
 
 ## Data format
 

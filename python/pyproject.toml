@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "turflp"
-version = "0.1.0"
+version = "0.2.0"
 description = "TURF analysis (total unduplicated reach and frequency) with integer linear programming"
 readme = "README.md"
 license = "MIT"

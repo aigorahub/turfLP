@@ -105,6 +105,7 @@ a { color: var(--accent-ink); text-underline-offset: 2px; }
 }
 .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .brand-name { font-weight: 650; font-size: 1rem; letter-spacing: -0.005em; }
+.brand-version { color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
 .brand-note { color: var(--ink-2); font-size: 0.875rem; }
 .status { margin-left: auto; color: var(--ink-2); font-size: 0.8125rem; text-align: right; }
 .status.is-error { color: var(--danger); }

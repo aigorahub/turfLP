@@ -67,10 +67,13 @@ const script = app.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
 const css = (await transform(readFileSync(join(src, "styles.css"), "utf8"), { loader: "css", minify: true })).code;
 
 const template = readFileSync(join(src, "index.html"), "utf8");
-if (!template.includes("/* styles */") || !template.includes("/* script */")) {
+if (!["/* styles */", "/* script */", "{{version}}"].every((p) => template.includes(p))) {
   throw new Error("index.html is missing a placeholder.");
 }
+// The version of the JavaScript port, shown next to the name.
+const version = JSON.parse(readFileSync(join(here, "..", "js", "package.json"), "utf8")).version;
 const page = template
+  .replace("{{version}}", () => version)
   .replace("/* styles */", () => css.trim())
   .replace("/* script */", () => script.trim());
 

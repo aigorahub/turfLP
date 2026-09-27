@@ -1,5 +1,6 @@
 {
   "name": "turflp-dashboard",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "A one-file browser dashboard for turfLP",

@@ -10,8 +10,8 @@ The package is not on npm yet. Build a tarball from the repository and install i
 
 ```sh
 git clone https://github.com/aigorahub/turfLP.git
-cd turfLP/js && npm ci && npm pack          # writes turflp-0.1.0.tgz
-cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.1.0.tgz
+cd turfLP/js && npm ci && npm pack          # writes turflp-0.2.0.tgz
+cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
 ```
 
 ## Usage

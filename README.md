@@ -27,14 +27,14 @@ The repository also has a Python package (`python/`) and a JavaScript/TypeScript
 pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
 
 # JavaScript (Node.js 20 or later): build a tarball from a clone, then install it
-cd turfLP/js && npm ci && npm pack && npm install /path/to/turfLP/js/turflp-0.1.0.tgz
+cd turfLP/js && npm ci && npm pack && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
 ```
 
 See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel. Neither package is on PyPI or npm yet.
 
 ## Browser dashboard
 
-[dashboard/](dashboard/) builds a one-file web page that runs the JavaScript port in the browser: open it, load an example data set or a CSV file, and see the best portfolio for each size with a reach curve and the reach of each product. The data does not leave the computer. See [dashboard/README.md](dashboard/README.md) for the build and the data format.
+[dashboard/](dashboard/) builds a one-file web page that runs the JavaScript port in the browser: open it, load an example data set or a CSV file, and see the best portfolio for each size with a reach curve and the reach of each product. The data does not leave the computer. Download `turflp-dashboard.html` from the [latest release](https://github.com/aigorahub/turfLP/releases/latest), or build it; see [dashboard/README.md](dashboard/README.md) for the build and the data format.
 
 ## Usage
 
