@@ -302,7 +302,7 @@ def _min_cover(reach, names):
                               np.ones(n), np.full(n, np.inf)))
     sol = _solver.solve("min", np.ones(m), model, np.arange(m), "set cover")
     sel = sol > 0.5
-    # Section 11: check the cover (the R package does not).
+    # Section 11: check the cover.
     if not np.all(np.any(a[:, sel] > 0, axis=1)) or np.any(np.abs(sol - sel) > 1e-6):
         raise RuntimeError("HiGHS returned an invalid solution in the set cover stage.")
     return _portfolio(reach, names, cand[sel])

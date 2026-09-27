@@ -111,6 +111,15 @@ test_that("turf_min_cover() finds the smallest full cover", {
   }
 })
 
+test_that("turf_min_cover() rejects a solver result that does not cover everyone", {
+  local_mocked_bindings(
+    solve_lp = function(direction, objective, model, binary, stage, ...) {
+      numeric(length(objective))
+    }
+  )
+  expect_error(turf_min_cover(tie_matrix), "invalid solution in the set cover stage")
+})
+
 test_that("turf_sizes() returns one row per size", {
   set.seed(1234)
   reach <- turf_simulate(n_respondents = 300, n_products = 12)
