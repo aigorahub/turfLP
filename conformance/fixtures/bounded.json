@@ -1,0 +1,105 @@
+{
+ "schema_version": 1,
+ "kind": "bounded",
+ "cases": [
+  {
+   "id": "tie-matrix/k2/penetration+frequency/pool1000-sec0",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "max_pool": 1000,
+   "max_pool_seconds": 0,
+   "warnings": [
+    "The search for the penetration optimum stopped (time limit of 0 seconds). The penetration is optimal only to within the solver tolerance (about 1e-9).",
+    "The frequency stage did not finish (time limit of 0 seconds). The portfolio is optimal on penetration only to within the solver tolerance and may not be optimal on frequency."
+   ],
+   "expected": {
+    "reach": 7
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency+penetration/pool1000-sec0",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "max_pool": 1000,
+   "max_pool_seconds": 0,
+   "warnings": [
+    "The search for the penetration optimum stopped (time limit of 0 seconds). The penetration is optimal only to within the solver tolerance (about 1e-9)."
+   ],
+   "expected": {
+    "reach": 7,
+    "frequency": 8
+   }
+  },
+  {
+   "id": "flood-402/k2/penetration+frequency/pool50-secNone",
+   "input": "flood-402",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "max_pool": 50,
+   "max_pool_seconds": null,
+   "warnings": [
+    "The search for the penetration optimum stopped (more than 50 portfolios are within the solver tolerance). The penetration is optimal only to within the solver tolerance (about 1e-9)."
+   ],
+   "expected": {
+    "reach": 16,
+    "penetration": {
+     "fraction": "8/1",
+     "value": 8.0
+    }
+   }
+  },
+  {
+   "id": "gen-diag-101/k1/penetration+frequency/pool100-secNone",
+   "input": "gen-diag-101",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "max_pool": 100,
+   "max_pool_seconds": null,
+   "warnings": [
+    "The search for the penetration optimum stopped (more than 100 portfolios are within the solver tolerance). The penetration is optimal only to within the solver tolerance (about 1e-9)."
+   ],
+   "expected": {
+    "reach": 1,
+    "penetration": {
+     "fraction": "1/1",
+     "value": 1.0
+    },
+    "frequency": 1
+   }
+  },
+  {
+   "id": "gen-diag-100/k1/penetration+frequency/pool100-secNone",
+   "input": "gen-diag-100",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "max_pool": 100,
+   "max_pool_seconds": null,
+   "warnings": [],
+   "expected": {
+    "reach": 1,
+    "penetration": {
+     "fraction": "1/1",
+     "value": 1.0
+    },
+    "frequency": 1
+   }
+  }
+ ]
+}

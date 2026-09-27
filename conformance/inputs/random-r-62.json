@@ -1,0 +1,18 @@
+{
+  "name": "random-r-62",
+  "source": "test-turf.R random matrix, set.seed(62)",
+  "rows": 35,
+  "cols": 9,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
+  "columns": [
+    "86ca12054",
+    "4b84d042e",
+    "918049406",
+    "a46032486",
+    "8d32809a0",
+    "63c802b26",
+    "41d2d3040",
+    "038484b1c",
+    "48606a824"
+  ]
+}

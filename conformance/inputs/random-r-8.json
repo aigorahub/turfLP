@@ -1,0 +1,16 @@
+{
+  "name": "random-r-8",
+  "source": "test-turf.R random matrix, set.seed(8)",
+  "rows": 39,
+  "cols": 7,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6", "P7"],
+  "columns": [
+    "ae0816ac6c",
+    "420a7c2b5e",
+    "b12d11be0e",
+    "8057839728",
+    "6932ed21e8",
+    "64020823e8",
+    "a85ae72adc"
+  ]
+}

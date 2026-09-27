@@ -170,7 +170,7 @@ Mirrors `turf_sizes()`.
 | presolve | off (HiGHS 1.14 presolve bug) | on | on |
 | `mip_rel_gap`, `mip_abs_gap` | 0 | 0 | 0 |
 | `primal_feasibility_tolerance`, `mip_feasibility_tolerance` | 1e-9 | 1e-9 | 1e-9 |
-| threads | 1 | 1 | 1 (WebAssembly) |
+| threads | 1 | 1 | not set: the WebAssembly build is single-threaded, and `createModel()` rejects thread options |
 | `time_limit` | remaining stage time, or none | same | same |
 
 The package versions are not the HiGHS versions: npm `highs@1.15.3` embeds HiGHS 1.15.1. The ports report both in their test output.

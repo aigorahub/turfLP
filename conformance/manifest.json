@@ -1,0 +1,701 @@
+{
+ "schema_version": 1,
+ "inputs": {
+  "cover-r-1": {
+   "sha256": "e12ebd065e77caf6ba8115e2f85af97f6a7fc0fcd3477957f7d0f0fc26227bdd",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(1)"
+  },
+  "cover-r-10": {
+   "sha256": "f04d88aff9b156536945fca6eb9bfad8ac6af0b459f9f7b4ecfae150cc573e8e",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(10)"
+  },
+  "cover-r-11": {
+   "sha256": "a272cc644ec5e8c0238a545b0a6d8f797020a00b231b03c9b46ee279cb2813db",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(11)"
+  },
+  "cover-r-12": {
+   "sha256": "efedc65de8a9a5fc78376af8e148b7d8a394698e91af9a6657b24c276a4afc64",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(12)"
+  },
+  "cover-r-13": {
+   "sha256": "f595bd238ed98ee93ce288b1537b06f336c56a8a56dfa217bfcdd7cbf77212b1",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(13)"
+  },
+  "cover-r-14": {
+   "sha256": "55dcd87c5c0fd7d1d2e5fe0c17244669d45b925bfde7ccf74a78acd4785d0e3b",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(14)"
+  },
+  "cover-r-15": {
+   "sha256": "d369dcc36e663258e7d8a42416835e47068c7b6143d6e21e4552b07a42575c18",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(15)"
+  },
+  "cover-r-16": {
+   "sha256": "fdf3ed3ac2a481ed02b0cc054efe03d832ec1cc546121557777b5e30a36e947b",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(16)"
+  },
+  "cover-r-17": {
+   "sha256": "61eb2f1ac898b8127c95f1629666a23e506ad9150568ca58dc3cc57c56d6a8dc",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(17)"
+  },
+  "cover-r-18": {
+   "sha256": "b75886b5ed4c66eedfb7d9d575615aecd8b176a5f7e9cc4f0b5dea7d503e633c",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(18)"
+  },
+  "cover-r-19": {
+   "sha256": "30df9a97dd57b19b78a8603c12336af2af5b69a92d298f1c6fac54e3e0bbc40f",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(19)"
+  },
+  "cover-r-2": {
+   "sha256": "a6cbea60f430cace3e22f4614c4179bdfd6c2a907a75dd9890bac9f018912c63",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(2)"
+  },
+  "cover-r-20": {
+   "sha256": "8be186210fac145d6d4536377474e69da0b8157fbbdd2e1f6037b9805fbbc953",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(20)"
+  },
+  "cover-r-21": {
+   "sha256": "76821ad4ede2a4aeaebafac99efc2fcdf5be9427a88365cdd34ef5ca81ae6fa9",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(21)"
+  },
+  "cover-r-22": {
+   "sha256": "961c8e192ca1ef737c8dbe63724a30fad5942fabd4ed0f56da6b72e9b56d98c5",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(22)"
+  },
+  "cover-r-23": {
+   "sha256": "a5645262bd1de7c9c70833d037fcba1428125cf4ca9ef8d3d8b23ddb537c4717",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(23)"
+  },
+  "cover-r-24": {
+   "sha256": "0e1da5c0bf8f9740ce7228509a03dcb0a5c4acbfa4a38f466f85600c1083da5c",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(24)"
+  },
+  "cover-r-25": {
+   "sha256": "dbac9511b86db59c3674eae2e4394a875de419f59d0fe237936060e7bea405f5",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(25)"
+  },
+  "cover-r-26": {
+   "sha256": "9ad8a753132c7f846f5b2ebe8473d0524cf5066af26ecc0372adbc75b27d2905",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(26)"
+  },
+  "cover-r-27": {
+   "sha256": "b4df30596b77a48c449e0f284a653099af3e4e6052da31914ebb4bf9ad8cd088",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(27)"
+  },
+  "cover-r-28": {
+   "sha256": "e8d7ee1bebfec6ce3e468320b673862abc9fd325412c33dbf164c8622e20d790",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(28)"
+  },
+  "cover-r-29": {
+   "sha256": "6fd9de08fc8010e092248d9da036f1e831ccaa39a83201923e8eea734bf112b0",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(29)"
+  },
+  "cover-r-3": {
+   "sha256": "0372808b468012cee4f9fb0d9067bba7d8a8d8f5e44584e65bd0460491db5515",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(3)"
+  },
+  "cover-r-30": {
+   "sha256": "0f3890f0c8971d763a3064c4d70e5467d4d147eaae0d335d86f8ef4445af6575",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(30)"
+  },
+  "cover-r-4": {
+   "sha256": "234f744278bb5392e81d3b3573f72b23002703cef47a278dbc4276ce38c914d7",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(4)"
+  },
+  "cover-r-5": {
+   "sha256": "ad6beb30e14cefb9d6a98dc31e2979e8d1bb8bcece1484504ccaa149794c9bf9",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(5)"
+  },
+  "cover-r-6": {
+   "sha256": "7695db8d5282297c93695632f8be7adbffe900fe1957ca2224ad574cb9907ff0",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(6)"
+  },
+  "cover-r-7": {
+   "sha256": "8f7dc18da5739560649241c75895d4169469407cb165286f517d6b1d098e6f5a",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(7)"
+  },
+  "cover-r-8": {
+   "sha256": "ca01ef83871f043aa546b0ee10448434977f854e6a098ede3f9e33f8406b7827",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(8)"
+  },
+  "cover-r-9": {
+   "sha256": "4da910ade40c1ab2892b3d64155948973e664d6e6f802a4ae40eac7611176769",
+   "rows": 20,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R cover matrix, set.seed(9)"
+  },
+  "data-cafe": {
+   "sha256": "323ace09a5fc39b69a773798ea25eb256af23bd629778ca2e7c69d15e6eabab3",
+   "rows": 2500,
+   "cols": 40,
+   "origin": "export_r.R",
+   "source": "package data cafe"
+  },
+  "data-chips": {
+   "sha256": "b4bfbfc2a333a5ca4623ed0cf832d05cb110e0a0f0a3cfa772338bf346672482",
+   "rows": 600,
+   "cols": 24,
+   "origin": "export_r.R",
+   "source": "package data chips >= 4"
+  },
+  "data-coffee": {
+   "sha256": "37a60dd553979b478aacc229de165ffe50da04633dd28f3088343a61ce13b6d8",
+   "rows": 118,
+   "cols": 27,
+   "origin": "export_r.R",
+   "source": "package data coffee >= 8"
+  },
+  "data-ham": {
+   "sha256": "8496839d4524ad1e277ca8958106b423195c73ae6fa7621ed67883e547998450",
+   "rows": 127,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "package data ham >= 7"
+  },
+  "data-icecream": {
+   "sha256": "0a2a20119c09fb44d5de71cb62ece306b88e996fd7d4c193bd22844badda1d36",
+   "rows": 120,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "package data icecream >= 8"
+  },
+  "data-lunchbags": {
+   "sha256": "2427cb2ddbecc2bd63463ee6251ac03527ca060c0bf8009d08677105ad32e2a5",
+   "rows": 1175,
+   "cols": 14,
+   "origin": "export_r.R",
+   "source": "package data lunchbags"
+  },
+  "data-pies": {
+   "sha256": "e28ee799353d9026831e0730eeca268a91440adbe06b28b5c5cfafa16f835af8",
+   "rows": 980,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "package data pies"
+  },
+  "flood-402": {
+   "sha256": "4037605879c453d64af2a9fd576483e4ae9bcce47ad0c0ed32864a8fb6d33c71",
+   "rows": 16,
+   "cols": 402,
+   "origin": "export_r.R",
+   "source": "200 complementary pairs plus pair 401-402, 16 x 402"
+  },
+  "gen-diag-100": {
+   "sha256": "1d1e30d350032f26f48556d98dc24c98cbbac3a6b1f09345de9e61b9e5d1e7e3",
+   "rows": 100,
+   "cols": 100,
+   "origin": "generate.py",
+   "source": "identity matrix of order 100"
+  },
+  "gen-diag-101": {
+   "sha256": "b5f9b5f3a46162e33536f1d95fd64dd11cee8b77f393c1388d54b2a86c457c71",
+   "rows": 101,
+   "cols": 101,
+   "origin": "generate.py",
+   "source": "identity matrix of order 101"
+  },
+  "gen-reach-only-3": {
+   "sha256": "71b240964091c36121364871a7681ddfe2bfb824605306e247746ff3183dcf76",
+   "rows": 2,
+   "cols": 3,
+   "origin": "generate.py",
+   "source": "reach-only example with two optima of different frequency"
+  },
+  "gen-reach-only-abc": {
+   "sha256": "7baab1c7fa1885f4e27589ecb6143f2f75db5e40591f75e20b093c89f3cffe86",
+   "rows": 3,
+   "cols": 3,
+   "origin": "generate.py",
+   "source": "columns A = 111, B = 100, C = 110"
+  },
+  "identical-300": {
+   "sha256": "83186c3730d4d50843d9137e03e5c3526534b39142ee640d9bf427738ae581f5",
+   "rows": 300,
+   "cols": 15,
+   "origin": "export_r.R",
+   "source": "12 identical columns plus 3 others, 300 rows"
+  },
+  "near-42000": {
+   "sha256": "a38b0ac475ba87998e21fc275ba24aee11dab730e497ae3100b9be4e68fec552",
+   "rows": 42000,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "penetration gap 2e-13, 42000 x 4"
+  },
+  "random-r-1": {
+   "sha256": "7d3af5fe20d1c8a296b4bff8b86f65698beeb760050f01db8a414777b8755219",
+   "rows": 11,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(1)"
+  },
+  "random-r-10": {
+   "sha256": "98a25202ec9638f7bcf5fff2eeb02f3cab4018953669be7823d06280632e0545",
+   "rows": 16,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(10)"
+  },
+  "random-r-11": {
+   "sha256": "5ad5cf1280e1ff62e1c3781879b8ad19b48f68afe1fe2c660c27526227d6ca8d",
+   "rows": 32,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(11)"
+  },
+  "random-r-12": {
+   "sha256": "602e8ea860b69ec22f58a7ad8f83c66963352b1cef576766e86288294cbc2957",
+   "rows": 9,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(12)"
+  },
+  "random-r-13": {
+   "sha256": "873b62d077519c81c7dcc23599bd1e61395d04267d52727b6fabd5715887831b",
+   "rows": 31,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(13)"
+  },
+  "random-r-14": {
+   "sha256": "7c27dceba28bb0e003d3ff3473e77e83b53a7fbce38b7b75c5dc1c557cafe4b5",
+   "rows": 16,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(14)"
+  },
+  "random-r-15": {
+   "sha256": "d3ba7f5fb7ebfbd13b45bbade68cbdf9beb849b60f634d1ae2632bbf5ea9d912",
+   "rows": 12,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(15)"
+  },
+  "random-r-16": {
+   "sha256": "33863714aec55ad14a8d67bef42fbef2c7390eca7ed18e8f338e2ceb13471746",
+   "rows": 40,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(16)"
+  },
+  "random-r-17": {
+   "sha256": "2140c7e511856a7d119773797b73bb17074a100539d4256477c6add5b060b1f1",
+   "rows": 40,
+   "cols": 9,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(17)"
+  },
+  "random-r-18": {
+   "sha256": "c83caa896ceee6b75caef3b7b174870e5ee1b44d0379c1c3fac11dcecf6b20dc",
+   "rows": 23,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(18)"
+  },
+  "random-r-19": {
+   "sha256": "ee7342cefc4c6b73dd0a989eb56dfeb68e149208aecb5c760d1c456bba3c0cf9",
+   "rows": 10,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(19)"
+  },
+  "random-r-2": {
+   "sha256": "bea153a3f24007bf816f0634db66d7316fa4e00481a6512ada5d5f642a0f14e8",
+   "rows": 28,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(2)"
+  },
+  "random-r-20": {
+   "sha256": "2b05cf18fb8094383b5bf91dfccc22e25cfc00017fe7a69b7d87c785aa72881e",
+   "rows": 9,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(20)"
+  },
+  "random-r-21": {
+   "sha256": "beb845af73029ec33c1b122afebbe2ba417e0bf3e84c93e046c943d5848b771b",
+   "rows": 40,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(21)"
+  },
+  "random-r-22": {
+   "sha256": "806baa43b496c43f593c46189e7c984268fe8c7d8a46d301d1d39ac796159756",
+   "rows": 16,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(22)"
+  },
+  "random-r-23": {
+   "sha256": "609e6d4fe11b21cf59089bb358240bc4bc12b97084f7287cbd54b1f48d71cf5d",
+   "rows": 36,
+   "cols": 7,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(23)"
+  },
+  "random-r-24": {
+   "sha256": "18f180022b0f6671c0dc76eb4f38baf7cb83da8f2f5582a2cb6aacc6905843d4",
+   "rows": 26,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(24)"
+  },
+  "random-r-25": {
+   "sha256": "1fb4086d4d59339c6784a1dca31020271099f3216f2e9f9f6827dae6e444b2a0",
+   "rows": 14,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(25)"
+  },
+  "random-r-26": {
+   "sha256": "aee4a6d78d822317c6be4906500e1a59241343e29d848df04f268ed5c9cb85b1",
+   "rows": 35,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(26)"
+  },
+  "random-r-27": {
+   "sha256": "656e8f56a1f7a0f029b12fa5738ef13961a9d01c583191b39f56e9db3ab70f9d",
+   "rows": 12,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(27)"
+  },
+  "random-r-28": {
+   "sha256": "2dff7614f843fd3b5662e5c39628390660fe6dd058d64d84cc0e0e95a65d809e",
+   "rows": 24,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(28)"
+  },
+  "random-r-29": {
+   "sha256": "378a22a01fd0580a8abf70b4f5ac5aeb9125247b43f5ce233359927cb8451004",
+   "rows": 12,
+   "cols": 7,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(29)"
+  },
+  "random-r-3": {
+   "sha256": "cb1167e5f677f9dff44d3e6ea119a9290b9caceff13bdb7bf3fb34fdb0a66ab8",
+   "rows": 12,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(3)"
+  },
+  "random-r-30": {
+   "sha256": "7fdd0a18f06a68e58b59f504d95dc1de4370b1cc52d3f9d9c4133520d289413e",
+   "rows": 17,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(30)"
+  },
+  "random-r-31": {
+   "sha256": "3f61849b84f699d2cb14c089aa1e8449d935e9e1c6b86ec8b8c8f601b5361222",
+   "rows": 18,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(31)"
+  },
+  "random-r-32": {
+   "sha256": "fdc9a47f7fd8b5c5c8e04e6406db62803f2c31e24c22fa2e8d248305130270dc",
+   "rows": 13,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(32)"
+  },
+  "random-r-33": {
+   "sha256": "4aee604ded1f5b9fc6074a2e7f794cbf513b9cc5ed215f79b99185f09253fa1e",
+   "rows": 15,
+   "cols": 9,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(33)"
+  },
+  "random-r-34": {
+   "sha256": "35118df5652cfc4a67afe196e7e0cb75c3df85b0af28433e6672b271e655fd4e",
+   "rows": 36,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(34)"
+  },
+  "random-r-35": {
+   "sha256": "a439aad4977f90af9257c07d072896036012faa912bdb96ef3db7f391e3ea24f",
+   "rows": 17,
+   "cols": 9,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(35)"
+  },
+  "random-r-36": {
+   "sha256": "2556494b712a49fa36e7c37ab104a85c3510985d56a6c2f8863feeee91e3372f",
+   "rows": 28,
+   "cols": 9,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(36)"
+  },
+  "random-r-361": {
+   "sha256": "bd48e07de09c3b7ab6a9d28ff6ec299978d1b85984cb67815029830c0a775f56",
+   "rows": 30,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(361)"
+  },
+  "random-r-37": {
+   "sha256": "312ca3b0895548d70ad329654d0f8b0e3cbcbdf691c1ba8e4b81a3940da222e7",
+   "rows": 31,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(37)"
+  },
+  "random-r-38": {
+   "sha256": "3bcc06539c6d8202a94ce28b874e54662d0d8cf32182c0177921acb6f9fcc439",
+   "rows": 40,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(38)"
+  },
+  "random-r-39": {
+   "sha256": "fccd64e9411ebc9793503de6d2bfda27db6e3f541d1e993bf518cb9be6f8499f",
+   "rows": 26,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(39)"
+  },
+  "random-r-4": {
+   "sha256": "530c8017c15f3247de5019c99f9e764ed6ae576e654934c1dce85dfd7d59cf40",
+   "rows": 18,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(4)"
+  },
+  "random-r-40": {
+   "sha256": "c1f6dda0f94e3fa98c710cffdfaacaee782689645e13014700a00820ceee0656",
+   "rows": 25,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(40)"
+  },
+  "random-r-5": {
+   "sha256": "9e2f8e405fad61ed87d02313596f8c82c3b5d31d1e3c4a6e1cf45bf0f45deb9c",
+   "rows": 9,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(5)"
+  },
+  "random-r-6": {
+   "sha256": "4f3cb3e5f54756247c6d7a665502a6f5e2a2ef0df25a0ba3784dfc1a909597eb",
+   "rows": 17,
+   "cols": 8,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(6)"
+  },
+  "random-r-62": {
+   "sha256": "e7d7d7a2a493afc0da6a75a938659bd6b4052a19f4e0f13524718f924f1246e2",
+   "rows": 35,
+   "cols": 9,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(62)"
+  },
+  "random-r-7": {
+   "sha256": "02d6a47a682d5ae485b32dba34812ee24661eac5feb5aac0de1f614ccfe21421",
+   "rows": 26,
+   "cols": 10,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(7)"
+  },
+  "random-r-8": {
+   "sha256": "b97293640ae8f483079c49f7af42ef95e0b736ca45d4931ff2aa6922ace81df8",
+   "rows": 39,
+   "cols": 7,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(8)"
+  },
+  "random-r-9": {
+   "sha256": "05061dcb1e894ee70f49ff982b522d1ad31c2ee37bbc657d1633a0ce8b1e2bac",
+   "rows": 13,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "test-turf.R random matrix, set.seed(9)"
+  },
+  "retry-35043": {
+   "sha256": "4596328ad51ab7f97680ee18e52428aaf917fda12e432f97ed56d8e28789b61a",
+   "rows": 35043,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "retried stage case, 35043 x 6"
+  },
+  "runtime-80x202": {
+   "sha256": "7311779f1fb3af13aaf5944b253172dd0b0f2cc13839dab5bbcb337628620bcb",
+   "rows": 80,
+   "cols": 202,
+   "origin": "export_r.R",
+   "source": "100 complementary pairs plus a higher-frequency pair, 80 x 202"
+  },
+  "simulate-1234": {
+   "sha256": "06425b8146d9bcd13ac8b0611d17ad9813f4a73880af0ba8a92e838e58069536",
+   "rows": 1000,
+   "cols": 30,
+   "origin": "export_r.R",
+   "source": "set.seed(1234); turf_simulate()"
+  },
+  "simulate-1234-300x12": {
+   "sha256": "8ff73c6ff1789f87b62d209408310a9c419dfa8640bcff7961d9e01edbbeeb17",
+   "rows": 300,
+   "cols": 12,
+   "origin": "export_r.R",
+   "source": "set.seed(1234); turf_simulate(300, 12)"
+  },
+  "stage-40000": {
+   "sha256": "b085988508b119abc373668ba66370f14dde277b86ba03fa0e7f0551ade023ec",
+   "rows": 40000,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "penetration bound tolerance case, 40000 x 4"
+  },
+  "stage-40000-perm": {
+   "sha256": "acfb01ec27a8b6730d318da24761af91f45619d7278c3a613931446ab24e6cf2",
+   "rows": 40000,
+   "cols": 4,
+   "origin": "export_r.R",
+   "source": "40000 x 4 case with columns 4, 1, 3, 2 (lp_solve status 5)"
+  },
+  "tie-matrix": {
+   "sha256": "f2c0584ca041c8bef7388e37b8767a1bfa9b3c32162358d373dc492b9c3b0d37",
+   "rows": 8,
+   "cols": 5,
+   "origin": "export_r.R",
+   "source": "tests/testthat/test-turf.R tie_matrix"
+  },
+  "tie-matrix-empty": {
+   "sha256": "87c5b9ebe2749ddee3ecf46c17f92acda95e7f0037e3f75a898fcf8562910a11",
+   "rows": 10,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "tie_matrix with two empty rows and one empty column"
+  },
+  "triple-15000": {
+   "sha256": "552475e8dcaedf324e75065324ccb44bfc9ce5b85bcea5c48ed65f1af1dd1ba0",
+   "rows": 15000,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "two full-reach triples with a small penetration gap, N = 5000"
+  },
+  "triple-60000": {
+   "sha256": "f4f4635f191e5f151f690e723b7be71fcfe3a59a3464711fd9f59f3e6f3dca2f",
+   "rows": 60000,
+   "cols": 6,
+   "origin": "export_r.R",
+   "source": "two full-reach triples with a small penetration gap, N = 20000"
+  },
+  "window-5000": {
+   "sha256": "08b2cfa89e89f48e9abbfde1f4986bf30feab667a5f50ea991a41518e437f648",
+   "rows": 5000,
+   "cols": 24,
+   "origin": "export_r.R",
+   "source": "penetration window case, 5000 x 24"
+  }
+ },
+ "counts": {
+  "turf.json": 1625,
+  "min_cover.json": 82,
+  "sizes.json": 12,
+  "bounded.json": 5,
+  "comparator.json": 40
+ },
+ "excluded": [
+  {
+   "case": "2600 x 202 run-time matrices (plan review, R set.seed(110))",
+   "reason": "their results and warnings depend on machine speed (30-second budgets)"
+  },
+  {
+   "case": "240000 x 6 triple (N = 80000)",
+   "reason": "the penetration gap (7.8e-15 relative) is below the comparison tolerance"
+  }
+ ]
+}

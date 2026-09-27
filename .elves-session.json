@@ -4,43 +4,43 @@
       "acceptance": [
         {
           "criterion": "`docs/algorithm.md` specifies inputs and error texts, the model, every stage, cut-and-retry, the penetration pool, the comparison rule, limits and their scopes, monotonic deadlines, explicit solver settings with presolve as the one named difference, warning texts, result fields, and the public Python and TypeScript API, and each algorithm rule names the R function it mirrors.",
-          "evidence": "",
+          "evidence": "docs/algorithm.md sections 1-15: inputs and error texts, model, criteria, comparison rule, next_valid, stage loop, penetration pool, result, warnings, minimum cover, sizes, solver settings (presolve the named difference), limits/budgets/monotonic clocks, public R/Python/TypeScript API; each rule names its R function.",
           "id": "B1-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`python3 conformance/generate.py --check` verifies the input digests, regenerates every fixture byte for byte, and exits 0, and `python3 conformance/test_generate.py` passes its hand-checked cases.",
-          "evidence": "",
+          "evidence": "python3 conformance/generate.py --check: 'conformance fixtures are current' (exit 0, verifies 97 input digests); python3 conformance/test_generate.py: 12 tests OK.",
           "id": "B1-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The exact fixtures cover at least 150 `turf` cases (reach only, each single criterion, and both orders), at least 40 `turf_min_cover` cases, and at least 10 `turf_sizes` cases (default sizes, explicit order, repeated sizes); they include the 7 by 4 presolve matrix, the status-5 permutation, the window case, the 402-column tie flood, the 80 by 202 run-time case, the 35,043, 40,000, 42,000, 15,000, and 60,000 respondent near-tie cases, identical columns, empty rows and columns, `diag(100)` and `diag(101)`, and all seven package data sets (sizes 1 to 3 for `cafe`, `chips`, and `coffee`; every size for the others).",
-          "evidence": "",
+          "evidence": "conformance/manifest.json counts: turf 1625, min_cover 82, sizes 12, bounded 5, comparator 40; all five orders present; coverage check found no missing required input (random-r-18 presolve 7x4, stage-40000-perm, window-5000, flood-402, runtime-80x202, retry-35043, stage-40000, near-42000, triple-15000/60000, identical-300, tie-matrix-empty, gen-diag-100/101, seven data sets).",
           "id": "B1-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`conformance/manifest.json` lists every input with its SHA-256 digest and source, and lists each excluded case with its reason (the 2,600 by 202 run-time cases are excluded because their results depend on machine speed).",
-          "evidence": "",
+          "evidence": "conformance/manifest.json lists 97 inputs with sha256, rows, cols, origin, source, and excluded cases (2600 x 202 run-time matrices: machine-speed dependent; 240000 x 6 triple: gap below tolerance).",
           "id": "B1-A4",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`Rscript conformance/run_r.R` passes every exact, comparator, and bounded fixture against the R package.",
-          "evidence": "",
+          "evidence": "Rscript conformance/run_r.R: turf 1625, min_cover 82, sizes 12, bounded 5, comparator 40 cases; 'all conformance fixtures pass' (exit 0).",
           "id": "B1-A5",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The built R tarball contains none of `docs/`, `conformance/`, `python/`, `js/`, or the run documents (checked by listing the tarball with placeholder files present in `python/` and `js/`), and `R CMD check --as-cran` gives only the new-submission NOTE.",
-          "evidence": "",
+          "evidence": "R CMD build with placeholder files in python/ and js/: tarball top level is build data DESCRIPTION inst LICENSE man NAMESPACE NEWS.md R tests (0 entries for docs, conformance, python, js, plans, placeholders; added ^\\.git$ for worktrees); R CMD check --as-cran: Status 1 NOTE (new submission).",
           "id": "B1-A6",
-          "met": false
+          "met": true
         }
       ],
       "id": "B1",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [
@@ -162,8 +162,8 @@
     "default_for_session": true
   },
   "continuation_guard": {
-    "reason": "plan review and implementation not started",
-    "stop_allowed": false
+    "stop_allowed": false,
+    "reason": "B2-B4 and final reviews remain"
   },
   "master_acceptance": [
     {

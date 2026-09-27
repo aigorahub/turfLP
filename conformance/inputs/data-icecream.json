@@ -1,0 +1,19 @@
+{
+  "name": "data-icecream",
+  "source": "package data icecream >= 8",
+  "rows": 120,
+  "cols": 10,
+  "names": ["Vanilla", "Chocolate", "Strawberry", "Mint chip", "Cookie dough", "Salted caramel", "Pistachio", "Coffee", "Mango sorbet", "Rocky road"],
+  "columns": [
+    "0b00190270cac90ca62840545e409d",
+    "bb04b08010042fc80c3cc0c4e6be1e",
+    "65f5142602c6581098860140501cc1",
+    "08041380812004c0689040c508be39",
+    "8b0c0932602025c48818cae4809734",
+    "ca22d1a520a005c4ec10cc04439c46",
+    "002024204200000080012200410e00",
+    "004020708240440080040a00010800",
+    "24d20023c0024110952210002008d8",
+    "0b2004822024014ca03c88c4001420"
+  ]
+}

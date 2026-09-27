@@ -52,7 +52,7 @@ Add Python (`python/`) and JavaScript/TypeScript (`js/`) ports of turfLP that us
 ## Stop Gate
 
 - **Stop allowed right now:** no
-- **Reason:** plan review and implementation not started.
+- **Reason:** B2, B3, B4, final reviews, and landing remain.
 
 ## Deferred hygiene
 
@@ -68,11 +68,11 @@ See the plan. Do not change R algorithm behavior. Expected conformance values co
 
 ## Current Phase
 
-staging: plan written; plan review by the four peer agents next.
+executing: plan reviewed twice by the four agents and revised; B1 complete.
 
 ## Next Exact Batch
 
-Plan review by turflp-astra, turflp-grok, turflp-agy, turflp-fugu; revise the plan; then B1.
+B2: Python package in `python/` against `docs/algorithm.md` and `conformance/`.
 
 ## Plan and Log Paths
 

@@ -1,0 +1,15 @@
+{
+  "name": "tie-matrix-empty",
+  "source": "tie_matrix with two empty rows and one empty column",
+  "rows": 10,
+  "cols": 6,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6"],
+  "columns": [
+    "060",
+    "930",
+    "690",
+    "640",
+    "d90",
+    "000"
+  ]
+}

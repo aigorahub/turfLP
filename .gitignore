@@ -5,3 +5,19 @@
 .DS_Store
 *.tar.gz
 *.Rcheck/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+python/dist/
+python/build/
+
+# JavaScript
+node_modules/
+js/dist/
+*.tgz
+.next/
+js/examples/nextjs/out/

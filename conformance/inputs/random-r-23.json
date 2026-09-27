@@ -1,0 +1,16 @@
+{
+  "name": "random-r-23",
+  "source": "test-turf.R random matrix, set.seed(23)",
+  "rows": 36,
+  "cols": 7,
+  "names": ["P1", "P2", "P3", "P4", "P5", "P6", "P7"],
+  "columns": [
+    "5f110aa0b",
+    "460b280ac",
+    "4dc80040c",
+    "052040601",
+    "060868007",
+    "805e18092",
+    "940080006"
+  ]
+}

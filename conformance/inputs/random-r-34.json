@@ -1,0 +1,13 @@
+{
+  "name": "random-r-34",
+  "source": "test-turf.R random matrix, set.seed(34)",
+  "rows": 36,
+  "cols": 4,
+  "names": ["P1", "P2", "P3", "P4"],
+  "columns": [
+    "2a4c33d80",
+    "9af013ac6",
+    "6209dbe29",
+    "3190bfe69"
+  ]
+}
