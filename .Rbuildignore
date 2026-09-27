@@ -12,3 +12,4 @@
 ^js$
 ^\.git$
 ^dashboard$
+^\.claude$
