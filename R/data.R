@@ -63,9 +63,8 @@
 #' Some customers would order no drink. The data is simulated and does not
 #' describe real customers or products.
 #'
-#' Run time grows with the portfolio size. On this data, one [turf()] call
-#' takes about 0.3 seconds for size 2 and about 4 to 6 seconds for sizes 3
-#' to 8 on a recent laptop.
+#' Run time depends on the portfolio size, the solver version, and the
+#' computer. Start with a small portfolio, such as the size 2 example below.
 #'
 #' @format A data frame with 2500 rows (customers) and 40 integer columns
 #'   (drinks), with values 0 and 1 and no missing values.

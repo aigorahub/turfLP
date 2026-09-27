@@ -23,8 +23,8 @@ A numeric matrix of 0 and 1 with \code{n_respondents} rows and
 product gets a reach probability drawn uniformly from 0 to \code{max_prob}. The
 number of respondents that the product reaches is drawn from a binomial
 distribution with that probability, and those respondents are chosen at
-random. Products are independent, so the simulated data has no
-correlation between products.
+random. Products are generated independently. Sample correlations
+between products can differ from zero.
 }
 \details{
 Call \code{\link[=set.seed]{set.seed()}} first for reproducible results.

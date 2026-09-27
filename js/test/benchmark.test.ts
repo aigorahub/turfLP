@@ -1,4 +1,4 @@
-// Plan B3-A5: the fixed 200 x 20 benchmark solves from a warm solver in under
+// The fixed 200 x 20 benchmark solves from a warm solver in under
 // 5 seconds, with the exact expected values.
 import { describe, expect, it } from "vitest";
 import { loadSolver, turf } from "../src/index.js";

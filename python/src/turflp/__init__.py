@@ -5,4 +5,4 @@ https://github.com/aigorahub/turfLP for the specification."""
 from ._core import Portfolio, TurfWarning, turf, turf_min_cover, turf_sizes
 
 __all__ = ["Portfolio", "TurfWarning", "turf", "turf_min_cover", "turf_sizes"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

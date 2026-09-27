@@ -705,7 +705,7 @@
  },
  "excluded": [
   {
-   "case": "2600 x 202 run-time matrices (plan review, R set.seed(110))",
+   "case": "2600 x 202 run-time matrices (R set.seed(110))",
    "reason": "their results and warnings depend on machine speed (30-second budgets)"
   },
   {

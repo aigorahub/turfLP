@@ -61,7 +61,7 @@ class OptimumTest(unittest.TestCase):
         self.assertEqual(pen["fraction"], "12/5")
 
     def test_near_tie_rule(self):
-        # The two full-reach triples of the 240,000-respondent review case:
+        # The two full-reach triples of the 240,000-respondent test case:
         # reaches (N-1, N-1, N+2) and (N-2, N+1, N+1) with N = 80000 differ by
         # 7.8e-15 (relative), below the tolerance; with N = 20000 they differ
         # by 5e-13, above it.

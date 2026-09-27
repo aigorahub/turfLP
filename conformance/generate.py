@@ -88,7 +88,7 @@ def segment_matrix(seed, rows, cols, segments=3, max_prob=0.5):
 def generated_inputs():
     """Inputs that do not need R. Returns {name: json text}."""
     out = {}
-    # Fixed benchmark for the JavaScript and Next.js checks (plan B3-A5).
+    # Fixed benchmark for the JavaScript and Next.js checks.
     out["gen-bench-200x20"] = input_json(
         "gen-bench-200x20", "splitmix64 seed 20260926, 3 segments, 200 x 20",
         segment_matrix(20260926, 200, 20))
@@ -100,7 +100,7 @@ def generated_inputs():
         cols = [[1 if i == j else 0 for i in range(n)] for j in range(n)]
         out["gen-diag-%d" % n] = input_json(
             "gen-diag-%d" % n, "identity matrix of order %d" % n, cols)
-    # Two correct reach-only answers with different frequency (plan review).
+    # Two optimal reach-only portfolios with different frequency.
     out["gen-reach-only-3"] = input_json(
         "gen-reach-only-3", "reach-only example with two optima of different frequency",
         [[1, 1], [1, 0], [0, 1]])
@@ -307,7 +307,7 @@ BOUNDED_RECIPES = [
 ]
 
 EXCLUDED_CASES = [
-    {"case": "2600 x 202 run-time matrices (plan review, R set.seed(110))",
+    {"case": "2600 x 202 run-time matrices (R set.seed(110))",
      "reason": "their results and warnings depend on machine speed (30-second budgets)"},
     {"case": "240000 x 6 triple (N = 80000)",
      "reason": "the penetration gap (7.8e-15 relative) is below the comparison tolerance"},

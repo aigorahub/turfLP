@@ -2,7 +2,7 @@
 
 TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the JavaScript port of the [turfLP R package](https://github.com/aigorahub/turfLP). It uses the same algorithm, solver settings, limits, and warning texts, and it passes the same conformance suite (`conformance/` in the repository), whose expected values come from exact enumeration of every portfolio.
 
-The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm package `highs`). The package is ESM with TypeScript types and runs on Node.js 20 or later.
+The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm package `highs`). The package is ESM with TypeScript types. It runs on Node.js 20 or later and in browsers; see "In the browser" and "Browser or server" below.
 
 ## Installation
 
@@ -10,8 +10,8 @@ The package is not on npm yet. Build a tarball from the repository and install i
 
 ```sh
 git clone https://github.com/aigorahub/turfLP.git
-cd turfLP/js && npm ci && npm pack          # writes turflp-0.1.0.tgz
-cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.1.0.tgz
+cd turfLP/js && npm ci && npm pack          # writes turflp-0.2.0.tgz
+cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
 ```
 
 ## Usage
@@ -46,7 +46,7 @@ for (const p of await turfSizes(reach, [1, 2, 3, 4], { names: ham.columns })) {
 turf(reach, size, options?): Promise<Portfolio>
 turfMinCover(reach, options?: { names? }): Promise<Portfolio>
 turfSizes(reach, sizes?, options?): Promise<Portfolio[]>
-loadSolver(options?: { locateFile?, wasmBinary? }): Promise<void>
+loadSolver(options?: { locateFile?, wasmBinary?, wasmModule? }): Promise<void>
 
 interface TurfOptions {
   tiebreak?: ("frequency" | "penetration")[];   // default ["frequency", "penetration"]
@@ -64,7 +64,7 @@ interface Portfolio {
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
 - `turfMinCover` finds the fewest products that together reach every respondent that some product reaches.
 - `turfSizes` solves several sizes. The default is every size from 1 to the minimum cover size.
-- `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` or `wasmBinary` when a bundler moves `highs.wasm`.
+- `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (the bytes of `highs.wasm`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file, for example in a browser worker ([dashboard/](../dashboard/) does this).
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 
 ## The solve blocks the thread
@@ -80,7 +80,62 @@ Times for one `turf()` call with both tie-breaks (`node scripts/benchmark.mjs`, 
 | 200 respondents x 40 products | 8 | 0.08 s |
 | 16 x 402, 201 portfolios tied on penetration | 2 | 9.4 s |
 
-Run time depends on the data, not only on its size: many portfolios that tie on penetration make the penetration search slow, up to its 30-second budget.
+Run time depends on the data as well as its size: many portfolios that tie on penetration make the penetration search slow, up to its 30-second budget.
+
+## In the browser
+
+The same package runs in a browser. [dashboard/](../dashboard/) in the repository is a complete example. Three things differ from Node.js:
+
+- The browser cannot read `highs.wasm` from `node_modules`. Serve the file (`node_modules/highs/build/highs.wasm`, 3.5 MB, about 1.2 MB with gzip) and pass a function that returns its URL, such as `loadSolver({ locateFile: () => wasmUrl })`, or fetch its bytes and pass them as `wasmBinary`.
+- The `highs` loader has branches for Node.js that import `node:module`, `node:fs`, and other built-in modules. They never run in a browser, but the bundler must leave them out. With esbuild, mark `node:*` as external, as `dashboard/build.mjs` does; other bundlers need the same setting.
+- The solve blocks the thread, so run it in a Web Worker. To cancel a solve, call `terminate()` on the worker and start a new one.
+
+```ts
+// solver-worker.ts, bundled as a worker script
+import { loadSolver, turf, type ReachMatrix } from "turflp";
+
+// Serve highs.wasm next to the worker script, or use an absolute URL.
+const ready = fetch("highs.wasm").then((r) => r.arrayBuffer()).then((wasmBinary) => loadSolver({ wasmBinary }));
+
+self.onmessage = async (e: MessageEvent<{ reach: ReachMatrix; size: number }>) => {
+  await ready;
+  self.postMessage(await turf(e.data.reach, e.data.size));
+};
+```
+
+Chrome does not start a module worker from a page opened as a local file (`file://`), so bundle the worker as a classic script if the page must work that way.
+
+## Browser or server
+
+On the same computer, the browser and Node.js had similar times, because both run the same WebAssembly: on four cases of 1,000 to 5,000 respondents, the dashboard in Chrome took 7 to 15 s, within the run-to-run variation of Node.js on the same inputs. In those four cases, the Node.js time was 1.07 to 1.61 times the time of native HiGHS through the Python package. Move a problem to a server when it takes too long for someone to wait at the page, when the device is slow (a phone), or when the run must continue after the page closes.
+
+Times for one `turf()` call with both tie-breaks, on random data where each product reaches each respondent independently with a probability between 0 and 0.5 (Node.js 26, Apple M5 Pro). Data of this kind is a hard case: real consumer data, where products form groups, solved much faster in these tests.
+
+| Respondents | Products | Size 3 | Size 5 | Size 8 |
+|---:|---:|---:|---:|---:|
+| 200 | 20 | 0.2 s | 0.1 s | 0.1 s |
+| 200 | 40 | 0.5 s | 0.8 s | 0.1 s |
+| 200 | 80 | 3.3 s | 2.8 s | 0.1 s |
+| 1000 | 20 | 1.7 s | 2.5 s | 0.3 s |
+| 1000 | 40 | 5.4 s | 6.3 s | 6.2 s |
+| 1000 | 80 | 8.2 s | 31 s | 12 s |
+| 5000 | 20 | 15 s | 10 s | 3.0 s |
+| 5000 | 40 | 52 s | 56 s | 33 s |
+| 5000 | 80 | timeout* | timeout* | timeout* |
+
+*The process exceeded a limit of 150 s that covered loading the solver, the solve, and the enumeration check. No solve time was recorded.
+
+A 20,000 by 20 problem of size 5 took 147 s; 20,000 by 40 at size 5 also exceeded the limit. The example data sets solved faster than random data of the same size: in the dashboard in Chrome, each size from 1 to 8 of `icecream` (120 by 10) took 0.1 s or less, and sizes 1 to 3 of `cafe` (2,500 by 40) took 1.3, 0.5, and 2.3 s. Sizes 1 to 8 of `cafe` took 44 s in total in Node.js.
+
+`turfSizes()` solves each size in turn, so its time is the sum over the sizes. Times of one case varied between runs by up to a factor of about 1.6, and data with many ties on penetration can take up to the 30-second pool budget more.
+
+A rule to start from, to be checked on your own data:
+
+- Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel, as the dashboard does.
+- Server, in the request: up to 200 respondents and 40 products and size 8 (the rule of the Next.js example below). The three measured 200 by 40 cases took less than a second; check your own data before you solve in a request.
+- Server, as a background job: problems of 1,000 respondents and 80 products, 5,000 respondents and 40 products, or larger; many sizes at once; and any problem whose run time you cannot predict.
+
+All 18 completed cases with fewer than 3 million portfolios were checked against an enumeration of every portfolio: reach and frequency matched exactly, and penetration matched to within 1e-9 (relative). Cases that timed out have no result and no check.
 
 ## Next.js on Vercel
 
@@ -96,7 +151,7 @@ The example's `scripts/standalone-test.mjs` builds it against the packed package
 
 ## Limits and warnings
 
-The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. That search stops after `maxPool` portfolios (1000) or `maxPoolSeconds` seconds (30), and then a later frequency tie-break gets another `maxPoolSeconds`. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
+The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `maxPool` more portfolios (1000 by default) within `maxPoolSeconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `maxPoolSeconds`. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
 
 ## Differences from R
 
@@ -104,10 +159,10 @@ The penetration tie-break is decided in JavaScript, not by the solver: the packa
 - The functions are asynchronous and return plain objects; `reachProp` is camelCase.
 - Warnings are returned in `warnings`, with the same texts as the R warnings.
 - The limits are options instead of the R options `turfLP.max_pool` and `turfLP.max_pool_seconds`.
-- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on; HiGHS 1.15 does not.
+- HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on in a test case. HiGHS 1.15 solves that case correctly.
 - There is no `turf_simulate()`.
 
-When several portfolios are optimal, R, Python, and JavaScript can return different ones. The values of the requested criteria are the same.
+When several portfolios are optimal, R, Python, and JavaScript can return different ones, with the same values of the requested criteria. When a search stops early, the warning says which value is not proved optimal.
 
 ## Data sets
 

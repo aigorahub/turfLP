@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>turfLP dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232a78d6'/%3E%3Cpath d='M3 12 L6.5 7 L9.5 9 L13 4' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>/* styles */</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="brand-name">turfLP</span>
+    <span class="brand-version">{{version}}</span>
+    <span class="brand-note">TURF analysis in your browser</span>
+  </div>
+  <p id="solver-status" class="status" aria-live="polite">Loading the solver…</p>
+  <a class="top-link" href="https://github.com/aigorahub/turfLP" target="_blank" rel="noopener">GitHub</a>
+</header>
+
+<main class="layout">
+  <aside class="side">
+    <section class="side-block" aria-labelledby="data-heading">
+      <h2 id="data-heading">Data</h2>
+      <p class="field-label">Examples</p>
+      <div id="examples" class="examples"></div>
+
+      <div id="drop" class="drop">
+        <p>Drop a CSV file here, or <label class="link" for="file">choose a file</label>.</p>
+        <input id="file" class="visually-hidden" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
+        <p class="hint">One row per respondent and one column per product, with product names in the first row. Values are 0 and 1, TRUE and FALSE, or ratings. <button id="template" type="button" class="link">Download a template</button></p>
+      </div>
+      <p id="data-error" class="error" role="alert" hidden></p>
+      <div id="data-info" class="data-info" hidden></div>
+    </section>
+
+    <fieldset id="settings" class="side-block" disabled>
+      <legend><h2>Settings</h2></legend>
+      <div class="field">
+        <p id="threshold-none" class="muted">Load data to choose settings.</p>
+        <div id="threshold-binary" hidden>
+          <p class="field-label">Reach</p>
+          <p class="muted">A 1 means that the product reaches the respondent.</p>
+        </div>
+        <div id="threshold-ratings" hidden>
+          <label class="field-label" for="threshold-input">Reached when the rating is at least</label>
+          <input id="threshold-input" class="input" type="number" inputmode="decimal">
+          <p id="threshold-hint" class="hint"></p>
+        </div>
+      </div>
+      <div class="field">
+        <p class="field-label" id="sizes-label">Portfolio sizes</p>
+        <div class="range" role="group" aria-labelledby="sizes-label">
+          <label class="visually-hidden" for="size-from">Smallest size</label>
+          <input id="size-from" class="input" type="number" min="1" step="1" value="1" inputmode="numeric">
+          <span>to</span>
+          <label class="visually-hidden" for="size-to">Largest size</label>
+          <input id="size-to" class="input" type="number" min="1" step="1" value="1" inputmode="numeric">
+        </div>
+        <p id="size-hint" class="hint" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <label class="field-label" for="tiebreak">Ties on reach</label>
+        <select id="tiebreak" class="input"></select>
+        <p class="hint">Frequency is the sum of the individual reach of the products, and penetration is the harmonic mean of those values.</p>
+      </div>
+    </fieldset>
+
+    <div class="run-bar">
+      <button id="run" type="button" class="button-primary" disabled>Run</button>
+      <p id="run-hint" class="hint" aria-live="polite"></p>
+    </div>
+  </aside>
+
+  <div class="results-pane">
+    <section id="results" class="results" aria-label="Results"></section>
+  </div>
+</main>
+<script type="module">/* script */</script>
+</body>
+</html>

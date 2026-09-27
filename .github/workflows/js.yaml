@@ -1,5 +1,6 @@
 # JavaScript package: type check, build, and tests (including the shared
-# conformance suite) on three platforms, plus the Next.js standalone test.
+# conformance suite) on three platforms, plus the Next.js standalone test and
+# the browser dashboard, which keeps the built page as an artifact.
 on:
   push:
   pull_request:
@@ -47,3 +48,33 @@ jobs:
         working-directory: js
       - run: node scripts/standalone-test.mjs
         working-directory: js/examples/nextjs
+
+  dashboard:
+    runs-on: ubuntu-latest
+    name: Browser dashboard
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            js/package-lock.json
+            dashboard/package-lock.json
+      - run: npm ci
+        working-directory: js
+      - run: npm ci
+        working-directory: dashboard
+      - run: npm run typecheck
+        working-directory: dashboard
+      - run: npm test
+        working-directory: dashboard
+      - run: npm run build
+        working-directory: dashboard
+      - run: npm run test:browser
+        working-directory: dashboard
+      - uses: actions/upload-artifact@v7
+        with:
+          name: turflp-dashboard
+          path: dashboard/dist/turflp-dashboard.html
+          if-no-files-found: error
