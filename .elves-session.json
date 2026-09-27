@@ -136,7 +136,7 @@
         },
         {
           "criterion": "The root README describes the three implementations, the shared conformance suite, and how to install each package from the repository.",
-          "evidence": "README.md section 'Python and JavaScript': the three implementations, docs/algorithm.md, the shared conformance suite (1,768 fixture cases from exact enumeration, run by CI against all three), install commands for Python and JavaScript, links to the package READMEs; CI badges for all four workflows.",
+          "evidence": "README.md section 'Python and JavaScript': the three implementations, docs/algorithm.md, the shared conformance suite (1,787 fixture cases from exact enumeration, run by CI against all three), install commands for Python and JavaScript, links to the package READMEs; CI badges for all four workflows.",
           "id": "B4-A2",
           "met": true
         },

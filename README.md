@@ -20,7 +20,7 @@ The package solves the integer programs with the HiGHS solver through the [highs
 
 ## Python and JavaScript
 
-The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), use HiGHS with the same settings, limits, and warning texts, and pass one shared conformance suite, [conformance/](conformance/), whose 1,768 fixture cases take their expected values from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push.
+The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), use HiGHS with the same settings, limits, and warning texts, and pass one shared conformance suite, [conformance/](conformance/), whose 1,787 fixture cases take their expected values from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push.
 
 ```sh
 # Python 3.10 or later
