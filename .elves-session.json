@@ -46,43 +46,43 @@
       "acceptance": [
         {
           "criterion": "`pytest python` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off, with no unexpected warning.",
-          "evidence": "",
+          "evidence": "cd python && pytest: 3557 passed in 163.58 s, including tests/test_conformance.py 3488 cases (turf 1625, min_cover 82, sizes 12, bounded 5 with exact warning texts, each with presolve on and off; comparator 40), with TurfWarning as an error outside the bounded and limit tests.",
           "id": "B2-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The Python suite has a test for each applicable case in `tests/testthat/test-turf.R` (every test except the `turf_simulate()` argument test and the R `print()` test), including the near-tie cases, the 402-column tie flood, `diag(101)`, the pool limit, and the zero time limit.",
-          "evidence": "",
+          "evidence": "python/tests/test_turf.py ports every test in tests/testthat/test-turf.R except the turf_simulate() argument test and print(): simulated example (products (4,13,15,27,28)), tie-break order, 43 random matrices vs brute force, min cover, turf_sizes, empty rows/columns, logical and data frames, bad input, 40000/35043/42000 near ties, identical columns, 402-column flood (no warning; max_pool 50 warning), pool time limit 0, diag(101).",
           "id": "B2-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the texts in `docs/algorithm.md`.",
-          "evidence": "",
+          "evidence": "test_logical_matrices_and_data_frames_give_the_same_result (nested list, bool array, int64 array, pandas DataFrame with column names) and test_bad_input_gives_clear_errors (TypeError/ValueError with the docs/algorithm.md section 1 texts).",
           "id": "B2-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "`turflp.datasets.load` returns all seven data sets with the R dimensions, column names, and values.",
-          "evidence": "",
+          "evidence": "python/tests/test_datasets.py: seven data sets with R dimensions; values and column names equal conformance/data/*.csv exported from R; ham >= 7 at size 2 gives N4, S1 with reach 98 as in the R README.",
           "id": "B2-A4",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The built wheel and sdist contain the data, `LICENSE`, and `COPYRIGHTS`, and a clean virtual environment that installs the wheel can solve the tie matrix and load a data set.",
-          "evidence": "",
+          "evidence": "uv build: wheel contains turflp/datasets/*.csv and dist-info/licenses/LICENSE and COPYRIGHTS; sdist contains src, tests, LICENSE, COPYRIGHTS; a clean Python 3.10 venv installed from the wheel solves the tie matrix (products (1, 2), reach 7, frequency 8, penetration 4.0) and loads cafe (2500, 40).",
           "id": "B2-A5",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Tests check the effective solver settings of every solve (gaps 0, tolerances 1e-9, one thread, presolve as configured) and the timeout, infeasible, invalid-vector, and retry-limit paths.",
-          "evidence": "",
+          "evidence": "python/tests/test_solver.py: every solve reads back mip_rel_gap 0, mip_abs_gap 0, both feasibility tolerances 1e-9, threads 1, presolve as configured (on and off); timeout, infeasible, invalid-vector (3 products), first-stage error, and retry-limit (101 solves, '100 solves' warning) paths give the documented warnings.",
           "id": "B2-A6",
-          "met": false
+          "met": true
         }
       ],
       "id": "B2",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [
@@ -162,8 +162,8 @@
     "default_for_session": true
   },
   "continuation_guard": {
-    "stop_allowed": false,
-    "reason": "B2-B4 and final reviews remain"
+    "reason": "B2-B4 and final reviews remain",
+    "stop_allowed": false
   },
   "master_acceptance": [
     {
@@ -185,7 +185,7 @@
       "met": false
     },
     {
-      "criterion": "Final reviews of the cumulative diff by turflp-astra, turflp-grok, turflp-agy, and turflp-fugu report no unresolved blocking finding.",
+      "criterion": "Final reviews of the cumulative diff by turflp-astra, turflp-agy, and turflp-fugu report no unresolved blocking finding.",
       "evidence": "",
       "id": "M-A4",
       "met": false

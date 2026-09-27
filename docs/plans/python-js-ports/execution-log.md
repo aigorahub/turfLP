@@ -20,3 +20,10 @@
 - B1: `docs/algorithm.md`; `conformance/export_r.R` froze 93 R inputs and 7 data CSVs; `conformance/generate.py` wrote 4 generated inputs and fixtures (turf 1625, min_cover 82, sizes 12, bounded 5, comparator 40) in 0.2 s; `test_generate.py` 12 tests OK; `run_r.R` passes all fixtures in about 76 s.
 - Fixed during B1: `diag(100)` at size 2 has 4950 exact ties and correctly hits the 1000-portfolio pool limit, so it moved out of the exact fixtures; a worktree `.git` file entered the R tarball, so `.Rbuildignore` gained `^\.git$`.
 - Evidence recorded in `.elves-session.json` for B1-A1 to B1-A6.
+
+## 2026-09-26 22:31 EDT B2 Python package
+
+- `python/`: package `turflp` 0.1.0 on highspy 1.15.1 (HiGHS 1.15.1) and NumPy; model passed to HiGHS as a row-wise `HighsLp` per solve, as R rebuilds its model per solve.
+- Found during B2: `highspy` 1.15 `getOptionValue` returns (status, value); with presolve on, HiGHS can report "unbounded or infeasible" for an infeasible model, so the port treats it as infeasible (spec section 6 updated).
+- `pytest`: 3557 passed in 164 s. Wheel and sdist contain data, LICENSE, COPYRIGHTS; clean Python 3.10 install works. `uv.lock` added for CI.
+- User instruction: leave turflp-grok out of the rest of the session. M-A4 now names turflp-astra, turflp-agy, and turflp-fugu.

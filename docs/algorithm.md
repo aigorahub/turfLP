@@ -85,7 +85,7 @@ Mirrors `next_valid()` and `exclude()`.
 
 1. If a deadline is set and has passed, return status `time`.
 2. Solve the model for the criterion, with the remaining time as the solver time limit.
-3. Read the model status, not the return code of the call. If the status is infeasible, return status `none`. If it is the time limit, return status `time`.
+3. Read the model status, not the return code of the call. If the status is infeasible, return status `none`. (With presolve on, HiGHS can report "unbounded or infeasible" for an infeasible model; no model here is unbounded, so the ports treat that status as infeasible.) If it is the time limit, return status `time`.
 4. If the solution is not optimal, or any `x_j` is missing, or the number of `x_j > 0.5` is not `size`, or any `x_j` is more than `1e-6` from 0 or 1: when `previous` is absent (the first stage), raise the error `HiGHS returned an invalid solution in the <criterion> stage.`; otherwise return status `invalid`.
 5. `sel` = the candidates with `x_j > 0.5`. If `previous` is absent, or `worse_on_earlier(earlier, sel, previous)` is false, return status `ok` with `sel`.
 6. Otherwise add the no-good row `Σ_{j∈sel} x_j ≤ size − 1` (which excludes exactly `sel`) and repeat.

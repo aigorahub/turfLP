@@ -105,7 +105,10 @@ def solve(direction, objective, model, binary, stage, soft=False, time_limit=mat
     h.passModel(lp)
     h.run()
     last_options.clear()
-    last_options.update({name: h.getOptionValue(name) for name in OPTION_NAMES})
+    for name in OPTION_NAMES:
+        value = h.getOptionValue(name)
+        # highspy 1.15 returns (status, value).
+        last_options[name] = value[1] if isinstance(value, tuple) else value
 
     status = h.getModelStatus()
     if status == highspy.HighsModelStatus.kOptimal:

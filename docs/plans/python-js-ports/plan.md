@@ -97,18 +97,18 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 - **Failure modes / pitfalls:** `highspy` status and option names; model rows added between solves must match the spec's row order; warnings must not be emitted twice.
 
 **Tasks:**
-- [ ] Package with `pyproject.toml` (Python 3.10 or later; `highspy>=1.15.1,<1.16`; `numpy`; pandas only in a `test` extra), MIT license, `COPYRIGHTS` for the data, and a lock file for CI.
-- [ ] `turf`, `turf_min_cover`, `turf_sizes`, `Portfolio`, `TurfWarning`, input validation, and `turflp.datasets.load`.
-- [ ] Conformance runner (exact, comparator, bounded) run with presolve on and off.
-- [ ] Ported regression tests from `tests/testthat/test-turf.R`, using the frozen inputs for R-seeded matrices.
+- [x] Package with `pyproject.toml` (Python 3.10 or later; `highspy>=1.15.1,<1.16`; `numpy`; pandas only in a `test` extra), MIT license, `COPYRIGHTS` for the data, and a lock file for CI.
+- [x] `turf`, `turf_min_cover`, `turf_sizes`, `Portfolio`, `TurfWarning`, input validation, and `turflp.datasets.load`.
+- [x] Conformance runner (exact, comparator, bounded) run with presolve on and off.
+- [x] Ported regression tests from `tests/testthat/test-turf.R`, using the frozen inputs for R-seeded matrices.
 
 **Acceptance criteria:**
-- [ ] B2-A1: `pytest python` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off, with no unexpected warning.
-- [ ] B2-A2: The Python suite has a test for each applicable case in `tests/testthat/test-turf.R` (every test except the `turf_simulate()` argument test and the R `print()` test), including the near-tie cases, the 402-column tie flood, `diag(101)`, the pool limit, and the zero time limit.
-- [ ] B2-A3: Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the texts in `docs/algorithm.md`.
-- [ ] B2-A4: `turflp.datasets.load` returns all seven data sets with the R dimensions, column names, and values.
-- [ ] B2-A5: The built wheel and sdist contain the data, `LICENSE`, and `COPYRIGHTS`, and a clean virtual environment that installs the wheel can solve the tie matrix and load a data set.
-- [ ] B2-A6: Tests check the effective solver settings of every solve (gaps 0, tolerances 1e-9, one thread, presolve as configured) and the timeout, infeasible, invalid-vector, and retry-limit paths.
+- [x] B2-A1: `pytest python` passes, including every exact, comparator, and bounded conformance fixture with presolve on and again with presolve off, with no unexpected warning.
+- [x] B2-A2: The Python suite has a test for each applicable case in `tests/testthat/test-turf.R` (every test except the `turf_simulate()` argument test and the R `print()` test), including the near-tie cases, the 402-column tie flood, `diag(101)`, the pool limit, and the zero time limit.
+- [x] B2-A3: Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the texts in `docs/algorithm.md`.
+- [x] B2-A4: `turflp.datasets.load` returns all seven data sets with the R dimensions, column names, and values.
+- [x] B2-A5: The built wheel and sdist contain the data, `LICENSE`, and `COPYRIGHTS`, and a clean virtual environment that installs the wheel can solve the tie matrix and load a data set.
+- [x] B2-A6: Tests check the effective solver settings of every solve (gaps 0, tolerances 1e-9, one thread, presolve as configured) and the timeout, infeasible, invalid-vector, and retry-limit paths.
 
 **Docs likely touched:** `python/README.md`.
 
@@ -197,7 +197,7 @@ These decisions came from the planning discussion with the user on 2026-09-26 an
 - [ ] M-A1: On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.
 - [ ] M-A2: The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.
 - [ ] M-A3: `docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.
-- [ ] M-A4: Final reviews of the cumulative diff by turflp-astra, turflp-grok, turflp-agy, and turflp-fugu report no unresolved blocking finding.
+- [ ] M-A4: Final reviews of the cumulative diff by turflp-astra, turflp-agy, and turflp-fugu report no unresolved blocking finding.
 
 ---
 
