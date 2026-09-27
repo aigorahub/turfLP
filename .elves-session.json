@@ -1,0 +1,181 @@
+{
+  "batches": [
+    {
+      "acceptance": [
+        {
+          "criterion": "`docs/algorithm.md` specifies inputs, the model, every stage, cut-and-retry, the penetration pool, limits, the tolerance rule, warning texts, and result fields, and each rule names the R function it mirrors.",
+          "evidence": "",
+          "id": "B1-A1",
+          "met": false
+        },
+        {
+          "criterion": "`python3 conformance/generate.py --check` regenerates every fixture byte for byte from the committed recipes and exits 0, and the generator self-test passes.",
+          "evidence": "",
+          "id": "B1-A2",
+          "met": false
+        },
+        {
+          "criterion": "The fixtures cover at least 150 `turf` cases and 40 `turf_min_cover` cases, both tie-break orders and each single criterion, the 7 by 4 presolve matrix, every reviewer counterexample from `tests/testthat/test-turf.R`, and all seven package data sets.",
+          "evidence": "",
+          "id": "B1-A3",
+          "met": false
+        },
+        {
+          "criterion": "`Rscript conformance/run_r.R` passes every fixture against the R package.",
+          "evidence": "",
+          "id": "B1-A4",
+          "met": false
+        },
+        {
+          "criterion": "`R CMD check --as-cran` still gives only the new-submission NOTE, which proves that the new folders are excluded from the R build.",
+          "evidence": "",
+          "id": "B1-A5",
+          "met": false
+        }
+      ],
+      "id": "B1",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "`pytest python` passes, including every conformance fixture, with no unexpected warning.",
+          "evidence": "",
+          "id": "B2-A1",
+          "met": false
+        },
+        {
+          "criterion": "The Python suite contains a test for each regression case in `tests/testthat/test-turf.R`, including the 40,000, 35,043, and 42,000 respondent near ties, the 402-column tie flood, `diag(101)`, the pool limits, and the zero time limit.",
+          "evidence": "",
+          "id": "B2-A2",
+          "met": false
+        },
+        {
+          "criterion": "Inputs as nested lists, NumPy integer or boolean arrays, and pandas data frames give the same result, and invalid inputs raise `ValueError` or `TypeError` with the R message texts.",
+          "evidence": "",
+          "id": "B2-A3",
+          "met": false
+        },
+        {
+          "criterion": "`turflp.datasets.load` returns all seven data sets with the R dimensions and values.",
+          "evidence": "",
+          "id": "B2-A4",
+          "met": false
+        },
+        {
+          "criterion": "`python -m build python` produces a wheel and an sdist that install into a clean virtual environment and import.",
+          "evidence": "",
+          "id": "B2-A5",
+          "met": false
+        }
+      ],
+      "id": "B2",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "`npm test` in `js/` passes, including every conformance fixture.",
+          "evidence": "",
+          "id": "B3-A1",
+          "met": false
+        },
+        {
+          "criterion": "The JavaScript suite contains a test for each regression case in `tests/testthat/test-turf.R`, as in B2-A2.",
+          "evidence": "",
+          "id": "B3-A2",
+          "met": false
+        },
+        {
+          "criterion": "`npm run build` produces ESM output with type declarations, and a clean Node.js project can install the packed tarball and solve the tie matrix.",
+          "evidence": "",
+          "id": "B3-A3",
+          "met": false
+        },
+        {
+          "criterion": "The main entry point does not import the data sets, and `turflp/datasets` returns all seven data sets with the R dimensions and values.",
+          "evidence": "",
+          "id": "B3-A4",
+          "met": false
+        },
+        {
+          "criterion": "The Next.js example builds with `next build` and its route handler returns a portfolio for a 200-respondent problem in under 5 seconds with `next start` on the development machine.",
+          "evidence": "",
+          "id": "B3-A5",
+          "met": false
+        }
+      ],
+      "id": "B3",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The three new workflows and the existing R workflow pass on the pull request.",
+          "evidence": "",
+          "id": "B4-A1",
+          "met": false
+        },
+        {
+          "criterion": "The root README describes the three implementations, the shared conformance suite, and how to install each package from the repository.",
+          "evidence": "",
+          "id": "B4-A2",
+          "met": false
+        },
+        {
+          "criterion": "`python/README.md` and `js/README.md` each show installation, a working example whose output matches the code, the limits and warnings, and the differences from R; the JavaScript README covers Next.js on Vercel (Node.js runtime, solver reuse, when to move work to a background job).",
+          "evidence": "",
+          "id": "B4-A3",
+          "met": false
+        },
+        {
+          "criterion": "The R package check still gives only the new-submission NOTE, and the R spelling check passes.",
+          "evidence": "",
+          "id": "B4-A4",
+          "met": false
+        }
+      ],
+      "id": "B4",
+      "status": "pending"
+    }
+  ],
+  "branch": "feat/python-js-ports",
+  "cobbler": {
+    "default_for_session": true
+  },
+  "continuation_guard": {
+    "reason": "plan review and implementation not started",
+    "stop_allowed": false
+  },
+  "master_acceptance": [
+    {
+      "criterion": "On the final pull request head, the R, Python, and JavaScript implementations all pass the full shared conformance suite in CI.",
+      "evidence": "",
+      "id": "M-A1",
+      "met": false
+    },
+    {
+      "criterion": "The R package behavior is unchanged: its tests pass and `R CMD check --as-cran` gives only the new-submission NOTE.",
+      "evidence": "",
+      "id": "M-A2",
+      "met": false
+    },
+    {
+      "criterion": "`docs/algorithm.md`, `conformance/README.md`, the root README, and both package READMEs are current with the final code.",
+      "evidence": "",
+      "id": "M-A3",
+      "met": false
+    },
+    {
+      "criterion": "Final reviews of the cumulative diff by turflp-astra, turflp-grok, turflp-agy, and turflp-fugu report no unresolved blocking finding.",
+      "evidence": "",
+      "id": "M-A4",
+      "met": false
+    }
+  ],
+  "plan_path": "docs/plans/python-js-ports/plan.md",
+  "run_id": "turflp-python-js-ports-2026-09-26",
+  "start_head": "ebea497080b292cc31e50d7450b92f06b6855ba2",
+  "work_driver": "host-native",
+  "worktree_path": "/Users/john/aigora/dev/turfLP-python-js-ports"
+}
