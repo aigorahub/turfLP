@@ -71,11 +71,11 @@ them.
 
 \examples{
 set.seed(1234)
-reach <- turf_simulate()
-turf(reach, size = 5)
+reach <- turf_simulate(n_respondents = 300, n_products = 15)
+turf(reach, size = 4)
 
 # Reach only, with no tie-break
-turf(reach, size = 5, tiebreak = character(0))
+turf(reach, size = 4, tiebreak = character(0))
 }
 \references{
 Serra, D. (2013). Implementing TURF analysis through binary linear

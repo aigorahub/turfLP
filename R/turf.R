@@ -77,11 +77,11 @@
 #'
 #' @examples
 #' set.seed(1234)
-#' reach <- turf_simulate()
-#' turf(reach, size = 5)
+#' reach <- turf_simulate(n_respondents = 300, n_products = 15)
+#' turf(reach, size = 4)
 #'
 #' # Reach only, with no tie-break
-#' turf(reach, size = 5, tiebreak = character(0))
+#' turf(reach, size = 4, tiebreak = character(0))
 #' @export
 turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
   reach <- as_reach_matrix(reach)

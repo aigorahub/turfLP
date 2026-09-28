@@ -31,7 +31,7 @@ keep so that most of these customers can still buy a design they bought
 before. Many of the customers are wholesalers.
 }
 \examples{
-turf_sizes(lunchbags, sizes = 1:4)
+turf(lunchbags, size = 3)
 }
 \references{
 Chen, D., Sain, S. L., & Guo, K. (2012). Data mining for the

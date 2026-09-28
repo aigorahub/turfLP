@@ -194,5 +194,5 @@
 #'   Customer Strategy Management*, 19(3), 197-208.
 #'   \doi{10.1057/dbm.2012.17}
 #' @examples
-#' turf_sizes(lunchbags, sizes = 1:4)
+#' turf(lunchbags, size = 3)
 "lunchbags"
