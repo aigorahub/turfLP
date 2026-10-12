@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>turfLP link preview card</title>
+<style>
+/* The light colors of ../src/styles.css. */
+:root {
+  --bg: oklch(0.975 0.003 250);
+  --surface: #ffffff;
+  --ink: oklch(0.24 0.012 250);
+  --ink-2: oklch(0.46 0.014 250);
+  --line: oklch(0.915 0.005 250);
+  --line-strong: oklch(0.84 0.007 250);
+  --grid: oklch(0.935 0.004 250);
+  --accent: #2a78d6;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 1fr 520px;
+  gap: 56px;
+  padding: 64px;
+}
+.text { display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand img { width: 52px; height: 52px; }
+.brand span { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
+h1 { margin: 64px 0 0; font-size: 70px; line-height: 1.08; font-weight: 700; letter-spacing: -0.03em; text-wrap: balance; }
+p { margin: 28px 0 0; font-size: 29px; line-height: 1.4; color: var(--ink-2); }
+.url { margin-top: auto; font-size: 28px; font-weight: 600; color: var(--ink); }
+.chart {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 30px 30px 22px;
+}
+.chart h2 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.chart svg { display: block; margin-top: 10px; }
+.grid { stroke: var(--grid); stroke-width: 1.5; }
+.axis { stroke: var(--line-strong); stroke-width: 1.5; }
+.tick, .axis-title { fill: var(--ink-2); font-size: 20px; font-variant-numeric: tabular-nums; }
+.area { fill: var(--accent); fill-opacity: 0.1; }
+.curve-line { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.dot { fill: var(--accent); stroke: var(--surface); stroke-width: 3; }
+.dot-label { fill: var(--ink); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="text">
+  <div class="brand"><img src="favicon.svg" alt=""><span>turfLP</span></div>
+  <h1>TURF analysis in your browser</h1>
+  <p>Find the product portfolio that reaches the most respondents.<br>Your data stays on your computer.</p>
+  <div class="url">turf.aigora.ai</div>
+</div>
+<div class="chart">
+  <h2>Reach by portfolio size</h2>
+  <svg id="curve" width="460" height="420" viewBox="0 0 460 420" role="img"></svg>
+</div>
+<script>
+// The reach curve of the ice cream example at the top-2 box, as the page draws it.
+const REACH = [39.2, 61.7, 72.5, 79.2, 83.3, 86.7, 88.3, 90.0];
+const W = 460, H = 420, m = { top: 44, right: 16, bottom: 70, left: 66 };
+const x = (i) => m.left + (i * (W - m.left - m.right)) / (REACH.length - 1);
+const y = (v) => m.top + ((100 - v) * (H - m.top - m.bottom)) / 100;
+const root = document.getElementById("curve");
+const el = (name, attrs, text) => {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text !== undefined) e.textContent = text;
+  root.append(e);
+};
+for (const t of [0, 25, 50, 75, 100]) {
+  el("line", { x1: m.left, x2: W - m.right, y1: y(t), y2: y(t), class: t === 0 ? "axis" : "grid" });
+  el("text", { x: m.left - 14, y: y(t) + 7, class: "tick", "text-anchor": "end" }, `${t}%`);
+}
+REACH.forEach((_, i) => el("text", { x: x(i), y: H - m.bottom + 30, class: "tick", "text-anchor": "middle" }, i + 1));
+el("text", { x: m.left + (W - m.left - m.right) / 2, y: H - 8, class: "axis-title", "text-anchor": "middle" }, "Products in the portfolio");
+const line = REACH.map((v, i) => `${i === 0 ? "M" : "L"}${x(i)} ${y(v)}`).join("");
+el("path", { d: `${line}V${y(0)}H${x(0)}Z`, class: "area" });
+el("path", { d: line, class: "curve-line" });
+REACH.forEach((v, i) => el("circle", { cx: x(i), cy: y(v), r: i === REACH.length - 1 ? 9 : 6, class: "dot" }));
+el("text", { x: W - m.right + 10, y: y(REACH.at(-1)) - 20, class: "dot-label", "text-anchor": "end" }, `${REACH.at(-1).toFixed(1)}%`);
+</script>
+</body>
+</html>

@@ -14,7 +14,15 @@ cd ../dashboard && npm ci && npm run build
 open dist/turflp-dashboard.html     # or double-click the file
 ```
 
-`npm run build` writes `dist/turflp-dashboard.html` (about 1.9 MB). The file can be copied, sent, or put on any static web host. Each [GitHub release](https://github.com/aigorahub/turfLP/releases) from 0.2.0 on has the built file, so you can download it there and skip the build. The CI workflow `js.yaml` also builds it and keeps it as the `turflp-dashboard` artifact of each run.
+`npm run build` writes `dist/turflp-dashboard.html` (about 1.9 MB). The file can be copied, sent, or put on any static web host. The build also writes `dist/site`, the directory for a web host ("Hosting" below). Each [GitHub release](https://github.com/aigorahub/turfLP/releases) from 0.2.0 on has the built file, so you can download it there and skip the build. The CI workflow `js.yaml` also builds it and keeps it as the `turflp-dashboard` artifact of each run.
+
+## Hosting
+
+The page is at <https://turf.aigora.ai>. `dist/site` holds what that host serves: the page as `index.html`, `favicon.ico`, `apple-touch-icon.png`, and `og.png`, the image that a chat or social app shows with a link to the page. The page keeps its icon inside the file, so the one file still shows an icon without the others.
+
+The link preview tags in `src/index.html` name `https://turf.aigora.ai`, because those apps need full addresses. Change them to host the page at another address.
+
+The images are in `site/`, with their sources: `favicon.svg` and `og.html`. After a change to a source, `npm run images` makes the images again. It needs Chrome, as `test:browser` does. The images are committed, because Chrome draws the text of `og.png` with the fonts of the computer.
 
 ## Data format
 
@@ -52,7 +60,7 @@ npm run test:browser   # the built file in headless Chrome, with and without a w
 
 `test:browser` needs Chrome. It looks in the usual places; set `CHROME_PATH` otherwise.
 
-The sources are in `src/`: `app.ts` (the page), `worker.ts` (the solver side), `csv.ts` (reading files), `data.ts` (examples and summaries), `charts.ts` (the reach curve and the product bars), and `index.html` and `styles.css`. `build.mjs` bundles them with esbuild and inlines `highs.wasm`, compressed with gzip.
+The sources are in `src/`: `app.ts` (the page), `worker.ts` (the solver side), `csv.ts` (reading files), `data.ts` (examples and summaries), `charts.ts` (the reach curve and the product bars), and `index.html` and `styles.css`. `build.mjs` bundles them with esbuild and inlines `highs.wasm`, compressed with gzip, and the icon from `site/favicon.svg`.
 
 ## License
 
