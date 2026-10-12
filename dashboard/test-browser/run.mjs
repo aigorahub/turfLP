@@ -4,25 +4,14 @@
 //
 //   npm run build && npm run test:browser
 
-import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
+import { findChrome } from "../chrome.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const file = pathToFileURL(join(here, "..", "dist", "turflp-dashboard.html")).href;
-const chrome = [
-  process.env.CHROME_PATH,
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  "/usr/bin/google-chrome",
-  "/usr/bin/google-chrome-stable",
-  "/usr/bin/chromium",
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-].find((p) => p && existsSync(p));
-if (!chrome) {
-  console.error("Chrome was not found. Set CHROME_PATH.");
-  process.exit(1);
-}
+const chrome = findChrome();
 
 // Reach at the top-2 box for sizes 1 to 8 of the ice cream data (R package).
 const ICECREAM = ["39.2% (47)", "61.7% (74)", "72.5% (87)", "79.2% (95)", "83.3% (100)",
@@ -66,6 +55,14 @@ async function session(workers) {
     await wait(() => document.getElementById("solver-status").textContent.startsWith("Solver ready"));
     const status = await page.$eval("#solver-status", (e) => e.textContent);
     check(workers === (status === "Solver ready"), `unexpected solver status: ${status}`);
+
+    // The icon is in the file, and the link preview image is on the host.
+    const icon = await page.$eval('link[rel="icon"][type="image/svg+xml"]', (e) => e.href);
+    check(icon.startsWith("data:image/svg+xml,"), "the icon is not in the file");
+    check(await page.evaluate((src) => { const i = new Image(); i.src = src; return i.decode().then(() => true, () => false); }, icon),
+          "the icon is not a readable image");
+    const card = await page.$eval('meta[property="og:image"]', (e) => e.content);
+    check(card === "https://turf.aigora.ai/og.png", `link preview image: ${card}`);
 
     // An example, all sizes.
     await clickExample("Ice cream");

@@ -1,10 +1,12 @@
 // Build dist/turflp-dashboard.html: one self-contained file with the page, the
 // solver worker, and highs.wasm (gzip-compressed, base64-encoded) inlined.
+// Also build dist/site, the directory for a web host: the same page as
+// index.html, with the icons and the link preview image from site/.
 // Run `npm ci` in ../js first: the solver comes from ../js/src and its
 // `highs` dependency from ../js/node_modules.
 
 import { build, transform } from "esbuild";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +14,9 @@ import { gzipSync } from "node:zlib";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, "src");
+const site = join(here, "site");
 const out = join(here, "dist", "turflp-dashboard.html");
+const hosted = join(here, "dist", "site");
 const requireFromJs = createRequire(join(here, "..", "js", "package.json"));
 
 let wasmPath;
@@ -66,17 +70,25 @@ const script = app.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
 
 const css = (await transform(readFileSync(join(src, "styles.css"), "utf8"), { loader: "css", minify: true })).code;
 
+// The icon goes into the page as a data URL, so that the file needs no other file.
+const favicon = "data:image/svg+xml," + readFileSync(join(site, "favicon.svg"), "utf8")
+  .trim().replace(/>\s+</g, "><").replace(/"/g, "'").replace(/[%#<>]/g, encodeURIComponent);
+
 const template = readFileSync(join(src, "index.html"), "utf8");
-if (!["/* styles */", "/* script */", "{{version}}"].every((p) => template.includes(p))) {
+if (!["/* styles */", "/* script */", "{{version}}", "{{favicon}}"].every((p) => template.includes(p))) {
   throw new Error("index.html is missing a placeholder.");
 }
 // The version of the JavaScript port, shown next to the name.
 const version = JSON.parse(readFileSync(join(here, "..", "js", "package.json"), "utf8")).version;
 const page = template
   .replace("{{version}}", () => version)
+  .replace("{{favicon}}", () => favicon)
   .replace("/* styles */", () => css.trim())
   .replace("/* script */", () => script.trim());
 
-mkdirSync(dirname(out), { recursive: true });
+mkdirSync(hosted, { recursive: true });
 writeFileSync(out, page);
+writeFileSync(join(hosted, "index.html"), page);
+for (const name of ["og.png", "apple-touch-icon.png", "favicon.ico"]) copyFileSync(join(site, name), join(hosted, name));
 console.log(`${out} (${(statSync(out).size / 1024 / 1024).toFixed(2)} MB)`);
+console.log(hosted);
