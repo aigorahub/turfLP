@@ -1123,6 +1123,22 @@ ui.drop.addEventListener("drop", (e) => {
 window.addEventListener("dragover", (e) => e.preventDefault());
 window.addEventListener("drop", (e) => e.preventDefault());
 
+// Theme: light by default; the button switches, and the choice is kept in this browser.
+const themeButton = $<HTMLButtonElement>("theme");
+function showTheme(): void {
+  const dark = document.documentElement.dataset.theme === "dark";
+  themeButton.textContent = dark ? "Light mode" : "Dark mode";
+  themeButton.setAttribute("aria-pressed", String(dark));
+}
+themeButton.addEventListener("click", () => {
+  const dark = document.documentElement.dataset.theme !== "dark";
+  if (dark) document.documentElement.dataset.theme = "dark";
+  else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem("turflp-theme", dark ? "dark" : "light"); } catch { /* storage may be off */ }
+  showTheme();
+});
+showTheme();
+
 buildExamples();
 render();
 void startSolver();

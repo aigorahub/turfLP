@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
+<script>
+// Light is the default. A dark choice made with the theme button is kept in this browser.
+try { if (localStorage.getItem("turflp-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch {}
+</script>
 <title>turfLP dashboard · Aigora</title>
 <meta name="description" content="TURF analysis in your browser. Find the product portfolio that reaches the most respondents. Your data stays on your computer.">
 <link rel="icon" href="favicon.ico" sizes="32x32">
@@ -32,6 +36,7 @@
   </div>
   <span class="brand-note">TURF analysis in your browser</span>
   <p id="solver-status" class="status" aria-live="polite">Loading the solver…</p>
+  <button id="theme" class="top-link theme-toggle" type="button" aria-pressed="false">Dark mode</button>
   <a class="top-link" href="https://github.com/aigorahub/turfLP" target="_blank" rel="noopener">GitHub</a>
 </header>
 

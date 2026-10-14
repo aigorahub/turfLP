@@ -64,6 +64,23 @@ async function session(workers) {
     const card = await page.$eval('meta[property="og:image"]', (e) => e.content);
     check(card === "https://turf.aigora.ai/og.png", `link preview image: ${card}`);
 
+    // Light by default, also with a dark system setting; the button switches and the choice is kept.
+    if (workers) {
+      const theme = () => page.evaluate(() => [document.documentElement.dataset.theme ?? "light",
+        getComputedStyle(document.body).backgroundColor, document.getElementById("theme").textContent]);
+      await page.emulateMedia({ colorScheme: "dark" });
+      const first = await theme();
+      check(first[0] === "light" && first[1] === "rgb(247, 246, 242)", `default theme: ${first}`);
+      await click("#theme");
+      check((await theme())[0] === "dark" && (await theme())[2] === "Light mode", "the theme button does not switch to dark");
+      await page.reload();
+      await wait(() => document.getElementById("solver-status").textContent.startsWith("Solver ready"));
+      check((await theme())[0] === "dark", "the dark choice is not kept");
+      await click("#theme");
+      check((await theme())[0] === "light", "the theme button does not switch back to light");
+      await page.emulateMedia({ colorScheme: "light" });
+    }
+
     // An example, all sizes.
     await clickExample("Ice cream");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
