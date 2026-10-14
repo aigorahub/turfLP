@@ -4,7 +4,9 @@
 import wasmGzipBase64 from "virtual:highs-wasm";
 import workerSource from "virtual:worker-source";
 import type { Criterion, Portfolio } from "../../js/src/index.js";
-import { productBars, reachCurve } from "./charts.js";
+import type { Point, StageInfo, Stop } from "./analysis.js";
+import { contributions } from "./contrib.js";
+import { contributionList, frontierChart, productBars, reachColumns, reachCurve, type Column } from "./charts.js";
 import { DataError, defaultThreshold, parseTable, templateCsv, toReach, type Table } from "./csv.js";
 import { EXAMPLES, exampleTable, resultsCsv, summarize, type Example, type ReachSummary,
          type SizeResult } from "./data.js";
@@ -14,13 +16,12 @@ import type { Reply, Request } from "./worker.js";
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const DEFAULT_MAX_SIZE = 8;
 
-const TIEBREAKS: { key: string; label: string; value: Criterion[] }[] = [
-  { key: "fp", label: "Frequency, then penetration", value: ["frequency", "penetration"] },
-  { key: "pf", label: "Penetration, then frequency", value: ["penetration", "frequency"] },
-  { key: "f", label: "Frequency only", value: ["frequency"] },
-  { key: "p", label: "Penetration only", value: ["penetration"] },
-  { key: "none", label: "None (reach only)", value: [] },
-];
+const CRITERION_LABEL: Record<"reach" | Criterion, string> = {
+  reach: "Reach", frequency: "Frequency", penetration: "Penetration",
+};
+// Seconds for the stage counts and for the trade-off frontier of one size.
+const ANALYSIS_SECONDS = { stages: 15, frontier: 30 };
+const MAX_FRONTIER_POINTS = 40;
 
 // Elements
 
@@ -47,7 +48,8 @@ const ui = {
   sizeFrom: $<HTMLInputElement>("size-from"),
   sizeTo: $<HTMLInputElement>("size-to"),
   sizeHint: $("size-hint"),
-  tiebreak: $<HTMLSelectElement>("tiebreak"),
+  stage2: $<HTMLSelectElement>("stage2"),
+  stage3: $<HTMLSelectElement>("stage3"),
   run: $<HTMLButtonElement>("run"),
   runHint: $("run-hint"),
   results: $("results"),
@@ -85,6 +87,24 @@ interface Run {
   names: string[];
   summary: ReachSummary;
   respondents: number;
+  /** The reach matrix and tie-break of the run, kept for the analysis of its portfolios. */
+  reach: Uint8Array;
+  cols: number;
+  tiebreak: Criterion[];
+  analyses: Map<number, Analysis>;
+}
+
+/** The stages and the trade-off frontier of the portfolio of one size. */
+interface Analysis {
+  id: number;
+  size: number;
+  status: "running" | "done" | "error";
+  stages: StageInfo[] | null;
+  stagesStop: Stop | null;
+  points: Point[];
+  maxFrequency: number | null;
+  frontierStop: Stop | null;
+  message: string | null;
 }
 
 const state = {
@@ -96,9 +116,12 @@ const state = {
   coverError: null as string | null,
   coverId: 0,
   sizesTouched: false,
-  tiebreak: "fp",
+  tiebreak: ["frequency", "penetration"] as Criterion[],
   run: null as Run | null,
   selected: null as number | null,
+  chartMode: "line" as "line" | "columns",
+  /** Index of the selected frontier point, for the size shown. */
+  frontierSelected: null as number | null,
   solver: "loading" as "loading" | "ready" | "failed",
   solverMode: "worker" as "worker" | "page",
 };
@@ -106,7 +129,7 @@ const state = {
 let nextId = 1;
 
 function settingsKey(): string {
-  return `${state.threshold}|${state.tiebreak}`;
+  return `${state.threshold}|${state.tiebreak.join(",")}`;
 }
 
 // Solver
@@ -197,17 +220,21 @@ async function startSolver(): Promise<void> {
   requestCover();
 }
 
+const pageCancelled = new Set<number>();
+
 function send(req: Request): void {
   if (worker) {
     worker.postMessage(req);
   } else if (page) {
+    if (req.type === "cancel") { pageCancelled.add(req.id); return; }
     const mod = page;
     pageQueue = pageQueue.then(() => {
       pageStop = false;
       return mod.handle(req,
         (r) => { setTimeout(() => onReply(r), 0); },
-        // Pause before each size so the page can draw and take a click on Cancel.
-        () => new Promise((res) => setTimeout(() => res(!pageStop), 20)));
+        // Pause before each size or solve so the page can draw and take a click on Cancel.
+        () => new Promise((res) => setTimeout(() => res(!pageStop &&
+          !(req.type === "analyze" && pageCancelled.has(req.id))), 20)));
     });
   }
 }
@@ -220,6 +247,8 @@ function stopSolver(): void {
     state.solver = "loading";
     // Show the loading state now, so Run is disabled until the new worker is ready.
     render();
+    // The analysis in progress stops with the worker; it runs again when asked.
+    for (const a of state.run?.analyses.values() ?? []) if (a.status === "running") state.run!.analyses.delete(a.size);
     startWorker().then(() => {
       state.solver = "ready";
       render();
@@ -259,6 +288,27 @@ function onReply(r: Reply): void {
     render();
     return;
   }
+  const analysis = r.type !== "ready" && r.id !== null
+    ? [...state.run?.analyses.values() ?? []].find((a) => a.id === r.id) : undefined;
+  if (analysis) {
+    if (r.type === "stages") {
+      analysis.stages = r.stages;
+      analysis.stagesStop = r.stop;
+      if (r.stop === "cancelled") analysis.status = "done";
+    } else if (r.type === "point") {
+      analysis.points.push(r.point);
+    } else if (r.type === "frontier") {
+      analysis.points = r.points;
+      analysis.maxFrequency = r.maxFrequency;
+      analysis.frontierStop = r.stop;
+      analysis.status = "done";
+    } else if (r.type === "error") {
+      analysis.status = "error";
+      analysis.message = r.message;
+    }
+    render();
+    return;
+  }
   const run = state.run;
   if (!run || run.status !== "running" || r.type === "ready" || (r.id !== null && r.id !== run.id)) return;
   if (r.type === "start") {
@@ -282,6 +332,7 @@ function onReply(r: Reply): void {
 
 function setData(loaded: Loaded, threshold: number): void {
   if (state.run?.status === "running") stopSolver();
+  cancelAnalyses();
   state.loaded = loaded;
   state.run = null;
   state.selected = null;
@@ -298,6 +349,8 @@ function setData(loaded: Loaded, threshold: number): void {
 function setThreshold(threshold: number): void {
   const t = state.loaded!.table;
   if (state.run?.status === "running") cancelRun();
+  // The run is out of date now; its analysis would delay the new cover.
+  cancelAnalyses();
   state.threshold = threshold;
   state.reach = toReach(t, threshold);
   state.summary = summarize(state.reach, t.rows, t.cols);
@@ -372,16 +425,48 @@ function startRun(): void {
   const range = sizeRange();
   if (state.solver !== "ready" || !state.loaded || !state.reach || !state.summary || "error" in range) return;
   const t = state.loaded.table;
-  const tiebreak = TIEBREAKS.find((x) => x.key === state.tiebreak)!.value;
+  const tiebreak = [...state.tiebreak];
+  cancelAnalyses();
   state.run = {
     id: nextId++, key: settingsKey(), sizes: range.sizes, results: new Map(), status: "running",
     message: null, current: null, currentStart: performance.now(), names: t.names,
     summary: state.summary, respondents: t.rows,
+    reach: state.reach, cols: t.cols, tiebreak, analyses: new Map(),
   };
   state.selected = null;
+  state.frontierSelected = null;
   send({ type: "run", id: state.run.id, sizes: range.sizes, tiebreak,
          matrix: { rows: t.rows, cols: t.cols, data: state.reach, names: t.names } });
   render();
+}
+
+/** Stop the analysis in progress, if any. It runs again when its size is shown. */
+function cancelAnalyses(except?: number): void {
+  const run = state.run;
+  if (!run) return;
+  for (const a of [...run.analyses.values()]) {
+    if (a.status === "running" && a.size !== except) {
+      send({ type: "cancel", id: a.id });
+      run.analyses.delete(a.size);
+    }
+  }
+}
+
+/** Start the analysis of the portfolio of one size of a finished run. */
+function requestAnalysis(run: Run, size: number): void {
+  if (run.status === "running" || state.solver !== "ready") return;
+  // Stop the analysis of another size, also when this size is done already.
+  cancelAnalyses(size);
+  const result = run.results.get(size);
+  if (!result || run.analyses.has(size)) return;
+  const a: Analysis = {
+    id: nextId++, size, status: "running", stages: null, stagesStop: null, points: [],
+    maxFrequency: null, frontierStop: null, message: null,
+  };
+  run.analyses.set(size, a);
+  send({ type: "analyze", id: a.id, products: [...result.portfolio.products], tiebreak: run.tiebreak,
+         seconds: ANALYSIS_SECONDS, maxPoints: MAX_FRONTIER_POINTS,
+         matrix: { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names } });
 }
 
 function cancelRun(): void {
@@ -549,10 +634,16 @@ function renderResults(): void {
     el("h2", "headline-title",
        `${p.size} ${p.size === 1 ? "product reaches" : "products reach"} ${percent(p.reachProp)} of respondents`, head);
     el("p", "headline-products", list(p.names), head);
-    const stats = el("p", "headline-stats", undefined, head);
-    el("span", undefined, `${count(p.reach)} of ${count(p.respondents)} respondents`, stats);
-    el("span", undefined, `Frequency ${count(p.frequency)}`, stats);
-    el("span", undefined, `Penetration ${decimal(p.penetration)}`, stats);
+    const stats = el("dl", "stats", undefined, head);
+    const stat = (label: string, value: string, note: string) => {
+      const d = el("div", "stat", undefined, stats);
+      el("dt", undefined, label, d);
+      el("dd", "stat-value", value, d);
+      el("dd", "stat-note", note, d);
+    };
+    stat("Reach", percent(p.reachProp), `${count(p.reach)} of ${count(p.respondents)} respondents`);
+    stat("Frequency", count(p.frequency), `${decimal(p.frequency / p.respondents)} products per respondent`);
+    stat("Penetration", decimal(p.penetration), "Harmonic mean of product reach");
     if (p.reach === run.summary.reachable) {
       el("p", "muted", "This portfolio reaches every respondent that any product reaches.", head);
     }
@@ -561,23 +652,61 @@ function renderResults(): void {
 
   const curveSection = el("section", "panel-block", undefined, host);
   const curveHead = el("div", "block-head", undefined, curveSection);
-  el("h3", undefined, "Reach by portfolio size", curveHead);
-  el("p", "muted", "Select a point or a row to show that portfolio.", curveHead);
+  const curveTitle = el("div", "block-title", undefined, curveHead);
+  el("h3", undefined, "Reach by portfolio size", curveTitle);
+  el("p", "muted", state.chartMode === "line" ? "Select a point or a row to show that portfolio."
+    : "Each column shows what each product adds to the reach, largest share first.", curveTitle);
+  curveHead.append(segmented("Chart type", [["line", "Line"], ["columns", "Columns"]], state.chartMode, (v) => {
+    state.chartMode = v as typeof state.chartMode;
+    const arrowKey = document.activeElement instanceof HTMLElement && document.activeElement.closest(".segmented");
+    render();
+    // Arrow keys move the focus with the choice.
+    if (arrowKey) (ui.results.querySelector(`.segmented [data-value="${v}"]`) as HTMLElement | null)?.focus();
+  }));
   const curve = el("div", "chart", undefined, curveSection);
-  const draw = () => reachCurve(curve, {
-    sizes: run.sizes,
-    points: done.map((s) => {
-      const p = run.results.get(s)!.portfolio;
-      return { size: s, reach: p.reach, reachProp: p.reachProp, names: p.names };
-    }),
-    respondents: run.respondents,
-    reachable: run.summary.reachable / run.respondents,
-    selected: shown,
-    onSelect: select,
+  const columns: Column[] = done.map((s) => {
+    const p = run.results.get(s)!.portfolio;
+    const matrix = { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names };
+    return { size: s, reach: p.reach, parts: contributions(matrix, [...p.products]).map((c) => ({ name: run.names[c.product], added: c.added })) };
   });
+  const draw = state.chartMode === "line"
+    ? () => reachCurve(curve, {
+        sizes: run.sizes,
+        points: done.map((s) => {
+          const p = run.results.get(s)!.portfolio;
+          return { size: s, reach: p.reach, reachProp: p.reachProp, names: p.names };
+        }),
+        respondents: run.respondents,
+        reachable: run.summary.reachable / run.respondents,
+        selected: shown,
+        onSelect: select,
+      })
+    : () => reachColumns(curve, {
+        sizes: run.sizes, columns, respondents: run.respondents,
+        reachable: run.summary.reachable / run.respondents, selected: shown, onSelect: select,
+      });
   // The host is in the document, so its width is known now.
   draw();
-  lastDraw = draw;
+  const draws = [draw];
+  if (state.chartMode === "columns" && shown !== null) {
+    const key = el("div", "contrib-host", undefined, curveSection);
+    el("h4", "contrib-title", `What each of the ${shown} products adds`, key);
+    contributionList(el("div", undefined, undefined, key), columns.find((c) => c.size === shown)!, run.respondents);
+  }
+
+  if (shown !== null && run.status !== "running") {
+    // A run whose settings changed gets no new analysis; Run again updates it.
+    if (!stale) requestAnalysis(run, shown);
+    const a = run.analyses.get(shown);
+    renderStages(el("section", "panel-block", undefined, host), run, shown, a);
+    const fr = renderFrontier(el("section", "panel-block", undefined, host), run, shown, a);
+    if (fr) draws.push(fr);
+  } else if (run.status === "running") {
+    const wait = el("section", "panel-block", undefined, host);
+    el("h3", undefined, "How the portfolio was chosen", el("div", "block-head", undefined, wait));
+    el("p", "muted", "The stages and the trade-off between reach and frequency appear when the run is done.", wait);
+  }
+  lastDraw = () => draws.forEach((d) => d());
 
   const tableSection = el("section", "panel-block", undefined, host);
   const tableHead = el("div", "block-head", undefined, tableSection);
@@ -617,10 +746,177 @@ function renderResults(): void {
   });
 }
 
+/** A segmented control: radio semantics, one tab stop, arrow keys move and select. */
+function segmented(label: string, options: [string, string][], value: string,
+                   onChange: (value: string) => void): HTMLElement {
+  const group = el("div", "segmented");
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", label);
+  options.forEach(([v, text], k) => {
+    const b = el("button", "segmented-option", text, group);
+    b.type = "button";
+    b.dataset.value = v;
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", String(v === value));
+    b.tabIndex = v === value ? 0 : -1;
+    b.addEventListener("click", () => { if (v !== value) onChange(v); });
+    b.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      onChange(options[(k + step + options.length) % options.length][0]);
+    });
+  });
+  return group;
+}
+
+function formatCriterion(c: "reach" | Criterion, value: number, respondents: number): string {
+  return c === "reach" ? percent(value / respondents) : c === "frequency" ? count(value) : decimal(value);
+}
+
+function portfolios(n: number, atLeast: boolean): string {
+  if (atLeast && n <= 1) return "one or more portfolios";
+  return `${atLeast ? "at least " : ""}${count(n)} ${n === 1 ? "portfolio" : "portfolios"}`;
+}
+
+/** The stages of the optimization, for the portfolio of one size. */
+function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis | undefined): void {
+  const head = el("div", "block-head", undefined, section);
+  const title = el("div", "block-title", undefined, head);
+  el("h3", undefined, "How the portfolio was chosen", title);
+  const order = ["reach", ...run.tiebreak] as ("reach" | Criterion)[];
+  el("p", "muted", order.length === 1
+    ? "One stage: the most reach. Ties on reach are not broken."
+    : `${order.length} stages: the most reach, then ${list(order.slice(1).map((c) => CRITERION_LABEL[c].toLowerCase()))} among the portfolios still tied.`,
+    title);
+  const p = run.results.get(size)!.portfolio;
+  const ol = el("ol", "stages", undefined, section);
+  order.forEach((c, s) => {
+    const info = a?.stages?.[s];
+    const li = el("li", "stage", undefined, ol);
+    const name = el("div", "stage-name", undefined, li);
+    el("span", "stage-number", `Stage ${s + 1}`, name);
+    el("span", "stage-criterion", s === 0 ? "Most reach" : c === "frequency" ? "Most frequency" : "Best penetration", name);
+    const value = c === "reach" ? p.reach : c === "frequency" ? p.frequency : p.penetration;
+    el("div", "stage-value", formatCriterion(c, value, run.respondents), li);
+    const detail = el("div", "stage-detail", undefined, li);
+    if (!info) {
+      el("span", "skeleton", undefined, detail);
+      return;
+    }
+    const tied = info.ties;
+    const prev = s > 0 ? a!.stages![s - 1] : null;
+    if (s === 0) {
+      detail.textContent = tied === 1 && !info.tiesAtLeast
+        ? `No other portfolio of ${size} reaches as many respondents.`
+        : `${portfolios(tied, info.tiesAtLeast)} of ${size} reach ${percent(p.reachProp)}, the most possible.`.replace(/^./, (m) => m.toUpperCase());
+    } else {
+      const among = prev!.ties === 1 && !prev!.tiesAtLeast ? "The one portfolio left" : `Among the ${portfolios(prev!.ties, prev!.tiesAtLeast)} left`;
+      const range = info.worst === null ? "" : Math.abs(info.worst - value) < 1e-9
+        ? `, ${CRITERION_LABEL[c].toLowerCase()} is ${formatCriterion(c, value, run.respondents)} for all of them`
+        : `, ${CRITERION_LABEL[c].toLowerCase()} runs from ${formatCriterion(c, info.worst, run.respondents)} to ${formatCriterion(c, value, run.respondents)}`;
+      const keep = tied === 1 && !info.tiesAtLeast ? "This stage keeps one." : `This stage keeps ${portfolios(tied, info.tiesAtLeast)}.`;
+      detail.textContent = prev!.ties === 1 && !prev!.tiesAtLeast
+        ? `${among} decides the choice; this stage does not change it.`
+        : `${among}${range}. ${keep}`;
+    }
+  });
+  if (a?.stages) {
+    const last = a.stages.at(-1)!;
+    if (last.ties > 1 || last.tiesAtLeast) {
+      el("p", "hint", `${portfolios(last.ties, last.tiesAtLeast)} tie on ${order.length === 1 ? "reach" : "every stage"}. The solver keeps the first one it finds.`.replace(/^./, (m) => m.toUpperCase()), section);
+    }
+  }
+  if (a?.stagesStop && a.stagesStop !== "complete" && a.stagesStop !== "cancelled") {
+    el("p", "hint", a.stagesStop === "time"
+      ? `The count of tied portfolios stopped after ${ANALYSIS_SECONDS.stages} seconds, so the counts are lower bounds.`
+      : "The solver returned an invalid solution, so the counts may be incomplete.", section);
+  }
+  if (a?.status === "error") el("p", "error", a.message ?? "The analysis stopped with an error.", section);
+}
+
+/** The reach and frequency trade-off for one size: a chart and its table. */
+function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysis | undefined): (() => void) | null {
+  const head = el("div", "block-head", undefined, section);
+  const title = el("div", "block-title", undefined, head);
+  el("h3", undefined, `Reach and frequency trade-off for ${size} ${size === 1 ? "product" : "products"}`, title);
+  el("p", "muted", "Each point is a portfolio that no other portfolio beats on both reach and frequency. " +
+    "From the left, each step gives up reach for frequency.", title);
+  const p = run.results.get(size)!.portfolio;
+  if (!a || a.points.length === 0) {
+    const msg = el("p", "muted", undefined, section);
+    if (a?.status === "error") { msg.className = "error"; msg.textContent = a.message ?? "The analysis stopped with an error."; }
+    else if (!a) msg.textContent = "Run again to find the portfolios on the frontier.";
+    else if (a.status === "running") msg.textContent = "Finding the portfolios on the frontier…";
+    else msg.textContent = a.frontierStop === "time"
+      ? `The search stopped after ${ANALYSIS_SECONDS.frontier} seconds before it found a point.`
+      : a.frontierStop === "invalid" ? "The solver returned an invalid solution, so the search stopped."
+      : a.stagesStop === "invalid" || a.stagesStop === "limit" ? "The search did not start, because the stage solves stopped."
+      : "No point was found.";
+    return null;
+  }
+  const pts = a.points;
+  const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, penetration: q.penetration, names: q.products.map((j) => run.names[j]) });
+  const onFrontier = pts.some((q) => q.reach === p.reach && q.frequency === p.frequency);
+  const sel = state.frontierSelected !== null && state.frontierSelected < pts.length ? state.frontierSelected : null;
+  const chart = el("div", "chart", undefined, section);
+  const maxFrequency = a.maxFrequency ?? Math.max(...pts.map((q) => q.frequency));
+  const draw = () => frontierChart(chart, {
+    points: pts.map(named), maxFrequency, respondents: run.respondents,
+    chosen: { reach: p.reach, frequency: p.frequency, penetration: p.penetration, names: p.names },
+    chosenOnFrontier: onFrontier, selected: sel, onSelect: selectFrontier,
+  });
+  draw();
+  const status = a.status === "running" ? `Finding more points… ${pts.length} so far.`
+    : a.frontierStop === "time" ? `The search stopped after ${ANALYSIS_SECONDS.frontier} seconds with ${pts.length} points. The frontier may have more.`
+    : a.frontierStop === "limit" ? `The search stopped at ${pts.length} points. The frontier has more.`
+    : a.frontierStop === "invalid" ? "The solver returned an invalid solution, so the search stopped."
+    : pts.length === 1 ? "One portfolio has both the most reach and the most frequency, so there is no trade-off at this size."
+    : !onFrontier ? "The chosen portfolio has the most reach but is not on the frontier: a portfolio with the same reach has more frequency. Choose frequency for stage 2 to get it."
+    : "";
+  if (status) el("p", a.status === "running" ? "hint live" : "hint", status, section);
+
+  const wrap = el("div", "table-wrap", undefined, section);
+  const table = el("table", "results-table frontier-table", undefined, wrap);
+  const hr = el("tr", undefined, undefined, el("thead", undefined, undefined, table));
+  for (const [text, cls] of [["Reach", "num"], ["Frequency", "num"], ["Penetration", "num"], ["Products", "text"], ["Change from most reach", "text"]]) {
+    el("th", cls, text, hr).scope = "col";
+  }
+  const tbody = el("tbody", undefined, undefined, table);
+  const first = new Set(pts[0].products);
+  pts.forEach((q, i) => {
+    const tr = el("tr", undefined, undefined, tbody);
+    tr.tabIndex = 0;
+    tr.dataset.index = String(i);
+    if (i === sel) { tr.className = "is-selected"; tr.setAttribute("aria-current", "true"); }
+    const reach = el("td", "num", undefined, tr);
+    reach.append(percent(q.reach / run.respondents), " ");
+    el("span", "sub", `(${count(q.reach)})`, reach);
+    el("td", "num", count(q.frequency), tr);
+    el("td", "num", decimal(q.penetration), tr);
+    el("td", "text products", q.products.map((j) => run.names[j]).join(", "), tr);
+    const now = new Set(q.products);
+    const out = pts[0].products.filter((j) => !now.has(j)).map((j) => run.names[j]);
+    const inn = q.products.filter((j) => !first.has(j)).map((j) => run.names[j]);
+    el("td", "text muted", i === 0 ? "Most reach" : `Swaps ${list(out)} for ${list(inn)}`, tr);
+    tr.addEventListener("click", () => selectFrontier(i));
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectFrontier(i); }
+    });
+  });
+  return draw;
+}
+
+/** Select a point of the frontier; select it again to clear. */
+function selectFrontier(index: number): void {
+  state.frontierSelected = state.frontierSelected === index ? null : index;
+  render();
+}
+
 let lastDraw: (() => void) | null = null;
 
 function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
-  const table = el("table", "results-table", undefined, host);
+  const table = el("table", "results-table size-table", undefined, host);
   const thead = el("thead", undefined, undefined, table);
   const hr = el("tr", undefined, undefined, thead);
   const heads: [string, string, string?][] = [
@@ -657,6 +953,7 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
     const p = r.portfolio;
     const prev = run.results.get(s - 1)?.portfolio;
     tr.tabIndex = 0;
+    tr.dataset.size = String(s);
     if (s === shown) tr.className = "is-selected";
     if (s === shown) tr.setAttribute("aria-current", "true");
     el("td", "num", String(s), tr);
@@ -692,22 +989,48 @@ function renderPreview(host: HTMLElement, l: Loaded, summary: ReachSummary): voi
   });
 }
 
-/** Show the portfolio of one size. Keyboard focus stays on the row or point that was used. */
+/** Show the portfolio of one size. */
 function select(size: number): void {
+  if (state.selected !== size) state.frontierSelected = null;
   state.selected = size;
-  const focused = document.activeElement;
-  const wasRow = focused instanceof HTMLTableRowElement;
-  const wasPoint = focused instanceof SVGElement && focused.classList.contains("hit");
   render();
-  if (wasRow) (ui.results.querySelector("tr.is-selected") as HTMLElement | null)?.focus();
-  if (wasPoint) (ui.results.querySelector(`.curve .hit[data-size="${size}"]`) as SVGElement | null)?.focus();
+}
+
+/**
+ * A selector for the focused element of the results, so that focus survives a
+ * render: each render builds the results again, and replies of the solver
+ * render at any time.
+ */
+function focusSelector(): string | null {
+  const f = document.activeElement;
+  if (!(f instanceof Element) || !ui.results.contains(f)) return null;
+  const plot = f.closest("svg")?.classList;
+  if (f.classList.contains("hit") && plot) {
+    const name = ["curve", "columns", "frontier"].find((c) => plot.contains(c));
+    const key = f.hasAttribute("data-size") ? "data-size" : "data-index";
+    return name ? `.${name} .hit[${key}="${f.getAttribute(key)}"]` : null;
+  }
+  if (f instanceof HTMLTableRowElement) {
+    return f.dataset.size ? `.size-table tr[data-size="${f.dataset.size}"]` : `.frontier-table tr[data-index="${f.dataset.index}"]`;
+  }
+  if (f instanceof HTMLElement && f.dataset.value) return `.segmented [data-value="${f.dataset.value}"]`;
+  if (f instanceof HTMLElement && f.dataset.product) return `.bar-row[data-product="${f.dataset.product}"]`;
+  if (f.classList.contains("button-secondary")) return ".button-secondary";
+  return null;
 }
 
 function render(): void {
+  const focus = focusSelector();
   renderStatus();
   renderExamples();
   renderSettings();
   renderResults();
+  restoreFocus(focus);
+}
+
+function restoreFocus(selector: string | null): void {
+  // Without preventScroll, a reply that renders would scroll back to the focused element.
+  if (selector) (ui.results.querySelector(selector) as HTMLElement | SVGElement | null)?.focus({ preventScroll: true });
 }
 
 // Live time of the running size.
@@ -721,16 +1044,28 @@ let lastWidth = 0;
 new ResizeObserver(() => {
   if (ui.results.clientWidth === lastWidth) return;
   lastWidth = ui.results.clientWidth;
+  const focus = focusSelector();
   lastDraw?.();
+  restoreFocus(focus);
 }).observe(ui.results);
 
 // Events
 
-for (const t of TIEBREAKS) {
-  const o = el("option", undefined, t.label, ui.tiebreak);
-  o.value = t.key;
+// Stage 2 and stage 3 make the tie-break. Stage 3 offers the criterion that stage 2 leaves.
+function renderStageOptions(): void {
+  const [second, third] = state.tiebreak;
+  ui.stage2.value = second ?? "none";
+  ui.stage3.replaceChildren();
+  const other = second === "frequency" ? "penetration" : second === "penetration" ? "frequency" : null;
+  if (other) el("option", undefined, CRITERION_LABEL[other], ui.stage3).value = other;
+  el("option", undefined, "None", ui.stage3).value = "none";
+  ui.stage3.value = third ?? "none";
+  ui.stage3.disabled = !other;
 }
-ui.tiebreak.value = state.tiebreak;
+for (const [v, text] of [["frequency", "Frequency"], ["penetration", "Penetration"], ["none", "None"]]) {
+  el("option", undefined, text, ui.stage2).value = v;
+}
+renderStageOptions();
 
 ui.thresholdInput.addEventListener("change", () => {
   const input = ui.thresholdInput;
@@ -738,10 +1073,22 @@ ui.thresholdInput.addEventListener("change", () => {
   if (input.value.trim() === "" || !Number.isFinite(v)) { input.value = String(state.threshold); return; }
   if (v !== state.threshold) setThreshold(v);
 });
-ui.tiebreak.addEventListener("change", () => {
+const otherCriterion = (c: Criterion): Criterion => (c === "frequency" ? "penetration" : "frequency");
+function setTiebreak(tiebreak: Criterion[]): void {
   if (state.run?.status === "running") cancelRun();
-  state.tiebreak = ui.tiebreak.value;
+  cancelAnalyses();
+  state.tiebreak = tiebreak;
+  renderStageOptions();
   render();
+}
+ui.stage2.addEventListener("change", () => {
+  const second = ui.stage2.value as Criterion | "none";
+  // Keep a third stage when there was one.
+  setTiebreak(second === "none" ? [] : state.tiebreak.length === 2 ? [second, otherCriterion(second)] : [second]);
+});
+ui.stage3.addEventListener("change", () => {
+  const second = state.tiebreak[0];
+  if (second) setTiebreak(ui.stage3.value === "none" ? [second] : [second, ui.stage3.value as Criterion]);
 });
 
 for (const input of [ui.sizeFrom, ui.sizeTo]) {

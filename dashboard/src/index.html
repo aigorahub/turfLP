@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>turfLP dashboard</title>
+<title>turfLP dashboard · Aigora</title>
 <meta name="description" content="TURF analysis in your browser. Find the product portfolio that reaches the most respondents. Your data stays on your computer.">
 <link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="icon" type="image/svg+xml" href="{{favicon}}">
@@ -19,15 +19,18 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="turfLP: TURF analysis in your browser. A reach curve that rises to 90.0% with 8 products.">
 <meta name="twitter:card" content="summary_large_image">
+<!-- Fonts: Manrope, Copyright 2018 The Manrope Project Authors; Instrument Serif, Copyright 2022 The Instrument Serif Project Authors. Both under the SIL Open Font License 1.1, https://openfontlicense.org -->
 <style>/* styles */</style>
 </head>
 <body>
 <header class="top">
   <div class="brand">
-    <span class="brand-name">turfLP</span>
+    <img class="brand-mark" src="{{logo}}" alt="" width="30" height="29">
+    <span class="brand-wordmark">aigora</span>
+    <span class="brand-product">turfLP</span>
     <span class="brand-version">{{version}}</span>
-    <span class="brand-note">TURF analysis in your browser</span>
   </div>
+  <span class="brand-note">TURF analysis in your browser</span>
   <p id="solver-status" class="status" aria-live="polite">Loading the solver…</p>
   <a class="top-link" href="https://github.com/aigorahub/turfLP" target="_blank" rel="noopener">GitHub</a>
 </header>
@@ -74,9 +77,13 @@
         <p id="size-hint" class="hint" aria-live="polite"></p>
       </div>
       <div class="field">
-        <label class="field-label" for="tiebreak">Ties on reach</label>
-        <select id="tiebreak" class="input"></select>
-        <p class="hint">Frequency is the sum of the individual reach of the products, and penetration is the harmonic mean of those values.</p>
+        <p class="field-label" id="stages-label">Optimization stages</p>
+        <div class="stage-fields" role="group" aria-labelledby="stages-label">
+          <span class="stage-fixed">Stage 1</span><span>Reach</span>
+          <label for="stage2">Stage 2</label><select id="stage2" class="input"></select>
+          <label for="stage3">Stage 3</label><select id="stage3" class="input"></select>
+        </div>
+        <p class="hint">Each stage breaks the ties of the stages before it. Frequency is the sum of the reach of the products, and penetration is the harmonic mean of those values.</p>
       </div>
     </fieldset>
 

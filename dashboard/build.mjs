@@ -68,14 +68,23 @@ const app = await build({
 // "</script" inside the inlined code would end the script element.
 const script = app.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
 
-const css = (await transform(readFileSync(join(src, "styles.css"), "utf8"), { loader: "css", minify: true })).code;
+// The Aigora fonts go into the page as data URLs, so the page works offline.
+const brand = join(src, "brand");
+const font = (file) => `url(data:font/woff2;base64,${readFileSync(join(brand, file)).toString("base64")}) format("woff2")`;
+const fontFaces =
+  `@font-face{font-family:"Manrope";src:${font("Manrope-Regular.woff2")};font-weight:100 800;font-display:swap}` +
+  `@font-face{font-family:"Instrument Serif";src:${font("InstrumentSerif-Italic.woff2")};font-weight:400;font-style:italic;font-display:swap}`;
+const css = fontFaces +
+  (await transform(readFileSync(join(src, "styles.css"), "utf8"), { loader: "css", minify: true })).code;
 
-// The icon goes into the page as a data URL, so that the file needs no other file.
-const favicon = "data:image/svg+xml," + readFileSync(join(site, "favicon.svg"), "utf8")
+// The icon and the Aigora mark go into the page as data URLs, so that the file needs no other file.
+const svgUrl = (path) => "data:image/svg+xml," + readFileSync(path, "utf8")
   .trim().replace(/>\s+</g, "><").replace(/"/g, "'").replace(/[%#<>]/g, encodeURIComponent);
+const favicon = svgUrl(join(site, "favicon.svg"));
+const logo = svgUrl(join(brand, "aigora-mark-light.svg"));
 
 const template = readFileSync(join(src, "index.html"), "utf8");
-if (!["/* styles */", "/* script */", "{{version}}", "{{favicon}}"].every((p) => template.includes(p))) {
+if (!["/* styles */", "/* script */", "{{version}}", "{{favicon}}", "{{logo}}"].every((p) => template.includes(p))) {
   throw new Error("index.html is missing a placeholder.");
 }
 // The version of the JavaScript port, shown next to the name.
@@ -83,6 +92,7 @@ const version = JSON.parse(readFileSync(join(here, "..", "js", "package.json"), 
 const page = template
   .replace("{{version}}", () => version)
   .replace("{{favicon}}", () => favicon)
+  .replace("{{logo}}", () => logo)
   .replace("/* styles */", () => css.trim())
   .replace("/* script */", () => script.trim());
 
