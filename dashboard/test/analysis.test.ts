@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { beforeAll, describe, expect, it } from "vitest";
 import { loadSolver, turf } from "../../js/src/index.js";
+import { readInput } from "../../js/test/helpers.js";
 import { frontier, stageInfo, TIE_CAP } from "../src/analysis.js";
 import { contributions } from "../src/contrib.js";
 import { toReach } from "../src/csv.js";
@@ -102,6 +103,25 @@ describe("stageInfo", () => {
     expect(s1.ties).toBe(Math.min(atReach.length, TIE_CAP));
     expect(s1.tiesAtLeast).toBe(atReach.length >= TIE_CAP);
     expect(s2.ties).toBe(Math.min(atFreq.length, TIE_CAP));
+  });
+
+  it("counts each of two identical products", async () => {
+    // Columns 0 and 1 reach the same respondents, so {0} and {1} tie on every stage.
+    const a = [[1, 1, 0], [1, 1, 0], [0, 0, 1]];
+    const m = { rows: 3, cols: 3, data: Uint8Array.from(a.flat()), names: ["A", "B", "C"] };
+    const res = await stageInfo(m, [0], ["frequency", "penetration"]);
+    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[2, false], [2, false], [2, false]]);
+  });
+
+  it("counts a penetration tie only within the comparison tolerance", async () => {
+    // Two portfolios have the most reach, with penetration values 2e-13 apart: the solver
+    // tolerance admits both, the comparison tolerance of the package only one.
+    const { a, names } = readInput("near-42000");
+    const m = { rows: a.length, cols: names.length, data: Uint8Array.from(a.flat()), names };
+    const chosen = await turf(a, 2, { tiebreak: ["penetration", "frequency"] });
+    const res = await stageInfo(m, [...chosen.products], ["penetration", "frequency"]);
+    expect(res.stop).toBe("complete");
+    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[2, false], [1, false], [1, false]]);
   });
 
   it("follows the tie-break order", async () => {

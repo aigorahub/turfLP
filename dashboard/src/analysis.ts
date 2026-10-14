@@ -30,6 +30,8 @@ export interface StageInfo {
 }
 
 export const TIE_CAP = 20;
+// Solves per range or count that may return portfolios outside the bounds, before the count stops.
+const MAX_REJECTS = 50;
 const EPS = 2 ** -52;
 
 /** Pause between solves so that a cancel message can arrive. Returns false to stop. */
@@ -50,7 +52,10 @@ class SizeModel {
   readonly reachCoef: Float64Array;
   readonly freqCoef: Float64Array;
   readonly penCoef: Float64Array;
+  /** The model with one order kept for identical products; the frontier and the ranges use it. */
   readonly base: solver.Model;
+  /** The model without those rows, so that counts include each order of identical products. */
+  readonly plain: solver.Model;
   private readonly sums: Int32Array;
 
   constructor(readonly matrix: Matrix, readonly size: number) {
@@ -90,6 +95,7 @@ class SizeModel {
     let model = new solver.Model(nVars, {
       starts, indices: Int32Array.from(idx), values: new Float64Array(idx.length).fill(1), lower, upper,
     });
+    this.plain = model;
     // Identical products: keep one order, as the package does.
     const seen = new Map<string, number>();
     this.colRows.forEach((rs, k) => {
@@ -194,24 +200,46 @@ export async function stageInfo(matrix: Matrix, products: readonly number[], tie
     criterion: c, value: c === "reach" ? p.reach : c === "frequency" ? p.frequency : p.penetration,
     worst: null, ties: 0, tiesAtLeast: true,
   }));
-  // Models with the bounds of the stages before s, and up to s.
+  // Models with the bounds of the stages up to s, with and without the rows for identical products.
+  const penBound = sm.penSum(chosen);
+  const penTol = 16 * sm.size * 2 ** -52 * Math.max(1, Math.abs(penBound));
   const bound = (mod: solver.Model, c: "reach" | Criterion) =>
     c === "reach" ? sm.atLeastReach(mod, p.reach)
-      : c === "frequency" ? sm.atLeastFrequency(mod, p.frequency) : sm.atMostPenSum(mod, sm.penSum(chosen));
+      : c === "frequency" ? sm.atLeastFrequency(mod, p.frequency) : sm.atMostPenSum(mod, penBound);
   const upTo: solver.Model[] = [];
+  const plainUpTo: solver.Model[] = [];
   let mod = sm.base;
-  for (const c of criteria) { mod = bound(mod, c); upTo.push(mod); }
+  let plain = sm.plain;
+  for (const c of criteria) {
+    mod = bound(mod, c); upTo.push(mod);
+    plain = bound(plain, c); plainUpTo.push(plain);
+  }
+  // The solver meets a bound only to within its tolerance, so check each portfolio
+  // exactly, with the comparison tolerance of the package for penetration.
+  const meets = (sel: Uint8Array, through: number) => {
+    const q = sm.point(sel);
+    return criteria.slice(0, through + 1).every((c) =>
+      c === "reach" ? q.reach >= p.reach
+        : c === "frequency" ? q.frequency >= p.frequency : sm.penSum(sel) <= penBound + penTol);
+  };
   let stop: Stop = "complete";
   try {
     // Ranges first: they cost one solve each.
     for (let s = 1; s < criteria.length; s++) {
       await pause(options.between);
       const c = criteria[s];
-      const worst = c === "frequency"
-        ? sm.solve("min", sm.freqCoef, upTo[s - 1], deadline)
-        : sm.solve("max", sm.penCoef, upTo[s - 1], deadline);
-      // The chosen portfolio satisfies the bounds, so a solve that finds none is wrong.
-      if (!worst) throw new Stopped("invalid");
+      let m1 = upTo[s - 1];
+      let worst: Uint8Array | null = null;
+      for (let t = 0; t < MAX_REJECTS && !worst; t++) {
+        const sel = c === "frequency"
+          ? sm.solve("min", sm.freqCoef, m1, deadline)
+          : sm.solve("max", sm.penCoef, m1, deadline);
+        // The chosen portfolio meets the bounds, so a solve that finds none is wrong.
+        if (!sel) throw new Stopped("invalid");
+        if (meets(sel, s - 1)) worst = sel;
+        else m1 = sm.exclude(m1, sel);
+      }
+      if (!worst) throw new Stopped("limit");
       const w = sm.point(worst);
       stages[s].worst = c === "frequency" ? w.frequency : w.penetration;
     }
@@ -223,16 +251,20 @@ export async function stageInfo(matrix: Matrix, products: readonly number[], tie
         stages[s].tiesAtLeast = false;
         continue;
       }
-      let m2 = upTo[s];
+      let m2 = plainUpTo[s];
       let count = 0;
+      let rejects = 0;
       stages[s].tiesAtLeast = true;
-      for (;;) {
-        if (count >= TIE_CAP) break;
+      while (count < TIE_CAP && rejects < MAX_REJECTS) {
         await pause(options.between);
         const sel = sm.solve("min", new Float64Array(sm.base.nVars), m2, deadline);
         if (!sel) { stages[s].tiesAtLeast = false; break; }
-        count++;
-        stages[s].ties = count;
+        if (meets(sel, s)) {
+          count++;
+          stages[s].ties = count;
+        } else {
+          rejects++;
+        }
         m2 = sm.exclude(m2, sel);
       }
       stages[s].ties = Math.max(count, 1);

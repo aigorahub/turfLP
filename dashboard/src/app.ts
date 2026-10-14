@@ -452,10 +452,11 @@ function cancelAnalyses(except?: number): void {
 
 /** Start the analysis of the portfolio of one size of a finished run. */
 function requestAnalysis(run: Run, size: number): void {
-  if (run.status === "running" || state.solver !== "ready" || run.analyses.has(size)) return;
-  const result = run.results.get(size);
-  if (!result) return;
+  if (run.status === "running" || state.solver !== "ready") return;
+  // Stop the analysis of another size, also when this size is done already.
   cancelAnalyses(size);
+  const result = run.results.get(size);
+  if (!result || run.analyses.has(size)) return;
   const a: Analysis = {
     id: nextId++, size, status: "running", stages: null, stagesStop: null, points: [],
     maxFrequency: null, frontierStop: null, message: null,
@@ -1014,7 +1015,8 @@ function render(): void {
   renderExamples();
   renderSettings();
   renderResults();
-  if (focus) (ui.results.querySelector(focus) as HTMLElement | SVGElement | null)?.focus();
+  // Without preventScroll, a reply that renders would scroll back to the focused element.
+  if (focus) (ui.results.querySelector(focus) as HTMLElement | SVGElement | null)?.focus({ preventScroll: true });
 }
 
 // Live time of the running size.
