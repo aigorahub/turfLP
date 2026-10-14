@@ -69,9 +69,9 @@ async function session(workers) {
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
     check(await page.$eval("#size-to", (e) => e.value) === "8", "default sizes are not 1 to 8");
     await click("#run");
-    await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length === 8);
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
     await idle();
-    const reach = await page.$$eval(".results-table tbody tr", (rows) => rows.map((r) => r.children[1].textContent));
+    const reach = await page.$$eval(".size-table tbody tr", (rows) => rows.map((r) => r.children[1].textContent));
     check(JSON.stringify(reach) === JSON.stringify(ICECREAM), `ice cream reach: ${reach}`);
     check(await page.$$eval(".curve .dot", (d) => d.length) === 8, "the reach curve does not have 8 points");
     check(await page.$$eval(".bar-row.is-in", (r) => r.length) === 8, "the bars do not mark 8 products");
@@ -84,6 +84,36 @@ async function session(workers) {
       title: document.querySelector(".headline-title").textContent,
     }));
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
+
+    // The stages and the trade-off of the selected size, then the columns with what each product adds.
+    await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
+                     document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
+    check(stage1 === "72.5%", `stage 1 value: ${stage1}`);
+    const frontierTop = await page.$eval(".frontier-table tbody tr td", (e) => e.textContent);
+    check(frontierTop === "72.5% (87)", `first frontier point: ${frontierTop}`);
+    await click('.segmented [data-value="columns"]');
+    check(await page.$$eval(".columns .column", (c) => c.length) === 8, "the columns chart does not have 8 columns");
+    const parts = await page.$$eval(".contrib li", (rows) => rows.map((r) => r.querySelector(".contrib-total").textContent));
+    check(parts.length === 3 && parts[2] === "72.5%", `contributions of size 3: ${parts}`);
+    await click('.segmented [data-value="line"]');
+
+    // Stage 2 set to none: one stage.
+    await page.evaluate(() => {
+      const s = document.getElementById("stage2");
+      s.value = "none";
+      s.dispatchEvent(new Event("change"));
+    });
+    check(await page.$eval("#stage3", (e) => e.disabled), "stage 3 is not disabled without stage 2");
+    await click("#run");
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
+    await idle();
+    await wait(() => document.querySelectorAll(".stage").length === 1);
+    await page.evaluate(() => {
+      const s = document.getElementById("stage2");
+      s.value = "frequency";
+      s.dispatchEvent(new Event("change"));
+    });
 
     // A worker that fails after it starts is replaced. Run stays disabled until the
     // new worker is ready, and a run after that finishes.
@@ -102,7 +132,7 @@ async function session(workers) {
       await page.evaluate(() => { window.__holdReady = false; window.__release(); });
       await idle();
       await click("#run");
-      await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length === 8);
+      await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
       await idle();
     }
 
@@ -110,10 +140,10 @@ async function session(workers) {
     await clickExample("Cafe");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
     await click("#run");
-    await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length >= 2);
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length >= 2);
     await click("#run");
     await idle();
-    const cancelled = await page.$$eval(".results-table tbody tr", (rows) => rows.filter((r) => r.textContent.includes("Cancelled")).length);
+    const cancelled = await page.$$eval(".size-table tbody tr", (rows) => rows.filter((r) => r.textContent.includes("Cancelled")).length);
     check(cancelled > 0, "Cancel did not stop the run");
     await page.evaluate(() => {
       const to = document.getElementById("size-to");
@@ -121,7 +151,7 @@ async function session(workers) {
       to.dispatchEvent(new Event("input"));
     });
     await click("#run");
-    await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length === 2);
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 2);
     await idle();
 
     // A file with an ID column and ratings, then a file with an error.
@@ -138,7 +168,7 @@ async function session(workers) {
     check(/4 respondents, 3 products, ratings from 1 to 5/.test(info), `file summary: ${info}`);
     check(await page.$eval("#threshold-input", (e) => e.value) === "4", "the threshold is not the top-2 box");
     await click("#run");
-    await wait(() => document.querySelectorAll(".results-table tbody tr[tabindex]").length === 3);
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 3);
     const title = await page.$eval(".headline-title", (e) => e.textContent);
     check(title === "3 products reach 100.0% of respondents", `ratings title: ${title}`);
     await load("bad.csv", "A,B\n1,0\n1,x\n");

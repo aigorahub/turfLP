@@ -3,6 +3,7 @@
 // this script and calls handle() itself.
 
 import { loadSolver, turf, turfMinCover, type Criterion, type Portfolio } from "../../js/src/index.js";
+import { frontier, stageInfo, type Between, type Point, type StageInfo, type Stop } from "./analysis.js";
 
 export interface Matrix {
   rows: number;
@@ -15,7 +16,12 @@ export interface Matrix {
 export type Request =
   | { type: "load"; wasm: Uint8Array }
   | { type: "cover"; id: number; matrix: Matrix }
-  | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[] };
+  | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[] }
+  // The stages and the reach and frequency trade-off of one portfolio of a run.
+  | { type: "analyze"; id: number; matrix: Matrix; products: number[]; tiebreak: Criterion[];
+      seconds?: { stages: number; frontier: number }; maxPoints?: number }
+  // Stop an analysis at its next solve. Handled at once, not in turn.
+  | { type: "cancel"; id: number };
 
 export type Reply =
   | { type: "ready"; seconds: number }
@@ -23,6 +29,9 @@ export type Reply =
   | { type: "start"; id: number; size: number }
   | { type: "size"; id: number; portfolio: Portfolio; seconds: number }
   | { type: "done"; id: number }
+  | { type: "stages"; id: number; stages: StageInfo[]; stop: Stop }
+  | { type: "point"; id: number; point: Point }
+  | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop }
   | { type: "error"; id: number | null; message: string };
 
 function rowsOf(m: Matrix): number[][] {
@@ -41,13 +50,28 @@ function plain(p: Portfolio): Portfolio {
 }
 
 /**
- * Answer one request. `between` runs before each size; on the page it yields
- * so the page can draw, and it returns false to stop.
+ * Answer one request. `between` runs before each size of a run and each solve
+ * of an analysis; it yields so that the page can draw or a cancel can arrive,
+ * and it returns false to stop.
  */
 export async function handle(msg: Request, post: (reply: Reply) => void,
                              between?: () => Promise<boolean>): Promise<void> {
   const id = msg.type === "load" ? null : msg.id;
   try {
+    if (msg.type === "cancel") return;
+    if (msg.type === "analyze") {
+      const options = { between: between as Between | undefined };
+      const st = await stageInfo(msg.matrix, msg.products, msg.tiebreak,
+                                 { ...options, seconds: msg.seconds?.stages });
+      post({ type: "stages", id: msg.id, ...st });
+      if (st.stop === "cancelled") return;
+      const fr = await frontier(msg.matrix, msg.products.length, {
+        ...options, seconds: msg.seconds?.frontier, maxPoints: msg.maxPoints,
+        onPoint: (point) => post({ type: "point", id: msg.id, point }),
+      });
+      post({ type: "frontier", id: msg.id, ...fr });
+      return;
+    }
     if (msg.type === "load") {
       const t0 = performance.now();
       await loadSolver({ wasmBinary: msg.wasm });
@@ -79,7 +103,15 @@ if (typeof WorkerGlobalScope !== "undefined") {
     postMessage: (reply: Reply) => void;
   };
   let queue = Promise.resolve();
+  const cancelled = new Set<number>();
   scope.onmessage = (e) => {
-    queue = queue.then(() => handle(e.data, (r) => scope.postMessage(r)));
+    const msg = e.data;
+    if (msg.type === "cancel") { cancelled.add(msg.id); return; }
+    // A macrotask between solves lets a cancel message in.
+    const between = msg.type === "analyze"
+      ? () => new Promise<boolean>((res) => setTimeout(() => res(!cancelled.has(msg.id)), 0))
+      : undefined;
+    queue = queue.then(() => handle(msg, (r) => scope.postMessage(r), between))
+      .finally(() => { if (msg.type === "analyze") cancelled.delete(msg.id); });
   };
 }

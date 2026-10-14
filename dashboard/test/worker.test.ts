@@ -52,4 +52,26 @@ describe("worker", () => {
     const replies = await ask({ type: "run", id: 4, matrix, sizes: [99], tiebreak: [] });
     expect(replies.at(-1)).toMatchObject({ type: "error", id: 4 });
   });
+
+  it("analyzes a portfolio: stages, then each point, then the frontier", async () => {
+    const replies = await ask({ type: "analyze", id: 5, matrix, products: [0, 4, 7], tiebreak: ["frequency"] });
+    const types = replies.map((r) => r.type);
+    expect(types[0]).toBe("stages");
+    expect(types.at(-1)).toBe("frontier");
+    expect(types.slice(1, -1).every((x) => x === "point")).toBe(true);
+    const stages = replies[0].type === "stages" ? replies[0] : null;
+    expect(stages?.stages.map((s) => s.criterion)).toEqual(["reach", "frequency"]);
+    const fr = replies.at(-1)!;
+    expect(fr.type === "frontier" && fr.points.length).toBe(types.length - 2);
+  });
+
+  it("stops an analysis when asked", async () => {
+    const replies = await ask({ type: "analyze", id: 6, matrix, products: [0, 4, 7], tiebreak: ["frequency"] },
+                              async () => false);
+    expect(replies).toEqual([expect.objectContaining({ type: "stages", id: 6, stop: "cancelled" })]);
+  });
+
+  it("ignores a cancel for no analysis", async () => {
+    expect(await ask({ type: "cancel", id: 99 })).toEqual([]);
+  });
 });

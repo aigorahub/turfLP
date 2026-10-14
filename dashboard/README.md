@@ -2,7 +2,9 @@
 
 A TURF analysis page that runs in the browser. It is one self-contained HTML file: the page, the turfLP JavaScript port, and the HiGHS WebAssembly solver are all inside it. Open the file in a browser; it needs no server and no network connection, and the data does not leave the computer.
 
-The page has the seven example data sets of the package, and it reads your own CSV files. For each portfolio size, it shows the best portfolio, its reach, frequency, and penetration, a reach curve, and the reach of each product, with the selected portfolio marked. The results download as CSV.
+The page has the seven example data sets of the package, and it reads your own CSV files. For each portfolio size, it shows the best portfolio, its reach, frequency, and penetration, and the reach of each product, with the selected portfolio marked. Reach by size shows as a line, or as columns that stack what each product adds to the reach. The results download as CSV.
+
+The settings set the stages of the optimization: stage 1 finds the most reach, and stages 2 and 3 break its ties on frequency, penetration, or both. For the selected size, the page shows how each stage narrows the choice: the range of each criterion among the portfolios still tied, and how many portfolios each stage keeps. It also shows the trade-off between reach and frequency: the portfolios that no other portfolio of that size beats on both, from the most reach to the most frequency. These extra solves run in the worker after the run, with limits of 15 seconds for the stage counts and 30 seconds and 40 points for the trade-off; the page says when a limit stops them. The package itself does not have these functions; they are in `src/analysis.ts`.
 
 ## Build
 
@@ -60,8 +62,10 @@ npm run test:browser   # the built file in headless Chrome, with and without a w
 
 `test:browser` needs Chrome. It looks in the usual places; set `CHROME_PATH` otherwise.
 
-The sources are in `src/`: `app.ts` (the page), `worker.ts` (the solver side), `csv.ts` (reading files), `data.ts` (examples and summaries), `charts.ts` (the reach curve and the product bars), and `index.html` and `styles.css`. `build.mjs` bundles them with esbuild and inlines `highs.wasm`, compressed with gzip, and the icon from `site/favicon.svg`.
+The sources are in `src/`: `app.ts` (the page), `worker.ts` (the solver side), `analysis.ts` (the stage and trade-off solves), `contrib.ts` (what each product adds), `csv.ts` (reading files), `data.ts` (examples and summaries), `charts.ts` (the charts), and `index.html` and `styles.css`. `build.mjs` bundles them with esbuild and inlines `highs.wasm`, compressed with gzip, the icon from `site/favicon.svg`, and the Aigora fonts and mark from `src/brand/`.
+
+The look follows the Aigora product design system: its colors, the Manrope and Instrument Serif fonts, and the ink app bar. The page copies the values it uses into `styles.css`.
 
 ## License
 
-MIT, as the rest of the repository. The example data sets and their licenses are listed in [../js/COPYRIGHTS](../js/COPYRIGHTS); the page shows the source of each public data set.
+MIT, as the rest of the repository. The example data sets and their licenses are listed in [../js/COPYRIGHTS](../js/COPYRIGHTS); the page shows the source of each public data set. The fonts in `src/brand/` are under the SIL Open Font License 1.1 (`Manrope-OFL.txt`, `InstrumentSerif-OFL.txt`). The Aigora name and mark are trademarks of Aigora and are not covered by the MIT License.
