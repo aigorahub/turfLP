@@ -226,11 +226,11 @@ export async function stageInfo(matrix: Matrix, products: readonly number[], tie
   try {
     // Ranges first: they cost one solve each.
     for (let s = 1; s < criteria.length; s++) {
-      await pause(options.between);
       const c = criteria[s];
       let m1 = upTo[s - 1];
       let worst: Uint8Array | null = null;
       for (let t = 0; t < MAX_REJECTS && !worst; t++) {
+        await pause(options.between);
         const sel = c === "frequency"
           ? sm.solve("min", sm.freqCoef, m1, deadline)
           : sm.solve("max", sm.penCoef, m1, deadline);
