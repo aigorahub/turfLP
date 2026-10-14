@@ -20,8 +20,17 @@
   --link: #8b3f30;
   --focus: #344840;
   --series: #c05a45;
-  --ramp-start: #6e2c20;
-  --ramp-end: #e2a797;
+  /* Product colors: the Aigora chart palette in an order whose neighbors pass the
+     color vision checks in both themes. --cat-9 is "other products". */
+  --cat-1: #c05a45;
+  --cat-2: #3b82c4;
+  --cat-3: #d96a01;
+  --cat-4: #9467bd;
+  --cat-5: #4a8c5c;
+  --cat-6: #cd63ad;
+  --cat-7: #ae8200;
+  --cat-8: #0297a5;
+  --cat-9: #8a8f8a;
   --bar-out: #c9ccc6;
   --skeleton: #eae6db;
   --danger: #8b273d;
@@ -59,8 +68,15 @@
   --link: #eda696;
   --focus: #eda696;
   --series: #e98c76;
-  --ramp-start: #f9d5cb;
-  --ramp-end: #7a3427;
+  --cat-1: #e98c76;
+  --cat-2: #83b9e6;
+  --cat-3: #ff7f0e;
+  --cat-4: #9467bd;
+  --cat-5: #88bc96;
+  --cat-6: #e377c2;
+  --cat-7: #ffc000;
+  --cat-8: #17becf;
+  --cat-9: #6e736e;
   --bar-out: #4a4f4a;
   --skeleton: #252925;
   --danger: #f2a8b9;
@@ -428,7 +444,7 @@ input[type="number"].input { width: 5.5rem; }
 .plot .hit { fill: transparent; cursor: pointer; outline: none; }
 .plot .hit:focus-visible { stroke: var(--focus); stroke-width: 2; rx: 6px; }
 .plot .column { transition: opacity 150ms var(--ease); }
-.plot .column.is-dim { opacity: 0.55; }
+.plot .column.is-dim { opacity: 0.72; }
 .plot .column.is-hover { opacity: 1; }
 
 .contrib-host { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }

@@ -28,3 +28,60 @@ export function contributions(matrix: Matrix, products: readonly number[]): { pr
   }
   return out;
 }
+
+/** The respondents each product adds when the products are counted in the given order. */
+export function addedInOrder(matrix: Matrix, ordered: readonly number[]): number[] {
+  const { rows, cols, data } = matrix;
+  const hit = new Uint8Array(rows);
+  return ordered.map((j) => {
+    let gain = 0;
+    for (let i = 0; i < rows; i++) {
+      if (!hit[i] && data[i * cols + j] === 1) { hit[i] = 1; gain++; }
+    }
+    return gain;
+  });
+}
+
+/** Distinct colors for the products; later products share the "other" color. */
+export const PRODUCT_COLORS = 8;
+
+export interface StackPart {
+  /** Product columns of the segment: one, or several for "other". */
+  products: number[];
+  added: number;
+  /** Color slot: 0 to PRODUCT_COLORS - 1, or PRODUCT_COLORS for "other". */
+  slot: number;
+}
+
+/**
+ * The columns of a run, smallest size first. Each product keeps one color
+ * slot in every column: slots go to products in the order they first join a
+ * portfolio as the size grows (within a size, in greedy order). Each column
+ * stacks its products by slot, so a product sits at the same place in the
+ * order everywhere; a segment is the reach the product adds to those below
+ * it. Products past the last color form one "other" segment on top.
+ */
+export function stackColumns(matrix: Matrix, portfolios: readonly { products: readonly number[] }[]):
+    { slots: Map<number, number>; columns: StackPart[][] } {
+  const slots = new Map<number, number>();
+  for (const p of portfolios) {
+    for (const c of contributions(matrix, p.products)) if (!slots.has(c.product)) slots.set(c.product, slots.size);
+  }
+  const columns = portfolios.map((p) => {
+    const ordered = [...p.products].sort((a, b) => slots.get(a)! - slots.get(b)!);
+    const added = addedInOrder(matrix, ordered);
+    const parts: StackPart[] = [];
+    ordered.forEach((j, k) => {
+      const slot = Math.min(slots.get(j)!, PRODUCT_COLORS);
+      const last = parts.at(-1);
+      if (slot === PRODUCT_COLORS && last?.slot === PRODUCT_COLORS) {
+        last.products.push(j);
+        last.added += added[k];
+      } else {
+        parts.push({ products: [j], added: added[k], slot });
+      }
+    });
+    return parts;
+  });
+  return { slots, columns };
+}
