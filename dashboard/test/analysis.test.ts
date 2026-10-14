@@ -179,4 +179,3 @@ describe("stackColumns", () => {
     expect(addedInOrder(matrix, [1, 0])[0]).toBe(measure([1]).reach);
   });
 });
-
