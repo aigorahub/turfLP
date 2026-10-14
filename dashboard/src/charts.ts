@@ -281,20 +281,25 @@ export function reachColumns(host: HTMLElement, o: ColumnsOptions): void {
 /** What each product of one portfolio adds, in the order counted: the key of the columns. */
 export function contributionList(host: HTMLElement, column: Column, respondents: number): void {
   host.replaceChildren();
-  const head = html("div", "contrib-row contrib-head", undefined, host);
-  head.setAttribute("aria-hidden", "true");
-  for (const t of ["", "Product", "Adds (points)", "Reach so far"]) html("span", undefined, t, head);
-  const ol = html("ol", "contrib", undefined, host);
-  ol.setAttribute("aria-label", `What each product of the ${column.size}-product portfolio adds to its reach`);
+  const table = html("table", "contrib", undefined, host);
+  html("caption", "visually-hidden", `What each product of the ${column.size}-product portfolio adds to its reach`, table);
+  const hr = html("tr", undefined, undefined, html("thead", undefined, undefined, table));
+  for (const [t, cls] of [["Product", "name"], ["Adds (points)", "num"], ["Reach so far", "num"]]) {
+    const th = html("th", cls, t, hr);
+    th.scope = "col";
+  }
+  const tbody = html("tbody", undefined, undefined, table);
   let total = 0;
   column.parts.forEach((p, k) => {
     total += p.added;
-    const li = html("li", "contrib-row", undefined, ol);
-    const sw = html("span", "contrib-swatch", undefined, li);
+    const tr = html("tr", undefined, undefined, tbody);
+    const name = html("th", "name", undefined, tr);
+    name.scope = "row";
+    const sw = html("span", "contrib-swatch", undefined, name);
     sw.style.background = stepColor(k, column.parts.length);
-    html("span", "contrib-name", p.name, li);
-    html("span", "contrib-added", `${k === 0 ? "" : "+"}${(100 * p.added / respondents).toFixed(1)}`, li);
-    html("span", "contrib-total", percent(total / respondents), li);
+    name.append(p.name);
+    html("td", "num", `${k === 0 ? "" : "+"}${(100 * p.added / respondents).toFixed(1)}`, tr);
+    html("td", "num muted", percent(total / respondents), tr);
   });
 }
 
@@ -317,10 +322,12 @@ export interface FrontierOptions {
   onSelect: (index: number) => void;
 }
 
-function niceStep(span: number, target: number): number {
+/** A step of 1, 2, or 5 times a power of ten, so labels need no extra digit. */
+function niceStep(span: number, target: number, integer = false): number {
   const raw = span / target;
+  if (integer && raw <= 1) return 1;
   const p = 10 ** Math.floor(Math.log10(raw));
-  return [1, 2, 2.5, 5, 10].map((s) => s * p).find((s) => s >= raw) ?? 10 * p;
+  return [1, 2, 5, 10].map((s) => s * p).find((s) => s >= raw) ?? 10 * p;
 }
 
 /** Reach against frequency for the portfolios on the trade-off frontier of one size. */
@@ -339,7 +346,7 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   const fPad = Math.max(1, (fHi - fLo) * 0.08);
   const rPad = Math.max(0.005, (rHi - rLo) * 0.12);
   // About one frequency label per 90 pixels, so that the labels do not touch.
-  const fStep = niceStep(fHi - fLo + 2 * fPad, Math.max(2, Math.min(6, Math.floor(iw / 90))));
+  const fStep = niceStep(fHi - fLo + 2 * fPad, Math.max(2, Math.min(6, Math.floor(iw / 90))), true);
   const rStep = niceStep(rHi - rLo + 2 * rPad, 4);
   const x0 = Math.floor((fLo - fPad) / fStep) * fStep;
   const x1 = Math.ceil((fHi + fPad) / fStep) * fStep;
@@ -348,9 +355,10 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   const x = (v: number) => m.left + ((v - x0) / (x1 - x0)) * iw;
   const y = (prop: number) => m.top + (1 - (prop - y0) / (y1 - y0)) * ih;
 
+  const digits = Math.max(0, -Math.floor(Math.log10(100 * rStep) + 1e-9));
   for (let v = y0; v <= y1 + 1e-9; v += rStep) {
     svg("line", { x1: m.left, x2: f.width - m.right, y1: y(v), y2: y(v), class: Math.abs(v - y0) < 1e-9 ? "axis" : "grid" }, f.root);
-    text(f.root, m.left - 8, y(v), "tick", `${(100 * v).toFixed(rStep < 0.01 ? 1 : 0)}%`, "end", "middle");
+    text(f.root, m.left - 8, y(v), "tick", `${(100 * v).toFixed(digits)}%`, "end", "middle");
   }
   for (let v = x0; v <= x1 + 1e-9; v += fStep) {
     text(f.root, x(v), f.height - m.bottom + 18, "tick", count(Math.round(v)));
@@ -432,6 +440,7 @@ export function productBars(host: HTMLElement, o: BarsOptions): void {
     const row = html("div", `bar-row${o.selected ? (inPortfolio ? " is-in" : " is-out") : ""}`, undefined, listEl);
     row.setAttribute("role", "listitem");
     row.tabIndex = 0;
+    row.dataset.product = String(j);
     const name = html("span", "bar-name", o.names[j], row);
     name.title = o.names[j];
     const track = html("span", "bar-track", undefined, row);

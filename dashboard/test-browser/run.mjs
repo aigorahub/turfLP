@@ -85,16 +85,20 @@ async function session(workers) {
     }));
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
 
+    // Focus on a product bar survives the renders of the analysis replies.
+    await page.evaluate(() => document.querySelector('.bar-row[data-product="0"]').focus());
     // The stages and the trade-off of the selected size, then the columns with what each product adds.
     await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
                      document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    check(await page.evaluate(() => document.activeElement?.getAttribute("data-product")) === "0",
+          "a solver reply moved the focus from the product bar");
     const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
     check(stage1 === "72.5%", `stage 1 value: ${stage1}`);
     const frontierTop = await page.$eval(".frontier-table tbody tr td", (e) => e.textContent);
     check(frontierTop === "72.5% (87)", `first frontier point: ${frontierTop}`);
     await click('.segmented [data-value="columns"]');
     check(await page.$$eval(".columns .column", (c) => c.length) === 8, "the columns chart does not have 8 columns");
-    const parts = await page.$$eval(".contrib li", (rows) => rows.map((r) => r.querySelector(".contrib-total").textContent));
+    const parts = await page.$$eval(".contrib tbody tr", (rows) => rows.map((r) => r.lastElementChild.textContent));
     check(parts.length === 3 && parts[2] === "72.5%", `contributions of size 3: ${parts}`);
     await click('.segmented [data-value="line"]');
 

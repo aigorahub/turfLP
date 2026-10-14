@@ -349,6 +349,8 @@ function setData(loaded: Loaded, threshold: number): void {
 function setThreshold(threshold: number): void {
   const t = state.loaded!.table;
   if (state.run?.status === "running") cancelRun();
+  // The run is out of date now; its analysis would delay the new cover.
+  cancelAnalyses();
   state.threshold = threshold;
   state.reach = toReach(t, threshold);
   state.summary = summarize(state.reach, t.rows, t.cols);
@@ -693,7 +695,8 @@ function renderResults(): void {
   }
 
   if (shown !== null && run.status !== "running") {
-    requestAnalysis(run, shown);
+    // A run whose settings changed gets no new analysis; Run again updates it.
+    if (!stale) requestAnalysis(run, shown);
     const a = run.analyses.get(shown);
     renderStages(el("section", "panel-block", undefined, host), run, shown, a);
     const fr = renderFrontier(el("section", "panel-block", undefined, host), run, shown, a);
@@ -843,7 +846,13 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
   if (!a || a.points.length === 0) {
     const msg = el("p", "muted", undefined, section);
     if (a?.status === "error") { msg.className = "error"; msg.textContent = a.message ?? "The analysis stopped with an error."; }
-    else msg.textContent = a?.status === "done" ? "No point was found." : "Finding the portfolios on the frontier…";
+    else if (!a) msg.textContent = "Run again to find the portfolios on the frontier.";
+    else if (a.status === "running") msg.textContent = "Finding the portfolios on the frontier…";
+    else msg.textContent = a.frontierStop === "time"
+      ? `The search stopped after ${ANALYSIS_SECONDS.frontier} seconds before it found a point.`
+      : a.frontierStop === "invalid" ? "The solver returned an invalid solution, so the search stopped."
+      : a.stagesStop === "invalid" || a.stagesStop === "limit" ? "The search did not start, because the stage solves stopped."
+      : "No point was found.";
     return null;
   }
   const pts = a.points;
@@ -1005,6 +1014,7 @@ function focusSelector(): string | null {
     return f.dataset.size ? `.size-table tr[data-size="${f.dataset.size}"]` : `.frontier-table tr[data-index="${f.dataset.index}"]`;
   }
   if (f instanceof HTMLElement && f.dataset.value) return `.segmented [data-value="${f.dataset.value}"]`;
+  if (f instanceof HTMLElement && f.dataset.product) return `.bar-row[data-product="${f.dataset.product}"]`;
   if (f.classList.contains("button-secondary")) return ".button-secondary";
   return null;
 }
@@ -1015,8 +1025,12 @@ function render(): void {
   renderExamples();
   renderSettings();
   renderResults();
+  restoreFocus(focus);
+}
+
+function restoreFocus(selector: string | null): void {
   // Without preventScroll, a reply that renders would scroll back to the focused element.
-  if (focus) (ui.results.querySelector(focus) as HTMLElement | SVGElement | null)?.focus({ preventScroll: true });
+  if (selector) (ui.results.querySelector(selector) as HTMLElement | SVGElement | null)?.focus({ preventScroll: true });
 }
 
 // Live time of the running size.
@@ -1030,7 +1044,9 @@ let lastWidth = 0;
 new ResizeObserver(() => {
   if (ui.results.clientWidth === lastWidth) return;
   lastWidth = ui.results.clientWidth;
+  const focus = focusSelector();
   lastDraw?.();
+  restoreFocus(focus);
 }).observe(ui.results);
 
 // Events
@@ -1060,6 +1076,7 @@ ui.thresholdInput.addEventListener("change", () => {
 const otherCriterion = (c: Criterion): Criterion => (c === "frequency" ? "penetration" : "frequency");
 function setTiebreak(tiebreak: Criterion[]): void {
   if (state.run?.status === "running") cancelRun();
+  cancelAnalyses();
   state.tiebreak = tiebreak;
   renderStageOptions();
   render();
