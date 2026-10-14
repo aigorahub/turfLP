@@ -820,7 +820,7 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
   if (a?.stages) {
     const last = a.stages.at(-1)!;
     if (last.ties > 1 || last.tiesAtLeast) {
-      el("p", "hint", `${portfolios(last.ties, last.tiesAtLeast)} tie on every stage. The solver keeps the first one it finds.`.replace(/^./, (m) => m.toUpperCase()), section);
+      el("p", "hint", `${portfolios(last.ties, last.tiesAtLeast)} tie on ${order.length === 1 ? "reach" : "every stage"}. The solver keeps the first one it finds.`.replace(/^./, (m) => m.toUpperCase()), section);
     }
   }
   if (a?.stagesStop && a.stagesStop !== "complete" && a.stagesStop !== "cancelled") {
