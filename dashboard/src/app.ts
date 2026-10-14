@@ -650,7 +650,9 @@ function renderResults(): void {
   }
   if (run.status === "error" && run.message) el("p", "error", run.message, head);
 
-  const curveSection = el("section", "panel-block", undefined, host);
+  // The reach chart and the stages side by side on a wide screen.
+  const split = el("div", "split", undefined, host);
+  const curveSection = el("section", "panel-block", undefined, split);
   const curveHead = el("div", "block-head", undefined, curveSection);
   const curveTitle = el("div", "block-title", undefined, curveHead);
   el("h3", undefined, "Reach by portfolio size", curveTitle);
@@ -685,8 +687,6 @@ function renderResults(): void {
         sizes: run.sizes, columns, respondents: run.respondents,
         reachable: run.summary.reachable / run.respondents, selected: shown, onSelect: select,
       });
-  // The host is in the document, so its width is known now.
-  draw();
   const draws = [draw];
   if (state.chartMode === "columns" && shown !== null) {
     const key = el("div", "contrib-host", undefined, curveSection);
@@ -698,14 +698,16 @@ function renderResults(): void {
     // A run whose settings changed gets no new analysis; Run again updates it.
     if (!stale) requestAnalysis(run, shown);
     const a = run.analyses.get(shown);
-    renderStages(el("section", "panel-block", undefined, host), run, shown, a);
+    renderStages(el("section", "panel-block", undefined, split), run, shown, a);
     const fr = renderFrontier(el("section", "panel-block", undefined, host), run, shown, a);
     if (fr) draws.push(fr);
   } else if (run.status === "running") {
-    const wait = el("section", "panel-block", undefined, host);
+    const wait = el("section", "panel-block", undefined, split);
     el("h3", undefined, "How the portfolio was chosen", el("div", "block-head", undefined, wait));
     el("p", "muted", "The stages and the trade-off between reach and frequency appear when the run is done.", wait);
   }
+  // Draw once both columns of the split row exist, so that the chart gets its final width.
+  draw();
   lastDraw = () => draws.forEach((d) => d());
 
   const tableSection = el("section", "panel-block", undefined, host);

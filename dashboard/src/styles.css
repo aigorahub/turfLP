@@ -183,8 +183,15 @@ fieldset:disabled .field-label, fieldset:disabled .muted { color: var(--ink-2); 
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 1160px;
+  max-width: 1440px;
   min-width: 0;
+}
+
+/* The reach chart and the stages side by side when the results are wide enough. */
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+@media (min-width: 1280px) {
+  .split { grid-template-columns: minmax(0, 7fr) minmax(20rem, 5fr); }
+  .split > :only-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 880px) {
@@ -202,28 +209,26 @@ fieldset:disabled .field-label, fieldset:disabled .muted { color: var(--ink-2); 
 
 .field-label { display: block; font-size: 14px; line-height: 20px; font-weight: 500; margin-bottom: 8px; }
 
-.examples {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 8px;
-}
+.examples { display: grid; gap: 2px; margin: 0 -12px; }
 .example {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
   padding: 8px 12px;
-  border: 1px solid var(--line-strong);
+  border: 0;
   border-radius: 8px;
-  background: var(--surface);
+  background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms var(--ease), background-color 120ms var(--ease);
+  transition: background-color 120ms var(--ease);
 }
 .example:hover { background: var(--hover); }
-.example[aria-pressed="true"] { border-color: var(--ink-3); background: var(--selected); }
-.example-title { font-size: 14px; line-height: 20px; font-weight: 600; }
-.example-size { font-size: 12px; line-height: 18px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.example[aria-pressed="true"] { background: var(--selected); }
+.example[aria-pressed="true"] .example-title { font-weight: 600; }
+.example-title { font-size: 14px; line-height: 20px; font-weight: 500; }
+.example-size { font-size: 12px; line-height: 18px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .drop {
   margin-top: 16px;
@@ -383,6 +388,7 @@ input[type="number"].input { width: 5.5rem; }
 .is-stale .headline, .is-stale .panel-block, .is-stale .warnings { opacity: 0.55; }
 
 .panel-block {
+  container-type: inline-size;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -404,7 +410,7 @@ input[type="number"].input { width: 5.5rem; }
 
 /* Charts */
 
-.chart { position: relative; min-height: 280px; }
+.chart { position: relative; min-height: 240px; }
 .plot { display: block; overflow: visible; }
 .plot .grid { stroke: var(--grid); stroke-width: 1; }
 .plot .axis { stroke: var(--line-strong); stroke-width: 1; }
@@ -469,8 +475,8 @@ input[type="number"].input { width: 5.5rem; }
 .stage-value { font-size: 20px; line-height: 28px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 .stage-detail { font-size: 14px; line-height: 20px; color: var(--ink-3); }
 
-@media (max-width: 640px) {
-  .stages { grid-template-columns: max-content minmax(0, 1fr); }
+@container (max-width: 600px) {
+  .stages { grid-template-columns: minmax(0, 1fr) max-content; }
   .stage-detail { grid-column: 1 / -1; margin-top: 4px; }
 }
 
@@ -525,6 +531,10 @@ input[type="number"].input { width: 5.5rem; }
 
 .bars-host { position: relative; }
 .bars { display: grid; gap: 2px; margin: 0 -8px; }
+@container (min-width: 880px) {
+  .bars { display: block; columns: 2; column-gap: 40px; }
+  .bar-row { break-inside: avoid; margin-bottom: 2px; grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) 3.75rem; }
+}
 .bar-row {
   display: grid;
   grid-template-columns: minmax(6rem, 14rem) minmax(0, 1fr) 3.75rem;

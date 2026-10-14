@@ -334,7 +334,7 @@ function niceStep(span: number, target: number, integer = false): number {
 export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   host.replaceChildren();
   const tooltip = new Tooltip(host);
-  const f = frame(host, "frontier", "Reach and frequency of the portfolios on the frontier", 280,
+  const f = frame(host, "frontier", "Reach and frequency of the portfolios on the frontier", 240,
                   { top: 24, right: 24, bottom: 44, left: 56 });
   const { m, iw, ih } = f;
   const all = [...o.points, o.chosen];
