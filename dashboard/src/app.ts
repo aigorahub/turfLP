@@ -5,7 +5,7 @@ import wasmGzipBase64 from "virtual:highs-wasm";
 import workerSource from "virtual:worker-source";
 import type { Criterion, Portfolio } from "../../js/src/index.js";
 import type { Point, StageInfo, Stop } from "./analysis.js";
-import { contributions } from "./contrib.js";
+import { PRODUCT_COLORS, stackColumns } from "./contrib.js";
 import { contributionList, frontierChart, productBars, reachColumns, reachCurve, type Column } from "./charts.js";
 import { DataError, defaultThreshold, parseTable, templateCsv, toReach, type Table } from "./csv.js";
 import { EXAMPLES, exampleTable, resultsCsv, summarize, type Example, type ReachSummary,
@@ -657,7 +657,7 @@ function renderResults(): void {
   const curveTitle = el("div", "block-title", undefined, curveHead);
   el("h3", undefined, "Reach by portfolio size", curveTitle);
   el("p", "muted", state.chartMode === "line" ? "Select a point or a row to show that portfolio."
-    : "Each column shows what each product adds to the reach, largest share first.", curveTitle);
+    : "Each product keeps one color. A segment is the reach it adds.", curveTitle);
   curveHead.append(segmented("Chart type", [["line", "Line"], ["columns", "Columns"]], state.chartMode, (v) => {
     state.chartMode = v as typeof state.chartMode;
     const arrowKey = document.activeElement instanceof HTMLElement && document.activeElement.closest(".segmented");
@@ -666,11 +666,18 @@ function renderResults(): void {
     if (arrowKey) (ui.results.querySelector(`.segmented [data-value="${v}"]`) as HTMLElement | null)?.focus();
   }));
   const curve = el("div", "chart", undefined, curveSection);
-  const columns: Column[] = done.map((s) => {
-    const p = run.results.get(s)!.portfolio;
-    const matrix = { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names };
-    return { size: s, reach: p.reach, parts: contributions(matrix, [...p.products]).map((c) => ({ name: run.names[c.product], added: c.added })) };
-  });
+  const matrix = { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names };
+  const stacks = stackColumns(matrix, done.map((s) => run.results.get(s)!.portfolio));
+  const columns: Column[] = done.map((s, k) => ({
+    size: s, reach: run.results.get(s)!.portfolio.reach,
+    parts: stacks.columns[k].map((part) => ({
+      name: part.slot === PRODUCT_COLORS
+        ? (part.products.length === 1 ? run.names[part.products[0]] : `${part.products.length} other products`)
+        : run.names[part.products[0]],
+      names: part.products.map((j) => run.names[j]),
+      added: part.added, slot: part.slot,
+    })),
+  }));
   const draw = state.chartMode === "line"
     ? () => reachCurve(curve, {
         sizes: run.sizes,

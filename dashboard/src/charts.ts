@@ -198,8 +198,8 @@ export function reachCurve(host: HTMLElement, o: CurveOptions): void {
 export interface Column {
   size: number;
   reach: number;
-  /** Products in the order they were counted, with the respondents each adds. */
-  parts: { name: string; added: number }[];
+  /** Segments from the bottom, with the respondents each adds and its color slot (8 is "other"). */
+  parts: { name: string; names: string[]; added: number; slot: number }[];
 }
 
 export interface ColumnsOptions {
@@ -211,13 +211,9 @@ export interface ColumnsOptions {
   onSelect: (size: number) => void;
 }
 
-/**
- * Color of the k-th of the n products of a column, in the order counted: the
- * first is the strongest step of the ramp and the last the weakest.
- */
-export function stepColor(k: number, n: number): string {
-  const t = n <= 1 ? 0 : Math.round((100 * k) / (n - 1));
-  return `color-mix(in oklch, var(--ramp-end) ${t}%, var(--ramp-start))`;
+/** Fill of a color slot: one color per product, and slot 8 for the other products. */
+export function slotColor(slot: number): string {
+  return `var(--cat-${slot + 1})`;
 }
 
 /** Reach by size as columns: each column stacks what each product adds to the reach. */
@@ -252,7 +248,7 @@ export function reachColumns(host: HTMLElement, o: ColumnsOptions): void {
         const d = r > 0
           ? `M${x0},${y0 - gap}V${y1 + r}Q${x0},${y1} ${x0 + r},${y1}H${x0 + barW - r}Q${x0 + barW},${y1} ${x0 + barW},${y1 + r}V${y0 - gap}Z`
           : `M${x0},${y0 - gap}V${y1}H${x0 + barW}V${y0 - gap}Z`;
-        svg("path", { d, class: "segment", style: `fill:${stepColor(k, c.parts.length)}` }, g);
+        svg("path", { d, class: "segment", style: `fill:${slotColor(p.slot)}` }, g);
       }
       below = top;
     });
@@ -266,12 +262,11 @@ export function reachColumns(host: HTMLElement, o: ColumnsOptions): void {
     interactive(hit, () => {
       const lines: TipLine[] = [
         { text: `${products(c.size)}: reach ${percent(c.reach / o.respondents)}`, strong: true },
-        ...c.parts.slice(0, 10).map((p, k) => ({
-          text: `${k === 0 ? "" : "+ "}${p.name} ${k === 0 ? percent(p.added / o.respondents) : points(p.added / o.respondents).replace(" points", "")}`,
+        ...c.parts.map((p, k) => ({
+          text: `${k === 0 ? "" : "+ "}${p.names.length > 1 ? list(p.names) : p.name} ${k === 0 ? percent(p.added / o.respondents) : points(p.added / o.respondents).replace(" points", "")}`,
           muted: k > 0,
         })),
       ];
-      if (c.parts.length > 10) lines.push({ text: `and ${c.parts.length - 10} more`, muted: true });
       tooltip.show(lines, x(c.size), y(c.reach / o.respondents));
       g.classList.add("is-hover");
     }, () => { tooltip.hide(); g.classList.remove("is-hover"); }, () => o.onSelect(c.size));
@@ -296,8 +291,8 @@ export function contributionList(host: HTMLElement, column: Column, respondents:
     const name = html("th", "name", undefined, tr);
     name.scope = "row";
     const sw = html("span", "contrib-swatch", undefined, name);
-    sw.style.background = stepColor(k, column.parts.length);
-    name.append(p.name);
+    sw.style.background = slotColor(p.slot);
+    name.append(p.names.length > 1 ? `Other: ${list(p.names)}` : p.name);
     html("td", "num", `${k === 0 ? "" : "+"}${(100 * p.added / respondents).toFixed(1)}`, tr);
     html("td", "num muted", percent(total / respondents), tr);
   });

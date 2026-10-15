@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { loadSolver, turf } from "../../js/src/index.js";
 import { readInput } from "../../js/test/helpers.js";
 import { frontier, stageInfo, TIE_CAP } from "../src/analysis.js";
-import { contributions } from "../src/contrib.js";
+import { addedInOrder, contributions, PRODUCT_COLORS, stackColumns } from "../src/contrib.js";
 import { toReach } from "../src/csv.js";
 import { exampleTable } from "../src/data.js";
 
@@ -145,5 +145,37 @@ describe("contributions", () => {
       expect(parts[0].added).toBe(Math.max(...products.map((j) => measure([j]).reach)));
       for (let i = 1; i < parts.length; i++) expect(parts[i].added).toBeLessThanOrEqual(parts[i - 1].added);
     }
+  });
+});
+
+describe("stackColumns", () => {
+  it("keeps one color slot per product and stacks each column by slot", async () => {
+    const portfolios: Awaited<ReturnType<typeof turf>>[] = [];
+    for (const k of [1, 2, 3, 4, 5]) portfolios.push(await turf(rows, k, { tiebreak: ["frequency", "penetration"] }));
+    const { slots, columns } = stackColumns(matrix, portfolios);
+    // Slots go to products as they first join, so size 1 has slot 0.
+    expect(slots.get(portfolios[0].products[0])).toBe(0);
+    columns.forEach((parts, k) => {
+      expect(parts.reduce((s, p) => s + p.added, 0)).toBe(portfolios[k].reach);
+      const order = parts.map((p) => p.slot);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+      for (const p of parts) expect(slots.get(p.products[0])).toBe(p.slot);
+    });
+  });
+
+  it("puts the products past the last color in one segment on top", () => {
+    // Twelve products, each reaching its own respondent: each size adds one new product.
+    const n = PRODUCT_COLORS + 4;
+    const m = { rows: n, cols: n, data: Uint8Array.from({ length: n * n }, (_, i) => (i % (n + 1) === 0 ? 1 : 0)),
+                names: Array.from({ length: n }, (_, j) => `P${j}`) };
+    const portfolios = Array.from({ length: n }, (_, k) => ({ products: Array.from({ length: k + 1 }, (_, j) => j) }));
+    const last = stackColumns(m, portfolios).columns.at(-1)!;
+    expect(last.length).toBe(PRODUCT_COLORS + 1);
+    expect(last.at(-1)).toEqual({ products: [8, 9, 10, 11], added: 4, slot: PRODUCT_COLORS });
+  });
+
+  it("counts what each product adds in the given order", () => {
+    expect(addedInOrder(matrix, [0, 1]).reduce((a, b) => a + b, 0)).toBe(measure([0, 1]).reach);
+    expect(addedInOrder(matrix, [1, 0])[0]).toBe(measure([1]).reach);
   });
 });
