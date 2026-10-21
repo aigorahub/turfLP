@@ -27,7 +27,7 @@
     {
       "acceptance": [
         {
-          "criterion": "R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R.",
+          "criterion": "R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R, and run_r.R loads the fixed cases and passes fixed into each call.",
           "evidence": "",
           "id": "B2-A1",
           "met": false
@@ -43,6 +43,12 @@
           "evidence": "",
           "id": "B2-A3",
           "met": false
+        },
+        {
+          "criterion": "print() of a portfolio with fixed products shows a Fixed: line with the product names, and no such line without them.",
+          "evidence": "",
+          "id": "B2-A4",
+          "met": false
         }
       ],
       "id": "B2",
@@ -51,13 +57,13 @@
     {
       "acceptance": [
         {
-          "criterion": "Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off.",
+          "criterion": "Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off, and the Python runner loads the fixed cases and passes fixed into each call.",
           "evidence": "",
           "id": "B3-A1",
           "met": false
         },
         {
-          "criterion": "JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off.",
+          "criterion": "JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off, and the JavaScript runner loads the fixed cases and passes fixed into each call.",
           "evidence": "",
           "id": "B3-A2",
           "met": false
@@ -87,9 +93,15 @@
           "met": false
         },
         {
-          "criterion": "npm run typecheck, test, build, and test:browser pass in dashboard/, with a test for a fixed run, fixed stage counts, and a fixed trade-off that ends complete.",
+          "criterion": "npm run typecheck, test, build, and test:browser pass in dashboard/, with a test for a fixed run, fixed stage counts, and a fixed trade-off that ends complete with maxFrequency equal to the fixed reaches plus the largest free reaches.",
           "evidence": "",
           "id": "B4-A3",
+          "met": false
+        },
+        {
+          "criterion": "Loading another data set clears the fixed products, and a threshold change unfixes only the products whose reach becomes zero and says so on the page.",
+          "evidence": "",
+          "id": "B4-A4",
           "met": false
         }
       ],
@@ -105,7 +117,7 @@
           "met": false
         },
         {
-          "criterion": "R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files included.",
+          "criterion": "R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files (python/uv.lock, js and dashboard package-lock.json), python/src/turflp/__init__.py, and README examples included.",
           "evidence": "",
           "id": "B5-A2",
           "met": false
@@ -127,6 +139,18 @@
       "criterion": "Every documented local gate passes on the final head: conformance check and self-test, run_r.R, R CMD check, pytest, js typecheck, test, build, test:conformance, dashboard typecheck, test, build, test:browser.",
       "evidence": "",
       "id": "M-A2",
+      "met": false
+    },
+    {
+      "criterion": "Every GitHub Actions check on the exact final PR head is green, the Python wheel and Next.js example checks included.",
+      "evidence": "",
+      "id": "M-A3",
+      "met": false
+    },
+    {
+      "criterion": "The PR is merged with a merge commit, release v0.3.0 is published on that merge commit with turflp-dashboard.html attached, and the publish-npm and publish-python workflows of the release succeed.",
+      "evidence": "",
+      "id": "M-A4",
       "met": false
     }
   ],

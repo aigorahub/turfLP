@@ -6,8 +6,9 @@ A user can name products that the portfolio must contain ("we must keep
 products 1 and 2"), and the R, Python, and JavaScript solvers and the browser
 dashboard find the best portfolio that contains them. The design below was
 agreed by turf-opus, turf-astra, turf-grok, and turf-agy on 2026-10-21. The
-run ends with all docs current, version 0.3.0 in all three packages, the PR
-merged with a merge commit, and a GitHub release v0.3.0.
+run ends with all docs current, version 0.3.0 in the R, Python, and
+JavaScript packages and the dashboard, the PR merged with a merge commit, and
+a GitHub release v0.3.0 on the merge commit with the dashboard file attached.
 
 ## Scope
 
@@ -60,7 +61,7 @@ merged with a merge commit, and a GitHub release v0.3.0.
 
 | Condition | Message |
 |---|---|
-| `fixed` not a vector of finite whole numbers (JS: TypeError for a non-array or a non-number element) | `` `fixed` must be a vector of whole-number product indices. `` |
+| `fixed` not a vector of finite whole numbers (R `NULL`, an empty vector, Python `()`, and an omitted or `undefined` JS `fixed` mean no fixed products and pass; JS: TypeError for a non-array or a non-number element) | `` `fixed` must be a vector of whole-number product indices. `` |
 | Any index outside the host range (R 1 to cols, Python/JS 0 to cols − 1; covers 0 and negatives in R; never validate with `[`) | `` `fixed` must hold product indices from <lo> to <hi>. `` (RangeError in JS) |
 | Fixed product reaches no respondent | `` Fixed product <name> reaches no respondent. `` |
 | More fixed products than `size` | `` `size` is <size>, but <f> products are fixed. `` |
@@ -176,9 +177,10 @@ B2 and B3).
 ### Batch 2 [B2]: R reference implementation
 
 **Acceptance criteria:**
-- [ ] B2-A1: R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R.
+- [ ] B2-A1: R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R, and run_r.R loads the fixed cases and passes fixed into each call.
 - [ ] B2-A2: testthat covers each new error message and the case of a fixed product that is the later twin of a free product, and R CMD check gives no new NOTE, WARNING, or ERROR.
 - [ ] B2-A3: Calls without fixed give the same results as before (existing tests and fixtures pass unchanged).
+- [ ] B2-A4: print() of a portfolio with fixed products shows a Fixed: line with the product names, and no such line without them.
 
 **Risk:** standard. **Review focus:** symmetry rows, check order, R index
 handling. **Depends on:** B1.
@@ -186,8 +188,8 @@ handling. **Depends on:** B1.
 ### Batch 3 [B3]: Python and JavaScript ports
 
 **Acceptance criteria:**
-- [ ] B3-A1: Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off.
-- [ ] B3-A2: JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off.
+- [ ] B3-A1: Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off, and the Python runner loads the fixed cases and passes fixed into each call.
+- [ ] B3-A2: JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off, and the JavaScript runner loads the fixed cases and passes fixed into each call.
 - [ ] B3-A3: Each port tests each new error message with the exact text and error type.
 
 **Risk:** standard. **Depends on:** B1, B2.
@@ -197,7 +199,8 @@ handling. **Depends on:** B1.
 **Acceptance criteria:**
 - [ ] B4-A1: The dashboard settings let the user fix products, and a run returns portfolios that contain them for every size, with the smallest size at the number of fixed products.
 - [ ] B4-A2: The stage counts, the trade-off, the contributions chart, the table, and the CSV use the fixed products of the run.
-- [ ] B4-A3: npm run typecheck, test, build, and test:browser pass in dashboard/, with a test for a fixed run, fixed stage counts, and a fixed trade-off that ends complete.
+- [ ] B4-A3: npm run typecheck, test, build, and test:browser pass in dashboard/, with a test for a fixed run, fixed stage counts, and a fixed trade-off that ends complete with maxFrequency equal to the fixed reaches plus the largest free reaches.
+- [ ] B4-A4: Loading another data set clears the fixed products, and a threshold change unfixes only the products whose reach becomes zero and says so on the page.
 
 **Risk:** standard. **Review focus:** state handling when data, threshold, or
 fixed change. **Depends on:** B3.
@@ -206,7 +209,7 @@ fixed change. **Depends on:** B3.
 
 **Acceptance criteria:**
 - [ ] B5-A1: README.md, python/README.md, js/README.md, dashboard/README.md, roxygen and man/, and NEWS.md describe fixed products.
-- [ ] B5-A2: R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files included.
+- [ ] B5-A2: R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files (python/uv.lock, js and dashboard package-lock.json), python/src/turflp/__init__.py, and README examples included.
 
 **Risk:** low. **Depends on:** B4.
 
@@ -214,3 +217,5 @@ fixed change. **Depends on:** B3.
 
 - [ ] M-A1: All reviewers report no blocking finding on the cumulative diff at the final head.
 - [ ] M-A2: Every documented local gate passes on the final head: conformance check and self-test, run_r.R, R CMD check, pytest, js typecheck, test, build, test:conformance, dashboard typecheck, test, build, test:browser.
+- [ ] M-A3: Every GitHub Actions check on the exact final PR head is green, the Python wheel and Next.js example checks included.
+- [ ] M-A4: The PR is merged with a merge commit, release v0.3.0 is published on that merge commit with turflp-dashboard.html attached, and the publish-npm and publish-python workflows of the release succeed.

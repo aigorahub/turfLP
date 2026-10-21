@@ -21,7 +21,7 @@ Stop allowed right now: no. Stop only after the release, or on a hard blocker.
 
 ## Current phase
 
-Planning review.
+Planning review, round 2.
 
 ## Next exact action
 
@@ -39,6 +39,6 @@ None.
 
 - `python3 conformance/generate.py --check`; `python3 conformance/test_generate.py`
 - `Rscript conformance/run_r.R`; `R CMD build . && R CMD check --as-cran turfLP_*.tar.gz`
-- Python: `cd python && uv venv && uv pip install -e ".[test]" && .venv/bin/pytest`
+- Python: `cd python && uv sync --locked --extra test && uv run --locked pytest`
 - JS: `cd js && npm ci && npm run typecheck && npm test && npm run build && npm run test:conformance`
-- Dashboard: `cd dashboard && npm ci && npm run typecheck && npm test && npm run build && npm run test:browser`
+- Dashboard (needs `npm ci` in js/ first): `cd dashboard && npm ci && npm run typecheck && npm test && npm run build && npm run test:browser`
