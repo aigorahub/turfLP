@@ -1,0 +1,137 @@
+{
+  "batches": [
+    {
+      "acceptance": [
+        {
+          "criterion": "docs/algorithm.md specifies the fixed argument, the model row, the free-only symmetry rows, the post-solve check, the error table, turf_min_cover and turf_sizes with fixed, and the fixed result field.",
+          "evidence": "",
+          "id": "B1-A1",
+          "met": false
+        },
+        {
+          "criterion": "conformance/generate.py --check passes and test_generate.py passes, with fixed cases for turf, min_cover, and sizes that cover every required case in the design.",
+          "evidence": "",
+          "id": "B1-A2",
+          "met": false
+        },
+        {
+          "criterion": "The expected values of the fixed cases come from exact enumeration over portfolios that contain every fixed product.",
+          "evidence": "",
+          "id": "B1-A3",
+          "met": false
+        }
+      ],
+      "id": "B1",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R.",
+          "evidence": "",
+          "id": "B2-A1",
+          "met": false
+        },
+        {
+          "criterion": "testthat covers each new error message and the case of a fixed product that is the later twin of a free product, and R CMD check gives no new NOTE, WARNING, or ERROR.",
+          "evidence": "",
+          "id": "B2-A2",
+          "met": false
+        },
+        {
+          "criterion": "Calls without fixed give the same results as before (existing tests and fixtures pass unchanged).",
+          "evidence": "",
+          "id": "B2-A3",
+          "met": false
+        }
+      ],
+      "id": "B2",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off.",
+          "evidence": "",
+          "id": "B3-A1",
+          "met": false
+        },
+        {
+          "criterion": "JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off.",
+          "evidence": "",
+          "id": "B3-A2",
+          "met": false
+        },
+        {
+          "criterion": "Each port tests each new error message with the exact text and error type.",
+          "evidence": "",
+          "id": "B3-A3",
+          "met": false
+        }
+      ],
+      "id": "B3",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The dashboard settings let the user fix products, and a run returns portfolios that contain them for every size, with the smallest size at the number of fixed products.",
+          "evidence": "",
+          "id": "B4-A1",
+          "met": false
+        },
+        {
+          "criterion": "The stage counts, the trade-off, the contributions chart, the table, and the CSV use the fixed products of the run.",
+          "evidence": "",
+          "id": "B4-A2",
+          "met": false
+        },
+        {
+          "criterion": "npm run typecheck, test, build, and test:browser pass in dashboard/, with a test for a fixed run, fixed stage counts, and a fixed trade-off that ends complete.",
+          "evidence": "",
+          "id": "B4-A3",
+          "met": false
+        }
+      ],
+      "id": "B4",
+      "status": "pending"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "README.md, python/README.md, js/README.md, dashboard/README.md, roxygen and man/, and NEWS.md describe fixed products.",
+          "evidence": "",
+          "id": "B5-A1",
+          "met": false
+        },
+        {
+          "criterion": "R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files included.",
+          "evidence": "",
+          "id": "B5-A2",
+          "met": false
+        }
+      ],
+      "id": "B5",
+      "status": "pending"
+    }
+  ],
+  "branch": "feat/fixed-products",
+  "master_acceptance": [
+    {
+      "criterion": "All reviewers report no blocking finding on the cumulative diff at the final head.",
+      "evidence": "",
+      "id": "M-A1",
+      "met": false
+    },
+    {
+      "criterion": "Every documented local gate passes on the final head: conformance check and self-test, run_r.R, R CMD check, pytest, js typecheck, test, build, test:conformance, dashboard typecheck, test, build, test:browser.",
+      "evidence": "",
+      "id": "M-A2",
+      "met": false
+    }
+  ],
+  "plan_path": "docs/plans/fixed-products.md",
+  "run_id": "turflp-fixed-products-2026-10-21",
+  "start_head": "06afb81c7c1d9cca7c97137caffe2b3e4d23588e",
+  "work_driver": "host-native"
+}
