@@ -12,7 +12,7 @@ One set of fixtures binds the R, Python, and JavaScript implementations of turfL
 | `manifest.json` | SHA-256 digest, size, origin, and source of every input; case counts; excluded cases with reasons. |
 | `generate.py` | Standard-library Python. Checks the inputs against the manifest, enumerates, and writes `fixtures/`. |
 | `test_generate.py` | Hand-checked tests of the generator. |
-| `fixtures/*.json` | The fixtures (below). |
+| `fixtures/*.json` | The fixtures (below). `fixed.json` holds the fixed-product cases. |
 | `run_r.R` | Runs every fixture against the R package. |
 | `../python/tests/test_conformance.py` | Runs every fixture against the Python package (`pytest`), with presolve on and off. |
 | `../js/scripts/conformance.mjs` | Runs every fixture against the built JavaScript package (`npm run test:conformance`), with presolve on and off. |
@@ -54,6 +54,8 @@ Every fixture file has `schema_version` (1), `kind`, and `cases`. Product indice
 
 **`bounded.json`**: `{"id", "input", "size", "tiebreak", "max_pool", "max_pool_seconds", "warnings", "expected"}`. `max_pool_seconds` is a number or `null` (no limit). These cases test the pool and time limits. A stopped search can still return a full optimum; `expected` holds only the criteria that the limits cannot affect.
 
+**`fixed.json`**: fixed-product cases for the three functions. Every case has `{"id", "function", "input", "fixed"}`, where `function` is `"turf"`, `"min_cover"`, or `"sizes"` and `fixed` is a list of 1-based column indices exactly as the call passes them (some cases repeat an index or list them out of order, and one is empty). The other keys are those of `turf.json` (`size`, `tiebreak`, `expected`), `min_cover.json` (`expected`), or `sizes.json` (`sizes`, `tiebreak`, `expected`). The expected values are the optima over the portfolios that contain every fixed product; for `sizes` with `null`, the sizes are `max(1, f)` to the minimum cover size with the fixed products.
+
 **`format.json`**: `{"value", "text"}`, the `%g` formatting of a time budget in warning texts (`docs/algorithm.md` section 10).
 
 **`comparator.json`**: `{"size", "old", "new", "worse"}`, the comparison rule of `docs/algorithm.md` section 5 for one minimized criterion: `worse` is true when `new > old + 16 * size * epsilon * max(1, |old|)`. The values sit below, at, and one representable double above the threshold.
@@ -73,6 +75,8 @@ Exact fixtures (`turf`, `min_cover`, `sizes`) run with no pool time limit (`max_
 **sizes.** The result has one row per requested size, in order, and each row passes the `turf` rule against its expected row.
 
 **bounded.** The call is made with the given limits. The warnings are exactly `warnings`, in order. Rule 2 holds, and the values in `expected` (the criteria that the limits cannot affect) are equal as in the `turf` rule.
+
+**fixed.** The runner passes `fixed` converted to the host base (Python and JavaScript subtract 1) and applies the rule of the case's `function`. In addition, the result reports `fixed` as the distinct fixed indices in ascending order, and its `products` contain every one of them; for `sizes`, every row does. R `turf_sizes()` returns names, so the R runner checks each row with `turf()` as it does for `sizes.json`.
 
 **format.** The implementation's warning number format of `value` equals `text`.
 

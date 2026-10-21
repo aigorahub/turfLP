@@ -6,7 +6,7 @@ Indices in this document are 1-based, as in R. Python and JavaScript use 0-based
 
 ## 1. Input
 
-Mirrors `as_reach_matrix()` and `check_size()` / `check_tiebreak()`.
+Mirrors `as_reach_matrix()`, `check_size()`, `check_tiebreak()`, and `check_fixed()`.
 
 The reach matrix has one row per respondent and one column per product. Implementations accept the host language's natural tabular forms (R: matrix or data frame; Python: nested lists, NumPy arrays, objects with `to_numpy()` and `columns`; JavaScript: arrays of arrays). Numeric values must be exactly 0 or 1, and logical values must be false or true.
 
@@ -20,7 +20,19 @@ Errors, in this order, with these exact messages:
 | Any value other than 0, 1, false, true | `` `reach` must contain only 0 and 1, or FALSE and TRUE. `` |
 | `size` not a single finite whole number of 1 or more | `` `size` must be a single whole number of 1 or more. `` |
 | `size` larger than the number of products that reach at least one respondent (`m`) | `` `size` is <size>, but only <m> products reach at least one respondent. `` |
+| `fixed` is not a vector of finite whole numbers | `` `fixed` must be a vector of whole-number product indices. `` |
+| An entry of `fixed` is outside the product indices (R 1 to `cols`, Python and JavaScript 0 to `cols − 1`) | `` `fixed` must hold product indices from <lo> to <hi>. `` |
 | No product reaches any respondent (`turf_min_cover`) | `No product reaches any respondent.` |
+| A fixed product reaches no respondent | `Fixed product <name> reaches no respondent.` |
+| `size` smaller than the number of distinct fixed products (`f`) | `` `size` is <size>, but <f> products are fixed. `` |
+
+`fixed` is the set of products that every returned portfolio must contain. It is optional: R `NULL` or an empty vector, Python `None` or an empty sequence, and an omitted, `undefined`, `null`, or empty JavaScript array mean no fixed products, and then every result is as without `fixed`. Indices use the host base, as `products` in the result does (R 1-based, Python and JavaScript 0-based). Duplicates are removed, and the order does not matter. Booleans are not numbers. In R, the checks never index with `[`, so 0 and negative indices fail the range check instead of selecting or dropping columns. In JavaScript, a `fixed` that is not an array, or an entry that is not a number, is a `TypeError`; every other `fixed` error is a `RangeError`. `<name>` is the product name of the first zero-reach entry in the order given.
+
+The checks run in this order:
+
+- `turf()`: the `reach` checks, `size`, then the two `fixed` checks, the zero-reach check, and the `size` against `f` check.
+- `turf_min_cover()`: the `reach` checks, the two `fixed` checks, `No product reaches any respondent.`, then the zero-reach check.
+- `turf_sizes()`: the `reach` checks, then the two `fixed` checks and the zero-reach check, before any solve and also when `sizes` is empty. Each size is then checked as in `turf()`.
 
 Product names come from the column names. When there are none, the names are `P1`, `P2`, and so on (1-based in every language).
 
@@ -32,6 +44,7 @@ Mirrors the start of `turf()`.
 
 - `r_j` is the number of respondents that product `j` reaches (column sum).
 - Candidate products are those with `r_j > 0`, in column order. Other products are never selected.
+- `F` is the set of candidates that are fixed (section 1 makes every fixed product a candidate). The other candidates are free.
 - The model uses only respondents that at least one candidate reaches. Other respondents stay in `respondents` and in the denominator of `reach_prop`.
 - `n` is the number of model respondents and `m` the number of candidates. `a` is the reduced `n` by `m` matrix.
 
@@ -50,7 +63,8 @@ Rows:
 - For each respondent `i`: `z_i + Σ_j a_ij x_j ≥ 1`.
 - Size: `Σ_j x_j = size`.
 - Penetration copy: `p − Σ_j c_j x_j = 0`, with `c_j = max_k(r_k) / r_j` over candidates.
-- Symmetry: when candidate `j` has the same set of reached respondents as an earlier candidate, let `j'` be the latest such earlier candidate and add `x_j' − x_j ≥ 0`. This selects identical products in column order.
+- Fixed: when `F` is not empty, `Σ_{j∈F} x_j = |F|`. With `x_j ≤ 1`, this makes every fixed `x_j` 1, also in the LP relaxation.
+- Symmetry: over the free candidates only, when free candidate `j` has the same set of reached respondents as an earlier free candidate, let `j'` be the latest such earlier free candidate and add `x_j' − x_j ≥ 0`. This selects identical free products in column order. Fixed candidates take no part in these rows: a fixed product is never `j` and never `j'`, so fixing a product never forces its identical twins into the portfolio.
 
 For integer `x`, the smallest feasible `z_i` is 1 when no selected product reaches respondent `i` and 0 otherwise.
 
@@ -86,7 +100,7 @@ Mirrors `next_valid()` and `exclude()`.
 1. If a deadline is set and has passed, return status `time`.
 2. Solve the model for the criterion, with the remaining time as the solver time limit.
 3. Read the model status, not the return code of the call. If the status is infeasible, return status `none`. (With presolve on, HiGHS can report "unbounded or infeasible" for an infeasible model; no model here is unbounded, so the ports treat that status as infeasible.) If it is the time limit, return status `time`.
-4. If the solution is not optimal, or any `x_j` is missing, or the number of `x_j > 0.5` is not `size`, or any `x_j` is more than `1e-6` from 0 or 1: when `previous` is absent (the first stage), raise the error `HiGHS returned an invalid solution in the <criterion> stage.`; otherwise return status `invalid`.
+4. If the solution is not optimal, or any `x_j` is missing, or the number of `x_j > 0.5` is not `size`, or any `x_j` is more than `1e-6` from 0 or 1, or any fixed `x_j` is not above 0.5: when `previous` is absent (the first stage), raise the error `HiGHS returned an invalid solution in the <criterion> stage.`; otherwise return status `invalid`.
 5. `sel` = the candidates with `x_j > 0.5`. If `previous` is absent, or `worse_on_earlier(earlier, sel, previous)` is false, return status `ok` with `sel`.
 6. Otherwise add the no-good row `Σ_{j∈sel} x_j ≤ size − 1` (which excludes exactly `sel`) and repeat.
 
@@ -134,6 +148,7 @@ Mirrors `new_portfolio()`.
 | `frequency` | `Σ r_j` over selected products |
 | `penetration` | `size / Σ (1 / r_j)` over selected products (harmonic mean) |
 | `respondents` | number of rows of the input |
+| `fixed` | the distinct fixed column indices, sorted ascending (R 1-based; Python and JavaScript 0-based); empty when there are none |
 
 ## 10. Warnings
 
@@ -155,13 +170,13 @@ W2, penetration search stopped:
 
 Mirrors `turf_min_cover()`.
 
-Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent, with `x` binary over the candidates. The result is built as in section 9. Implementations must check that the selection covers every model respondent and that every `x_j` is within `1e-6` of 0 or 1, and raise `HiGHS returned an invalid solution in the set cover stage.` when either check fails.
+Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent and, when `F` is not empty, `Σ_{j∈F} x_j = |F|`, with `x` binary over the candidates. The result is the smallest portfolio that contains every fixed product and reaches every reachable respondent. It is built as in section 9. Implementations must check that the selection covers every model respondent, that every `x_j` is within `1e-6` of 0 or 1, and that every fixed `x_j` is above 0.5, and raise `HiGHS returned an invalid solution in the set cover stage.` when a check fails.
 
 ## 12. Portfolio sizes
 
 Mirrors `turf_sizes()`.
 
-`turf_sizes(reach, sizes, tiebreak)` returns one result per size, in the given order. When `sizes` is absent, it is `1 … turf_min_cover(reach).size`.
+`turf_sizes(reach, sizes, tiebreak, fixed)` returns one result per size, in the given order, each from `turf(reach, size, tiebreak, fixed)`. When `sizes` is absent, it is `max(1, f) … turf_min_cover(reach, fixed).size`, with `f` the number of distinct fixed products.
 
 ## 13. Solver settings
 
@@ -194,12 +209,12 @@ R exposes `max_pool` and `max_pool_seconds` as the options `turfLP.max_pool` and
 ### R (reference)
 
 ```r
-turf(reach, size, tiebreak = c("frequency", "penetration"))
-turf_min_cover(reach)
-turf_sizes(reach, sizes = NULL, tiebreak = c("frequency", "penetration"))
+turf(reach, size, tiebreak = c("frequency", "penetration"), fixed = NULL)
+turf_min_cover(reach, fixed = NULL)
+turf_sizes(reach, sizes = NULL, tiebreak = c("frequency", "penetration"), fixed = NULL)
 ```
 
-`turf()` and `turf_min_cover()` return a `turf_portfolio` list with the fields in section 9; `turf_sizes()` returns a data frame with one row per size and the columns `size`, `reach`, `reach_prop`, `frequency`, `penetration`, and `products` (names joined with ", "). Warnings are R warnings.
+`turf()` and `turf_min_cover()` return a `turf_portfolio` list with the fields in section 9 (`fixed` is an integer vector, `integer(0)` when there are none); printing it adds a `Fixed:` line with the fixed product names when there are any; `turf_sizes()` returns a data frame with one row per size and the columns `size`, `reach`, `reach_prop`, `frequency`, `penetration`, and `products` (names joined with ", "). Warnings are R warnings.
 
 ### Python
 
@@ -207,10 +222,11 @@ turf_sizes(reach, sizes = NULL, tiebreak = c("frequency", "penetration"))
 from turflp import turf, turf_min_cover, turf_sizes, Portfolio, TurfWarning
 
 def turf(reach, size: int, tiebreak=("frequency", "penetration"), *,
-         names=None, max_pool: int = 1000, max_pool_seconds: float = 30.0) -> Portfolio: ...
-def turf_min_cover(reach, *, names=None) -> Portfolio: ...
+         names=None, fixed=(), max_pool: int = 1000, max_pool_seconds: float = 30.0) -> Portfolio: ...
+def turf_min_cover(reach, *, names=None, fixed=()) -> Portfolio: ...
 def turf_sizes(reach, sizes=None, tiebreak=("frequency", "penetration"), *,
-               names=None, max_pool: int = 1000, max_pool_seconds: float = 30.0) -> list[Portfolio]: ...
+               names=None, fixed=(), max_pool: int = 1000,
+               max_pool_seconds: float = 30.0) -> list[Portfolio]: ...
 
 @dataclass(frozen=True)
 class Portfolio:
@@ -222,12 +238,14 @@ class Portfolio:
     frequency: int
     penetration: float
     respondents: int
+    fixed: tuple[int, ...] = ()   # 0-based fixed column indices, ascending
 
 class TurfWarning(UserWarning): ...
 ```
 
 - `reach` is a nested list, a NumPy array, or any object with `to_numpy()` and `columns` (for example a pandas data frame). Names come from `names`, else from `columns`, else `P1`, `P2`, ….
 - `tiebreak` is a sequence of strings; an empty sequence means reach only.
+- `fixed` is a sequence of whole numbers (Python or NumPy integers, or floats with no fractional part), or `None`.
 - Warnings are emitted with `warnings.warn(text, TurfWarning)`. `turf_sizes` emits each size's warnings as they occur.
 - Data sets: `turflp.datasets.load(name) -> Dataset`, a named tuple with `columns: tuple[str, ...]` and `values: numpy.ndarray` (integers), plus `names()` listing the seven data sets. The ratings are raw; the thresholds from the R help pages are documented, not applied.
 
@@ -243,6 +261,7 @@ type Criterion = "frequency" | "penetration";
 interface TurfOptions {
   tiebreak?: readonly Criterion[];      // default ["frequency", "penetration"]
   names?: readonly string[];
+  fixed?: readonly number[] | null;     // 0-based column indices; default []
   maxPool?: number;                     // default 1000
   maxPoolSeconds?: number;              // default 30
 }
@@ -256,13 +275,14 @@ interface Portfolio {
   readonly frequency: number;
   readonly penetration: number;
   readonly respondents: number;
+  readonly fixed: readonly number[];    // 0-based, ascending
   readonly warnings: readonly string[];
 }
 
 function loadSolver(options?: { locateFile?: (file: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
                                wasmModule?: WebAssembly.Module }): Promise<void>;
 function turf(reach: ReachMatrix, size: number, options?: TurfOptions): Promise<Portfolio>;
-function turfMinCover(reach: ReachMatrix, options?: { names?: readonly string[] }): Promise<Portfolio>;
+function turfMinCover(reach: ReachMatrix, options?: { names?: readonly string[]; fixed?: readonly number[] | null }): Promise<Portfolio>;
 function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null, options?: TurfOptions): Promise<Portfolio[]>;
 ```
 

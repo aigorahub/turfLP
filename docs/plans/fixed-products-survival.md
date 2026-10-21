@@ -21,11 +21,11 @@ Stop allowed right now: no. Stop only after the release, or on a hard blocker.
 
 ## Current phase
 
-Planning review, round 2.
+B1 review.
 
 ## Next exact action
 
-Send the plan to the three reviewers.
+Send B1 to the reviewers.
 
 ## Deferred hygiene
 

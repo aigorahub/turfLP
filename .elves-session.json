@@ -4,25 +4,25 @@
       "acceptance": [
         {
           "criterion": "docs/algorithm.md specifies the fixed argument, the model row, the free-only symmetry rows, the post-solve check, the error table, turf_min_cover and turf_sizes with fixed, and the fixed result field.",
-          "evidence": "",
+          "evidence": "docs/algorithm.md sections 1, 2, 3, 6, 9, 11, 12, 15 updated (see diff of this commit).",
           "id": "B1-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "conformance/generate.py --check passes and test_generate.py passes, with fixed cases for turf, min_cover, and sizes that cover every required case in the design.",
-          "evidence": "",
+          "evidence": "python3 conformance/generate.py --check: current, fixed.json 155 cases; python3 conformance/test_generate.py: OK (FixedTest added). Cases: identical-300 later twin and twin pair, empty, duplicate and unordered, zero column before (random-r-20, random-r-7, cover-r-22), all candidates fixed, size == |F|, F covers everyone (tie-matrix 2,4,5), tie-breaks on and off, min_cover and sizes with fixed.",
           "id": "B1-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The expected values of the fixed cases come from exact enumeration over portfolios that contain every fixed product.",
-          "evidence": "",
+          "evidence": "generate.py portfolios(mat, k, fixed) enumerates fixed + every (k - |F|)-subset of the free candidates; optimum and min_cover take fixed; FixedTest hand-checks tie-matrix with product 1 fixed.",
           "id": "B1-A3",
-          "met": false
+          "met": true
         }
       ],
       "id": "B1",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [
