@@ -83,7 +83,7 @@ Acceptance criteria:
 ### Batch 7 [B7]: Conditional native HiGHS comparison
 
 Acceptance criteria:
-- [ ] B7-A1: A measured decision to keep WASM or use native HiGHS for named job classes, or B7 is skipped with its measured reason.
+- [x] B7-A1: A measured decision to keep WASM or use native HiGHS for named job classes, or B7 is skipped with its measured reason.
 
 ### Batch 8 [B8]: Docs and version
 
