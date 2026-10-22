@@ -170,15 +170,27 @@ type Sel = Uint8Array; // 0/1 over the candidates
  * `warnings`. The solve itself blocks the JavaScript thread.
  */
 export async function turf(reach: ReachMatrix, size: number, options: TurfOptions = {}): Promise<Portfolio> {
-  const r = asReach(reach, options.names);
+  const r = timed("validate", () => asReach(reach, options.names));
   const tiebreak = checkTiebreak(options.tiebreak);
   checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
   await solver.getSolver();
   return turfSync(r, size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
 }
 
+// Time one phase for solver.trace, when a benchmark has set its sink.
+function timed<T>(phase: string, f: () => T): T {
+  const sink = solver.trace.sink;
+  if (!sink) return f();
+  const t = performance.now();
+  const out = f();
+  sink({ phase, ms: performance.now() - t });
+  return out;
+}
+
 function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknown, maxPool: number,
                   maxPoolSeconds: number): Portfolio {
+  const sink = solver.trace.sink;
+  const t0 = sink ? performance.now() : 0;
   const warnings: string[] = [];
   // Section 2: reduction.
   const prodReach = columnSums(r);
@@ -247,6 +259,9 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknow
     if (prev !== undefined) model = model.addRow([n + prev, n + k], [1, -1], 0, Infinity);
     lastSeen.set(key, k);
   });
+
+  sink?.({ phase: "prepare", ms: performance.now() - t0, rows: model.base.lower.length, cols: nVars,
+           nnz: model.base.starts[model.base.lower.length] });
 
   // Section 4: criteria. `sel` is 0/1 over the candidates.
   const reachValue = (sel: Sel) => {
@@ -392,7 +407,7 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknow
 
   const products: number[] = [];
   selected!.forEach((v, k) => { if (v) products.push(cand[k]); });
-  return portfolio(r, products, warnings, fixed);
+  return timed("result", () => portfolio(r, products, warnings, fixed));
 }
 
 /**

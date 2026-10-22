@@ -14,11 +14,11 @@ Stop allowed right now: no. Stop only after the release and the redeploy, or on 
 
 ## Current phase
 
-Plan delta review (John's additions), then B1.
+B1 review (astra, grok), then B2.
 
 ## Next exact action
 
-Send the John's-additions delta to grok and agy.
+Send B1 to astra and grok.
 
 ## Deferred hygiene
 

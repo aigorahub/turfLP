@@ -145,6 +145,19 @@ export class Model {
   }
 }
 
+/** One timed phase of a solve, for benchmarks. */
+export interface TraceEvent {
+  phase: string;
+  ms: number;
+  stage?: string;
+  rows?: number;
+  cols?: number;
+  nnz?: number;
+}
+// Benchmarks set `trace.sink` to time the phases of each solve. Off by default,
+// so a normal solve does no extra work.
+export const trace: { sink: ((event: TraceEvent) => void) | null } = { sink: null };
+
 export type SolveResult = Float64Array | null | "time" | "invalid";
 
 /**
@@ -158,7 +171,16 @@ export function solve(
 ): SolveResult {
   const h = loadedSolver();
   const n = model.nVars;
+  const sink = trace.sink;
+  let t = sink ? performance.now() : 0;
+  const lap = (phase: string, extra: Partial<TraceEvent> = {}) => {
+    if (!sink) return;
+    const now = performance.now();
+    sink({ phase, ms: now - t, stage, ...extra });
+    t = now;
+  };
   const { starts, indices, values, lower, upper } = model.csr();
+  lap("csr", { rows: lower.length, cols: n, nnz: starts[lower.length] });
   const colUpper = new Float64Array(n).fill(h.infinity);
   const integrality = new Int32Array(n);
   for (const j of binary) {
@@ -181,6 +203,7 @@ export function solve(
       matrix: { format: "csr", numRows: lower.length, numCols: n, starts, indices, values },
       integrality: integrality as unknown as Int32Array,
     });
+    lap("passModel");
     // The WebAssembly build is single-threaded and rejects thread options.
     const options: Record<string, number | string | boolean> = {
       output_flag: false,
@@ -193,6 +216,7 @@ export function solve(
     if (Number.isFinite(timeLimit)) options.time_limit = timeLimit;
     m.options.set(options);
     const result = m.run().modelStatus;
+    lap("run");
     for (const name of OPTION_NAMES) lastOptions[name] = m.options.get(name);
     if (result === status.optimal) return Float64Array.from(m.getSolution().colValue);
     // No model here is unbounded, so "unbounded or infeasible" means infeasible.

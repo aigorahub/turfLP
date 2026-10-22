@@ -32,11 +32,11 @@ The Required-behavior sentence "HiGHS still solves every optimization stage" rea
 ### Batch 1 [B1]: Measure and prove deployment support
 
 Acceptance criteria:
-- [ ] B1-A1: A repeatable benchmark command with frozen inputs (the plan's case list), recorded versions, lock files, and input checksums.
-- [ ] B1-A2: A local baseline table: phase costs (validation, preparation, CSR assembly, passModel, each stage, pool solves, result checks), model rows, columns, and nonzeros, total time, and memory, for every frozen case.
-- [ ] B1-A3: The pinned highs runtime is checked by calls, not types, for row addition and deletion, objective and row-bound changes, option reset, zeroAllClocks, and a MIP start; the result decides B4.
-- [ ] B1-A4: Vercel feasibility in turflp-bench: the example route deployed, worker_threads, WASM loading, and worker termination proved or disproved, and the B6 execution path selected.
-- [ ] B1-A5: The latency budget and memory and queue caps are set from the measurements.
+- [x] B1-A1: A repeatable benchmark command with frozen inputs (the plan's case list), recorded versions, lock files, and input checksums.
+- [x] B1-A2: A local baseline table: phase costs (validation, preparation, CSR assembly, passModel, each stage, pool solves, result checks), model rows, columns, and nonzeros, total time, and memory, for every frozen case.
+- [x] B1-A3: The pinned highs runtime is checked by calls, not types, for row addition and deletion, objective and row-bound changes, option reset, zeroAllClocks, and a MIP start; the result decides B4.
+- [x] B1-A4: Vercel feasibility in turflp-bench: the example route deployed, worker_threads, WASM loading, and worker termination proved or disproved, and the B6 execution path selected.
+- [x] B1-A5: The latency budget and memory and queue caps are set from the measurements.
 
 ### Batch 2 [B2]: Prepare once and bitset kernels
 

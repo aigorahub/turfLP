@@ -4,37 +4,37 @@
       "acceptance": [
         {
           "criterion": "A repeatable benchmark command with frozen inputs (the plan's case list), recorded versions, lock files, and input checksums.",
-          "evidence": "",
+          "evidence": "js/scripts/bench.mjs, 92 frozen cases with checksums; docs/plans/bench-baseline.json; log 2026-10-22.",
           "id": "B1-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "A local baseline table: phase costs (validation, preparation, CSR assembly, passModel, each stage, pool solves, result checks), model rows, columns, and nonzeros, total time, and memory, for every frozen case.",
-          "evidence": "",
+          "evidence": "Baseline table in docs/plans/bench-baseline.json and the log: HiGHS run time dominates; model sizes recorded per case.",
           "id": "B1-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The pinned highs runtime is checked by calls, not types, for row addition and deletion, objective and row-bound changes, option reset, zeroAllClocks, and a MIP start; the result decides B4.",
-          "evidence": "",
+          "evidence": "js/scripts/highs-probe.mjs 9/9 on highs 1.15.3; time_limit reset needs options.reset().",
           "id": "B1-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Vercel feasibility in turflp-bench: the example route deployed, worker_threads, WASM loading, and worker termination proved or disproved, and the B6 execution path selected.",
-          "evidence": "",
+          "evidence": "turflp-bench on Vercel: workers, WASM load, terminate proved; load baseline docs/plans/bench-vercel/load-baseline.jsonl; path: Vercel workers, one solve per instance.",
           "id": "B1-A4",
-          "met": false
+          "met": true
         },
         {
           "criterion": "The latency budget and memory and queue caps are set from the measurements.",
-          "evidence": "",
+          "evidence": "Provisional budgets in the log (10 s p95 inline, 50 s deadline, 1 active + 4 queued, 512 MB); primary workloads named.",
           "id": "B1-A5",
-          "met": false
+          "met": true
         }
       ],
       "id": "B1",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [
