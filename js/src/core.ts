@@ -311,6 +311,7 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknow
         return { status: "invalid" as Status, model: mod };
       };
       if (sol === "invalid") return invalid();
+      const tc = solver.trace.sink ? performance.now() : 0;
       const sel = new Uint8Array(m);
       let count = 0;
       let bad = false;
@@ -321,9 +322,9 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknow
         if (Math.abs(x - sel[k]) > 1e-6) bad = true;
       }
       if (bad || count !== size || fixPos.some((k) => !sel[k])) return invalid();
-      if (previous === null || !worseOnEarlier(earlier, sel, previous, size)) {
-        return { status: "ok", sel, model: mod };
-      }
+      const better = previous === null || !worseOnEarlier(earlier, sel, previous, size);
+      solver.trace.sink?.({ phase: "check", ms: performance.now() - tc });
+      if (better) return { status: "ok", sel, model: mod };
       mod = exclude(mod, sel);
     }
     return { status: "limit", model: mod };

@@ -2,17 +2,20 @@
 // of the built package, with the phase times of solver.trace.
 //
 //   npm run build && node scripts/bench.mjs [--out results.json] [--samples 30]
-//     [--warmups 5] [--budget 60] [--only name,name] [--list]
+//     [--warmups 5] [--budget 60] [--only name,name] [--set reduce=off] [--list]
+//   node scripts/bench.mjs --freeze   (writes scripts/bench-cases.json)
 //
-// --budget caps the measured seconds of one case: a case that reaches it stops
-// early and is marked censored, with its sample count. Results go to --out as
-// JSON, and a table goes to stdout.
+// The cases come from scripts/bench-cases.json, frozen once, so that a fixed
+// set taken from a minimum cover does not change between runs. --budget caps
+// the measured seconds of a case that is not primary: such a case stops early
+// and is marked censored, with its sample count. Primary cases always take
+// every sample. Results go to --out as JSON, and a table goes to stdout.
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { turf, turfMinCover, loadSolver } from "../dist/index.js";
-import { trace } from "../dist/solver.js";
+import { settings, trace } from "../dist/solver.js";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -24,6 +27,16 @@ const WARMUPS = Number(arg("warmups", 5));
 const BUDGET = Number(arg("budget", 60));
 const ONLY = arg("only", null)?.split(",");
 const OUT = arg("out", null);
+// --set name=value,name=value changes solver.settings, to compare variants.
+for (const kv of arg("set", "").split(",").filter(Boolean)) {
+  const [k, v] = kv.split("=");
+  if (!(k in settings)) throw new Error(`unknown setting ${k}`);
+  settings[k] = v;
+}
+const MANIFEST = new URL("./bench-cases.json", import.meta.url);
+// The declared primary workloads of the performance gate (docs/plans/bip-speed-log.md, B1-A5).
+const PRIMARY = ["gen-bench-200x20/k5", "gen-bench-200x40/k3", "cafe/k3", "cafe/k5", "dup-2000x25/k3",
+                 "near-42000/k2/penetration-first"];
 
 const root = new URL("../../conformance/inputs/", import.meta.url);
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex").slice(0, 16);
@@ -101,6 +114,8 @@ async function casesOf(name, input) {
   add(2, DEFAULT, two, "k2/fixed-top2");
   add(5, DEFAULT, two, "k5/fixed-top2");
   if (name === "identical-300") add(2, DEFAULT, [5], "k2/fixed-later-twin");
+  // The near-tie penetration search of the regression fixture.
+  if (name === "near-42000") add(2, ["penetration", "frequency"], [], "k2/penetration-first");
   if (input.a.length <= 2500) {
     const cover = (await turfMinCover(input.a)).products;
     add(cover.length, DEFAULT, [...cover], "cover/fixed-cover");
@@ -122,13 +137,21 @@ const env = {
   turflp: JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version,
   commit: execSync("git rev-parse HEAD").toString().trim(),
   lockfile: sha(readFileSync(new URL("../package-lock.json", import.meta.url))),
-  samples: SAMPLES, warmups: WARMUPS, budget: BUDGET,
+  samples: SAMPLES, warmups: WARMUPS, budget: BUDGET, settings: { ...settings },
 };
-if (args.includes("--list")) {
+if (args.includes("--freeze")) {
+  const cases = [];
   for (const [name, make] of Object.entries(INPUTS)) {
     const input = make();
-    for (const c of await casesOf(name, input)) console.log(c.id, input.checksum);
+    for (const c of await casesOf(name, input)) cases.push({ ...c, checksum: input.checksum, primary: PRIMARY.includes(c.id) });
   }
+  writeFileSync(MANIFEST, JSON.stringify(cases, null, 1) + "\n");
+  console.log(`${cases.length} cases written`);
+  process.exit(0);
+}
+const MANIFEST_CASES = JSON.parse(readFileSync(MANIFEST, "utf8"));
+if (args.includes("--list")) {
+  for (const c of MANIFEST_CASES) console.log(c.id, c.checksum, c.primary ? "primary" : "");
   process.exit(0);
 }
 
@@ -136,7 +159,8 @@ const results = [];
 for (const [name, make] of Object.entries(INPUTS)) {
   if (ONLY && !ONLY.includes(name)) continue;
   const input = make();
-  for (const c of await casesOf(name, input)) {
+  for (const c of MANIFEST_CASES.filter((m) => m.input === name)) {
+    if (c.checksum !== input.checksum) throw new Error(`${c.id}: the input changed (checksum ${input.checksum})`);
     const run = async () => {
       const events = [];
       trace.sink = (e) => events.push(e);
@@ -149,8 +173,8 @@ for (const [name, make] of Object.entries(INPUTS)) {
       return { p, ms, cpuMs: (used.user + used.system) / 1000, events };
     };
     for (let w = 0; w < WARMUPS; w++) await run();
-    const totals = [], cpus = [], phases = {};
-    let solves = 0, first = null, last = null, rss = 0, censored = false;
+    const totals = [], cpus = [], phases = {}, stages = {}, solveCounts = [], poolCounts = [];
+    let first = null, last = null, rss = 0, censored = false;
     const start = performance.now();
     for (let s = 0; s < SAMPLES; s++) {
       const r = await run();
@@ -159,18 +183,30 @@ for (const [name, make] of Object.entries(INPUTS)) {
       const sum = {};
       for (const e of r.events) sum[e.phase] = (sum[e.phase] ?? 0) + e.ms;
       for (const [k, v] of Object.entries(sum)) (phases[k] ??= []).push(v);
-      solves = r.events.filter((e) => e.phase === "run").length;
+      // HiGHS run time by stage; penetration runs after the first are pool solves.
+      const byStage = {};
+      let pen = 0;
+      for (const e of r.events.filter((x) => x.phase === "run")) {
+        const key = e.stage === "penetration" && pen++ > 0 ? "penetration pool" : e.stage;
+        byStage[key] = (byStage[key] ?? 0) + e.ms;
+      }
+      for (const [k, v] of Object.entries(byStage)) (stages[k] ??= []).push(v);
+      solveCounts.push(r.events.filter((e) => e.phase === "run").length);
+      poolCounts.push(Math.max(0, pen - 1));
       first ??= r.events.find((e) => e.phase === "csr");
       last = r.p;
       rss = Math.max(rss, process.memoryUsage().rss);
-      if ((performance.now() - start) / 1000 > BUDGET && s + 1 < SAMPLES) { censored = true; break; }
+      if (!c.primary && (performance.now() - start) / 1000 > BUDGET && s + 1 < SAMPLES) { censored = true; break; }
     }
     const row = {
       id: c.id, input: name, checksum: input.checksum, size: c.size, tiebreak: c.tiebreak, fixed: c.fixed,
       respondents: input.a.length, products: input.a[0].length,
       total: stats(totals), cpu: stats(cpus),
+      primary: c.primary,
       phases: Object.fromEntries(Object.entries(phases).map(([k, v]) => [k, stats(v).median])),
-      solves, model: first && { rows: first.rows, cols: first.cols, nnz: first.nnz },
+      stages: Object.fromEntries(Object.entries(stages).map(([k, v]) => [k, stats(v).median])),
+      solves: stats(solveCounts).median, poolSolves: stats(poolCounts).median,
+      model: first && { rows: first.rows, cols: first.cols, nnz: first.nnz },
       rssMB: Math.round(rss / 2 ** 20), censored,
       result: { products: last.products, reach: last.reach, frequency: last.frequency,
                 penetration: last.penetration, warnings: last.warnings.length },
@@ -179,8 +215,9 @@ for (const [name, make] of Object.entries(INPUTS)) {
     const ph = row.phases;
     console.log([row.id.padEnd(36), `n=${row.total.n}${censored ? "*" : ""}`,
       `median ${row.total.median.toFixed(1)} ms`, `p95 ${row.total.p95.toFixed(1)}`,
-      `solves ${solves}`, `model ${row.model?.rows}x${row.model?.cols}/${row.model?.nnz}`,
-      `prep ${(ph.prepare ?? 0).toFixed(1)} csr ${(ph.csr ?? 0).toFixed(1)} pass ${(ph.passModel ?? 0).toFixed(1)} run ${(ph.run ?? 0).toFixed(1)}`,
+      `solves ${row.solves} pool ${row.poolSolves}`, `model ${row.model?.rows}x${row.model?.cols}/${row.model?.nnz}`,
+      `prep ${(ph.prepare ?? 0).toFixed(1)} csr ${(ph.csr ?? 0).toFixed(1)} pass ${(ph.passModel ?? 0).toFixed(1)} run ${(ph.run ?? 0).toFixed(1)} check ${(ph.check ?? 0).toFixed(1)}`,
+      Object.entries(row.stages).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(" "),
       `rss ${row.rssMB} MB`].join("  "));
   }
 }
