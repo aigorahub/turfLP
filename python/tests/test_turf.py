@@ -154,6 +154,7 @@ def test_bad_input_gives_clear_errors():
 def test_fixed_products_give_exact_errors_in_order():
     type_text = "`fixed` must be a vector of whole-number product indices."
     for bad, err in (("1", TypeError), ([True], TypeError), (["1"], TypeError), (3, TypeError),
+                     ({0, 1}, TypeError),
                      ([1.5], ValueError), ([math.nan], ValueError), ([math.inf], ValueError)):
         with pytest.raises(err) as e:
             turf(TIE, 2, fixed=bad)

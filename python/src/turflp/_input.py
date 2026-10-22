@@ -83,7 +83,8 @@ def check_fixed(fixed, cols):
     so that the zero-reach check names the first bad one."""
     if fixed is None:
         return []
-    if isinstance(fixed, (str, bytes)):
+    # A set has no order, so the zero-reach error could name either of two products.
+    if isinstance(fixed, (str, bytes, set, frozenset, dict)):
         raise TypeError("`fixed` must be a vector of whole-number product indices.")
     try:
         fixed = list(fixed)

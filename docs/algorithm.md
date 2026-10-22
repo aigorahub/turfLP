@@ -245,7 +245,7 @@ class TurfWarning(UserWarning): ...
 
 - `reach` is a nested list, a NumPy array, or any object with `to_numpy()` and `columns` (for example a pandas data frame). Names come from `names`, else from `columns`, else `P1`, `P2`, ….
 - `tiebreak` is a sequence of strings; an empty sequence means reach only.
-- `fixed` is a sequence of whole numbers (Python or NumPy integers, or floats with no fractional part), or `None`.
+- `fixed` is a sequence or NumPy array of whole numbers (Python or NumPy integers, or floats with no fractional part), or `None`. A set is rejected, because it has no order.
 - Warnings are emitted with `warnings.warn(text, TurfWarning)`. `turf_sizes` emits each size's warnings as they occur.
 - Data sets: `turflp.datasets.load(name) -> Dataset`, a named tuple with `columns: tuple[str, ...]` and `values: numpy.ndarray` (integers), plus `names()` listing the seven data sets. The ratings are raw; the thresholds from the R help pages are documented, not applied.
 
