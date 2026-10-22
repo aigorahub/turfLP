@@ -22,6 +22,7 @@ Complete results (no warnings) are kept in a cache of at most 16 MB per instance
 | 503 | One solve is running and 4 are waiting. The response has `Retry-After: 1`. |
 | 504 | The request passed its 50-second deadline. |
 | 500 | The solver failed (an invalid HiGHS solution, or the worker ended). |
+| 499 | The client aborted the request while it waited; no client reads this answer. |
 
 The limits are per instance. A limit for the whole service needs the platform's rate limits or a shared store.
 

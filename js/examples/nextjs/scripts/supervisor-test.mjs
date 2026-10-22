@@ -96,6 +96,11 @@ await check("cache keys: fixed sets as the package reads them; every other field
   assert.equal(cacheKey({ ...base, fixed: [1, 0, 1] }), cacheKey({ ...base, fixed: [0, 1] }));
   // null is reach only; an omitted tiebreak is frequency then penetration.
   assert.notEqual(cacheKey({ ...base, tiebreak: null }), k);
+  // No given value, valid or not, shares the key of an omitted one.
+  for (const v of [{ omitted: true }, [false], { omitted: true, v: null }]) {
+    assert.notEqual(cacheKey({ ...base, tiebreak: v }), k, JSON.stringify(v));
+    assert.notEqual(cacheKey({ ...base, names: v }), k, JSON.stringify(v));
+  }
   for (const change of [{ version: "2" }, { reach: [[1, 0], [1, 1]] }, { size: 2 }, { fixed: [0] },
                         { tiebreak: ["penetration"] }, { names: ["a", "b"] }]) {
     assert.notEqual(cacheKey({ ...base, ...change }), k, JSON.stringify(change));

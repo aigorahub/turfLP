@@ -14,8 +14,9 @@ export interface CacheKeyInput {
 }
 
 // JSON writes an omitted value as null; the package reads an omitted tiebreak
-// as frequency then penetration and null as reach only.
-const OMITTED = { omitted: true };
+// as frequency then penetration and null as reach only. [false] and [true, v]
+// keep every omitted value apart from every given one, whatever v is.
+const given = (v: unknown) => (v === undefined ? [false] : [true, v]);
 
 /**
  * Omitted, null, and empty fixed sets are one key; a list of whole numbers is
@@ -27,7 +28,6 @@ export function cacheKey(k: CacheKeyInput): string {
   if (Array.isArray(fixed) && fixed.every((j) => Number.isInteger(j))) {
     fixed = [...new Set(fixed as number[])].sort((a, b) => a - b);
   }
-  const given = (v: unknown) => (v === undefined ? OMITTED : v);
   const text = JSON.stringify([k.version, k.reach, k.size, fixed, given(k.tiebreak), given(k.names)]);
   return createHash("sha256").update(text).digest("hex");
 }
