@@ -277,9 +277,13 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
                    value: (sel) => fsum(Array.from(sel, (v, k) => (v ? penCoef[k] : 0))) },
   };
 
-  const addBound = (mod: solver.Model, obj: Obj, rhs: number) =>
-    obj.direction === "min" ? mod.addRow(obj.row[0], obj.row[1], -Infinity, rhs)
-                            : mod.addRow(obj.row[0], obj.row[1], rhs, Infinity);
+  const addBound = (mod: solver.Model, obj: Obj, rhs: number) => {
+    // With no coverage row left, the reach row is the constant 0: a bound that 0
+    // meets is left out; any other stays, and the model is infeasible.
+    if (obj.row[0].length === 0 && (obj.direction === "min" ? 0 <= rhs : 0 >= rhs)) return mod;
+    return obj.direction === "min" ? mod.addRow(obj.row[0], obj.row[1], -Infinity, rhs)
+                                   : mod.addRow(obj.row[0], obj.row[1], rhs, Infinity);
+  };
   const exclude = (mod: solver.Model, sel: Sel) => {
     const ix: number[] = [];
     sel.forEach((v, k) => { if (v) ix.push(n + k); });
@@ -337,6 +341,44 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
                   `optimal on ${middle} may not be optimal on ${stage}.`);
   };
 
+  // A stage skipped at a proved bound (John's additions, docs/plans/bip-speed.md):
+  // reach, when a greedy portfolio of exactly `size` candidates with every
+  // fixed product reaches every model respondent; frequency, when the selection
+  // entering the stage, after every earlier bound, has the largest frequency
+  // that any portfolio with the fixed products can have.
+  const greedy = (): Sel => {
+    const sel = new Uint8Array(m);
+    const hit = new Uint8Array(n);
+    const take = (k: number) => { sel[k] = 1; for (const g of groups.colGroups[k]) hit[g] = 1; };
+    for (const k of fixPos) take(k);
+    for (let left = size - fixPos.length; left > 0; left--) {
+      let best = -1;
+      let bestGain = -1;
+      for (let k = 0; k < m; k++) {
+        if (sel[k]) continue;
+        let gain = 0;
+        for (const g of groups.colGroups[k]) if (!hit[g]) gain += groups.weight[g];
+        if (gain > bestGain) { best = k; bestGain = gain; }
+      }
+      take(best);
+    }
+    return sel;
+  };
+  const freeReach = Array.from(candReach).filter((_, k) => !fixPos.includes(k)).sort((a, b) => b - a);
+  const maxFrequency = fixPos.reduce((t, k) => t + candReach[k], 0) +
+    freeReach.slice(0, size - fixPos.length).reduce((t, x) => t + x, 0);
+  const skipped = (stage: "reach" | Criterion, previous: Sel | null): Sel | null => {
+    if (solver.settings.skip !== "on") return null;
+    if (stage === "reach" && previous === null) {
+      const w = greedy();
+      return reachValue(w) === 0 ? w : null;
+    }
+    if (stage === "frequency" && previous !== null && objectives.frequency.value(previous) === maxFrequency) {
+      return previous;
+    }
+    return null;
+  };
+
   // Section 7: the stage loop.
   const stages: ("reach" | Criterion)[] = ["reach", ...tiebreak];
   let previous: Sel | null = null;
@@ -344,7 +386,9 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
   for (let s = 0; s < stages.length; s++) {
     const obj = objectives[stages[s]];
     const earlier = stages.slice(0, s).map((t) => objectives[t]);
-    const res = nextValid(model, obj, earlier, previous);
+    const skip = skipped(stages[s], previous);
+    const res: { status: Status; sel?: Sel; model: solver.Model } =
+      skip ? { status: "ok", sel: skip, model } : nextValid(model, obj, earlier, previous);
     if (res.status !== "ok") {
       unfinished(stages[s], res.status);
       break;
@@ -382,9 +426,11 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
         selected = bestOf(pool, [obj], size);
         if (s + 1 < stages.length) {
           const later = objectives[stages[s + 1]];
-          const r3 = nextValid(addBound(withoutPool, obj, obj.value(selected)), later,
-                               stages.slice(0, s + 1).map((t) => objectives[t]), selected,
-                               performance.now() / 1000 + maxPoolSeconds);
+          const skip = skipped(stages[s + 1], selected);
+          const r3 = skip ? { status: "ok" as Status, sel: skip, model: withoutPool }
+            : nextValid(addBound(withoutPool, obj, obj.value(selected)), later,
+                        stages.slice(0, s + 1).map((t) => objectives[t]), selected,
+                        performance.now() / 1000 + maxPoolSeconds);
           if (r3.status === "ok") selected = r3.sel!;
           else unfinished(stages[s + 1], r3.status, false);
         }

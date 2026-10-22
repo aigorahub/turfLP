@@ -134,6 +134,27 @@ try {
   m.dispose();
 }
 
+// An empty row is a constant 0: a bound that 0 meets keeps the optimum, one
+// that 0 misses makes the model infeasible (the reduced model's reach bound
+// when no coverage row is left).
+{
+  const e = h.createModel();
+  try {
+    e.passModel(base());
+    e.options.set(OPTIONS);
+    e.addRow(-h.infinity, 0, { indices: new Int32Array(0), values: new Float64Array(0) });
+    e.run();
+    const held = [e.getModelStatus(), e.getObjectiveValue()];
+    e.addRow(1, h.infinity, { indices: new Int32Array(0), values: new Float64Array(0) });
+    e.run();
+    check("empty row: a true bound keeps the optimum, a false one is infeasible",
+          same(held, fresh([])) && e.getModelStatus() === h.constants.modelStatus.infeasible,
+          `${JSON.stringify(held)}, then status ${e.getModelStatus()}`);
+  } finally {
+    e.dispose();
+  }
+}
+
 const failed = results.filter((r) => !r.ok).length;
 console.log(`highs ${version}: ${results.length - failed} of ${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

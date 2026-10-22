@@ -1,6 +1,7 @@
 // Run the shared conformance fixtures (conformance/README.md) and the large
 // regression cases against the built package, with presolve on and off, and
-// with the reduced and the unreduced reference model.
+// with the reduced model (the default) and the unreduced reference model, and
+// with the skip checks of a stage at a proved bound.
 // Plain Node.js, because each solve blocks the thread for a long time on the
 // largest inputs, which a test runner's worker messages do not tolerate.
 //
@@ -98,10 +99,12 @@ function checkExpected(id, a, p, e) {
 const counts = {};
 const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
-for (const [presolve, reduce] of [["on", "on"], ["off", "on"], ["on", "off"]]) {
+for (const [presolve, reduce, skip] of [["on", "on", "off"], ["off", "on", "off"], ["on", "off", "off"],
+                                        ["on", "on", "on"]]) {
   settings.presolve = presolve;
   settings.reduce = reduce;
-  const mode = `presolve ${presolve}, reduce ${reduce}`;
+  settings.skip = skip;
+  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}`;
   for (const c of read("fixtures/turf.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
@@ -174,7 +177,8 @@ for (const [presolve, reduce] of [["on", "on"], ["off", "on"], ["on", "off"]]) {
   }
 }
 settings.presolve = "on";
-settings.reduce = "off";
+settings.reduce = "on";
+settings.skip = "off";
 
 const obj = { name: "x", direction: "min", value: (v) => v };
 for (const c of read("fixtures/comparator.json").cases) {
@@ -206,7 +210,7 @@ for (const reduce of ["on", "off"]) {
   check(same(p.products, [400, 401]) && /penetration optimum stopped/.test(p.warnings.join(" ")),
         tag("flood-402 max_pool 50"), JSON.stringify(p));
 }
-settings.reduce = "off";
+settings.reduce = "on";
 counts.regression = 10;
 
 const v = loadedSolver().version;

@@ -97,7 +97,10 @@ export const settings = {
   // "on" leaves out the respondents that the fixed products reach and gives
   // respondents reached by the same products one weighted row; "off" builds
   // one row per reachable respondent, the reference model.
-  reduce: "off" as "on" | "off",
+  reduce: "on" as "on" | "off",
+  // "on" skips a stage whose optimum a cheap portfolio meets at a proved bound
+  // (docs/algorithm.md section 7); "off" solves every stage.
+  skip: "off" as "on" | "off",
 };
 // Options of the most recent solve, read back from HiGHS. Tests check them.
 export const lastOptions: Record<string, unknown> = {};

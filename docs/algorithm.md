@@ -68,13 +68,25 @@ Rows:
 
 For integer `x`, the smallest feasible `z_i` is 1 when no selected product reaches respondent `i` and 0 otherwise.
 
+### Equivalent reduced model
+
+An implementation may solve this smaller model instead. It has the same feasible selections `x` and the same reach of every selection, so every stage has the same optima and the same results. The JavaScript port uses it (its `settings.reduce`); R and Python solve the model above.
+
+Let `N` be the number of respondents and `M` the number of model respondents (those that some candidate reaches). Let `C` be the model respondents that some fixed product reaches.
+
+- Leave out the rows of the respondents in `C`. The fixed row selects every fixed product in every feasible portfolio, so every respondent in `C` is reached by every feasible portfolio, and its row is always satisfied with `z_i = 0`.
+- Group the remaining model respondents by the set of candidates that reach them (their row of `a`). Group `g` has weight `w_g`, its number of respondents, and `Σ_g w_g = M − |C|`. The group has one variable `z_g ≥ 0` (no upper bound) and one row `z_g + Σ_j a_gj x_j ≥ 1`. All members of a group are reached by the same selections, so for integer `x` the smallest `z_g` is 1 when the group is not reached and 0 otherwise, as for each of its members.
+- The reach objective is `U = Σ_g w_g z_g`, the number of model respondents that the selection leaves unreached. For a selection, `U` equals the reach objective of the full model, so the reach of the selection is `M − U`.
+- Every candidate keeps its variable `x_j`, and the size, fixed, penetration, and symmetry rows are as above. A candidate whose respondents all lie in `C`, or that equals another candidate on the remaining respondents, stays a candidate: it can still be needed to reach the exact size, and its frequency and penetration terms use `r_j` over all respondents. Symmetry rows compare the columns of the full input, never the reduced rows.
+- A bound on the reach stage is a bound on `U`: for a selection with reach `R`, the row is `Σ_g w_g z_g ≤ M − R`. When no group remains (the fixed products reach every model respondent), `U` is 0 for every selection and such a bound always holds, so it can be left out. The reach of the result is computed from the selected products on the original data (section 9), never from `z`.
+
 ## 4. Criteria
 
 Mirrors the `objectives` list in `turf()`. Each criterion has a direction, an objective vector, and a value computed from the selected products (`sel`), never from the solver's continuous variables.
 
 | Criterion | Direction | Objective | Value from `sel` |
 |---|---|---|---|
-| reach | minimize | `Σ_i z_i` | `n −` (number of model respondents reached by `sel`) |
+| reach | minimize | `Σ_i z_i` (reduced model: `Σ_g w_g z_g`) | `n −` (number of model respondents reached by `sel`) |
 | frequency | maximize | `Σ_j r_j x_j` | `Σ_{j∈sel} r_j` |
 | penetration | minimize | `p` | `Σ_{j∈sel} c_j` |
 
@@ -170,7 +182,7 @@ W2, penetration search stopped:
 
 Mirrors `turf_min_cover()`.
 
-Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent and, when `F` is not empty, `Σ_{j∈F} x_j = |F|`, with `x` binary over the candidates. The result is the smallest portfolio that contains every fixed product and reaches every reachable respondent. It is built as in section 9. Implementations must check that the selection covers every model respondent, that every `x_j` is within `1e-6` of 0 or 1, and that every fixed `x_j` is above 0.5, and raise `HiGHS returned an invalid solution in the set cover stage.` when a check fails.
+Minimize `Σ_j x_j` subject to `Σ_j a_ij x_j ≥ 1` for every model respondent and, when `F` is not empty, `Σ_{j∈F} x_j = |F|`, with `x` binary over the candidates. With the reduced model of section 3, the rows are one per group, without weights; when no group remains, the fixed products alone are the cover. The result is the smallest portfolio that contains every fixed product and reaches every reachable respondent. It is built as in section 9. Implementations must check that the selection covers every model respondent, that every `x_j` is within `1e-6` of 0 or 1, and that every fixed `x_j` is above 0.5, and raise `HiGHS returned an invalid solution in the set cover stage.` when a check fails.
 
 ## 12. Portfolio sizes
 
