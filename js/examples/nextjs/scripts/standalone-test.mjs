@@ -113,6 +113,14 @@ try {
     throw new Error(`fixed was not applied: ${JSON.stringify([free.body, fixed.body])}`);
   }
   expectStatus("malformed JSON", await post(main.url, "{reach:"), 400);
+  // JSON 1e309 is Infinity: a cached answer for null must not answer it.
+  expectStatus("tiebreak null", await post(main.url, { reach: [[1]], size: 1, tiebreak: null }), 200);
+  expectStatus("tiebreak 1e309", await post(main.url, '{"reach": [[1]], "size": 1, "tiebreak": 1e309}'), 400);
+  await post(main.url, { reach: [[1]], size: 1, names: [null] });
+  const inf = await post(main.url, '{"reach": [[1]], "size": 1, "names": [1e309]}');
+  if (inf.status !== 200 || inf.body.portfolio.names[0] !== "Infinity") {
+    throw new Error(`names [1e309]: ${JSON.stringify(inf)}`);
+  }
   expectStatus("fixed out of range", await post(main.url, { reach: small, size: 2, fixed: [9] }), 400);
   expectStatus("a cell that is not 0 or 1", await post(main.url, { reach: [[0, 2]], size: 1 }), 400);
   expectStatus("too many cells", await post(main.url, { reach: [new Array(8001).fill(1)], size: 1 }), 413);

@@ -13,22 +13,37 @@ export interface CacheKeyInput {
   names: unknown;
 }
 
-// JSON writes an omitted value as null; the package reads an omitted tiebreak
-// as frequency then penetration and null as reach only. [false] and [true, v]
-// keep every omitted value apart from every given one, whatever v is.
-const given = (v: unknown) => (v === undefined ? [false] : [true, v]);
+// A text for each value that no other value shares. JSON.stringify is not one:
+// it writes Infinity (JSON 1e309 parses to it) as null, and the package reads
+// the two differently. Every part carries its type, and strings are quoted.
+function canon(v: unknown): string {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  switch (typeof v) {
+    case "number": return `n${String(v)}`;
+    case "string": return `s${JSON.stringify(v)}`;
+    case "boolean": return `b${v}`;
+    case "undefined": return "u";
+    case "object":
+      return `{${Object.entries(v as object).map(([k, x]) => `${JSON.stringify(k)}:${canon(x)}`).join(",")}}`;
+    default: return `?${String(v)}`;
+  }
+}
+
+// The package reads an omitted tiebreak as frequency then penetration and null
+// as reach only, so an omitted value has its own text.
+const given = (v: unknown) => (v === undefined ? "omitted" : canon(v));
 
 /**
  * Omitted, null, and empty fixed sets are one key; a list of whole numbers is
- * keyed sorted and without repeats, as the package reads it. An omitted
- * tiebreak or names list is a different key from null.
+ * keyed sorted and without repeats, as the package reads it.
  */
 export function cacheKey(k: CacheKeyInput): string {
   let fixed = k.fixed ?? [];
   if (Array.isArray(fixed) && fixed.every((j) => Number.isInteger(j))) {
     fixed = [...new Set(fixed as number[])].sort((a, b) => a - b);
   }
-  const text = JSON.stringify([k.version, k.reach, k.size, fixed, given(k.tiebreak), given(k.names)]);
+  const text = [k.version, k.reach, k.size, fixed].map(canon).concat(given(k.tiebreak), given(k.names)).join("|");
   return createHash("sha256").update(text).digest("hex");
 }
 
