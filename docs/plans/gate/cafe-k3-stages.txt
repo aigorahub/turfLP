@@ -1,0 +1,4 @@
+groupRatio 0.6
+cafe/k3                               n=3  median 2591.0 ms  p95 2623.0  solves 4 pool 1  model 2433x2472/17701  pack 0.3 prep 2.7 csr 0.1 pass 4.0 run 2582.7 check 0.2  reach 1214.9 frequency 689.1 penetration 531.0 penetration pool 150.8  rss 88 MB
+groupRatio 1
+cafe/k3                               n=3  median 9034.0 ms  p95 9198.5  solves 4 pool 1  model 2006x2045/15927  pack 0.3 prep 2.3 csr 0.1 pass 4.3 run 9024.9 check 0.2  reach 968.4 frequency 3903.7 penetration 4053.5 penetration pool 102.1  rss 78 MB
