@@ -3,7 +3,7 @@
 // each product. One shared tooltip per chart. Colors come from CSS custom
 // properties, so both themes work.
 
-import { count, decimal, list, percent, points } from "./format.js";
+import { count, list, percent, points } from "./format.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 

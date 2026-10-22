@@ -264,6 +264,27 @@ async function session(workers) {
       .test(document.getElementById("fixed-hint").textContent));
     const boxB = await page.$eval('#fixed-list input[value="1"]', (e) => [e.checked, e.disabled]);
     check(!boxB[0] && boxB[1], `product B after the threshold change: ${boxB}`);
+    // Two portfolios of 2 tie on reach and frequency; penetration breaks the tie, and the stage says so.
+    await load("ties.csv", "A,B,C,D\n1,0,0,1\n0,1,0,1\n1,0,1,0\n0,1,1,0\n1,0,0,1\n0,1,0,1\n");
+    await wait(() => /6 respondents, 4 products/.test(document.getElementById("data-info").textContent) &&
+                     !document.getElementById("run").disabled);
+    await page.evaluate(() => {
+      const s = document.getElementById("stage3");
+      s.value = "penetration";
+      s.dispatchEvent(new Event("change"));
+      for (const id of ["size-from", "size-to"]) {
+        const i = document.getElementById(id);
+        i.value = "2";
+        i.dispatchEvent(new Event("input"));
+      }
+    });
+    await click("#run");
+    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 1);
+    await idle();
+    await click(".deep-dive .button-secondary");
+    await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton"));
+    const tie = await page.$$eval(".stage .stage-detail", (d) => d.map((x) => x.textContent));
+    check(tie[2] === "Penetration breaks the tie among the 2 portfolios left. This stage keeps one.", `penetration stage: ${tie}`);
     await load("bad.csv", "A,B\n1,0\n1,x\n");
     await wait(() => !document.getElementById("data-error").hidden);
     const error = await page.$eval("#data-error", (e) => e.textContent);

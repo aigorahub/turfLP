@@ -876,7 +876,9 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
       const keep = tied === 1 && !info.tiesAtLeast ? "This stage keeps one." : `This stage keeps ${portfolios(tied, info.tiesAtLeast)}.`;
       detail.textContent = prev!.ties === 1 && !prev!.tiesAtLeast
         ? `${among} decides the choice; this stage does not change it.`
-        : `${among}${range}. ${keep}`;
+        : value === null
+          ? `Penetration breaks the tie ${among.replace(/^Among/, "among")}. ${keep}`
+          : `${among}${range}. ${keep}`;
     }
   });
   if (a?.stages) {
