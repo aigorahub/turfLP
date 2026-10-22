@@ -151,6 +151,55 @@ describe("without conformance inputs", () => {
     await expect(turf(TIE, 2, { tiebreak: ["reach" as any] })).rejects.toThrow(RangeError);
   });
 
+  it("fixed products give exact errors with the right type, in order", async () => {
+    const fail = async (p: Promise<unknown>) => {
+      try { await p; } catch (e) { return e as Error; }
+      throw new Error("no error");
+    };
+    const typeText = "`fixed` must be a vector of whole-number product indices.";
+    for (const bad of ["1", 3, ["1"], [true], [null]] as any[]) {
+      const e = await fail(turf(TIE, 2, { fixed: bad }));
+      expect([e.constructor, e.message]).toEqual([TypeError, typeText]);
+    }
+    const hole = [0];
+    hole.length = 2;
+    expect((await fail(turf(TIE, 2, { fixed: hole }))).constructor).toBe(TypeError);
+    for (const bad of [[1.5], [NaN], [Infinity]]) {
+      const e = await fail(turf(TIE, 2, { fixed: bad }));
+      expect([e.constructor, e.message]).toEqual([RangeError, typeText]);
+    }
+    for (const bad of [[-1], [5], [0, 5]]) {
+      const e = await fail(turf(TIE, 2, { fixed: bad }));
+      expect([e.constructor, e.message]).toEqual([RangeError, "`fixed` must hold product indices from 0 to 4."]);
+    }
+    const withZero = TIE.map((row) => [...row, 0, 0]);
+    expect((await fail(turf(withZero, 2, { fixed: [1, 6, 5] }))).message)
+      .toBe("Fixed product P7 reaches no respondent.");
+    expect((await fail(turf(TIE, 1, { fixed: [0, 1, 1] }))).message)
+      .toBe("`size` is 1, but 2 products are fixed.");
+    // The size checks come first, and turfSizes checks `fixed` before any size.
+    expect((await fail(turf(TIE, 6, { fixed: [-1] }))).message).toMatch(/only 5 products/);
+    expect((await fail(turfSizes(TIE, [], { fixed: [-1] }))).message)
+      .toBe("`fixed` must hold product indices from 0 to 4.");
+    expect((await fail(turfMinCover([[0, 0, 0], [0, 0, 0]], { fixed: [0] }))).message)
+      .toBe("No product reaches any respondent.");
+    expect((await fail(turfMinCover(withZero, { fixed: [5] }))).message)
+      .toBe("Fixed product P6 reaches no respondent.");
+    expect(await turf(TIE, 2, { fixed: null })).toEqual(await turf(TIE, 2));
+    expect((await turf(TIE, 2, { fixed: [] })).fixed).toEqual([]);
+  });
+
+  it("a fixed product does not force its identical twins in", async () => {
+    // Product 4 is a copy of product 1. With 4 fixed, the best partner is 2
+    // (reach 7, frequency 8); a symmetry row x1 >= x4 would force 1 in.
+    const twin = TIE.map((row) => [...row.slice(0, 4), row[1]]);
+    const p = await turf(twin, 2, { fixed: [4] });
+    expect([p.products, p.fixed]).toEqual([[2, 4], [4]]);
+    const c = await turfMinCover(twin, { fixed: [4] });
+    expect(c.products).toContain(4);
+    expect(c.fixed).toEqual([4]);
+  });
+
   it("limits are checked before solving", async () => {
     for (const bad of [NaN, -1, 1.5]) {
       await expect(turf(TIE, 2, { maxPool: bad })).rejects.toThrow(RangeError);

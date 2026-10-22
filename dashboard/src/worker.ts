@@ -15,11 +15,11 @@ export interface Matrix {
 
 export type Request =
   | { type: "load"; wasm: Uint8Array }
-  | { type: "cover"; id: number; matrix: Matrix }
-  | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[] }
+  | { type: "cover"; id: number; matrix: Matrix; fixed?: number[] }
+  | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[]; fixed?: number[] }
   // The stages and the reach and frequency trade-off of one portfolio of a run.
   | { type: "analyze"; id: number; matrix: Matrix; products: number[]; tiebreak: Criterion[];
-      seconds?: { stages: number; frontier: number }; maxPoints?: number }
+      fixed?: number[]; seconds?: { stages: number; frontier: number }; maxPoints?: number }
   // Stop an analysis at its next solve. Handled at once, not in turn.
   | { type: "cancel"; id: number };
 
@@ -45,7 +45,7 @@ function plain(p: Portfolio): Portfolio {
   return {
     products: [...p.products], names: [...p.names], size: p.size, reach: p.reach,
     reachProp: p.reachProp, frequency: p.frequency, penetration: p.penetration,
-    respondents: p.respondents, warnings: [...p.warnings],
+    respondents: p.respondents, fixed: [...p.fixed], warnings: [...p.warnings],
   };
 }
 
@@ -62,11 +62,11 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
     if (msg.type === "analyze") {
       const options = { between: between as Between | undefined };
       const st = await stageInfo(msg.matrix, msg.products, msg.tiebreak,
-                                 { ...options, seconds: msg.seconds?.stages });
+                                 { ...options, seconds: msg.seconds?.stages, fixed: msg.fixed });
       post({ type: "stages", id: msg.id, ...st });
       if (st.stop === "cancelled") return;
       const fr = await frontier(msg.matrix, msg.products.length, {
-        ...options, seconds: msg.seconds?.frontier, maxPoints: msg.maxPoints,
+        ...options, seconds: msg.seconds?.frontier, maxPoints: msg.maxPoints, fixed: msg.fixed,
         onPoint: (point) => post({ type: "point", id: msg.id, point }),
       });
       post({ type: "frontier", id: msg.id, ...fr });
@@ -77,7 +77,7 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
       await loadSolver({ wasmBinary: msg.wasm });
       post({ type: "ready", seconds: (performance.now() - t0) / 1000 });
     } else if (msg.type === "cover") {
-      const p = await turfMinCover(rowsOf(msg.matrix), { names: msg.matrix.names });
+      const p = await turfMinCover(rowsOf(msg.matrix), { names: msg.matrix.names, fixed: msg.fixed });
       post({ type: "cover", id: msg.id, portfolio: plain(p) });
     } else {
       const reach = rowsOf(msg.matrix);
@@ -85,7 +85,7 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
         if (between && !(await between())) return;
         post({ type: "start", id: msg.id, size });
         const t0 = performance.now();
-        const p = await turf(reach, size, { tiebreak: msg.tiebreak, names: msg.matrix.names });
+        const p = await turf(reach, size, { tiebreak: msg.tiebreak, names: msg.matrix.names, fixed: msg.fixed });
         post({ type: "size", id: msg.id, portfolio: plain(p), seconds: (performance.now() - t0) / 1000 });
       }
       post({ type: "done", id: msg.id });

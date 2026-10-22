@@ -82,6 +82,12 @@ try { if (localStorage.getItem("turflp-theme") === "dark") document.documentElem
         <p id="size-hint" class="hint" aria-live="polite"></p>
       </div>
       <div class="field">
+        <p class="field-label" id="fixed-label">Fixed products</p>
+        <input id="fixed-filter" class="input fixed-filter" type="search" placeholder="Filter products" aria-label="Filter products" hidden>
+        <div id="fixed-list" class="fixed-list" role="group" aria-labelledby="fixed-label"></div>
+        <p class="hint"><span id="fixed-hint" aria-live="polite"></span> <button id="fixed-clear" type="button" class="link" hidden>Clear</button></p>
+      </div>
+      <div class="field">
         <p class="field-label" id="stages-label">Optimization stages</p>
         <div class="stage-fields" role="group" aria-labelledby="stages-label">
           <span class="stage-fixed">Stage 1</span><span>Reach</span>

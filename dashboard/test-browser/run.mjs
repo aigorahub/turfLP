@@ -157,9 +157,32 @@ async function session(workers) {
       await idle();
     }
 
+    // Fixed products: two checked products are in every portfolio, and the sizes start at 2.
+    const fixedNames = await page.$$eval("#fixed-list .fixed-name", (n) => [6, 8].map((j) => n[j].textContent));
+    await click('#fixed-list input[value="6"]');
+    await click('#fixed-list input[value="8"]');
+    await wait(() => /the fixed ones included/.test(document.getElementById("size-hint").textContent));
+    check(await page.$eval("#size-from", (e) => e.value) === "2", "with 2 fixed products the sizes do not start at 2");
+    await click("#run");
+    await idle();
+    const fixedRows = await page.$$eval(".size-table tbody tr[tabindex] .products", (c) => c.map((x) => x.textContent));
+    check(fixedRows.length > 1 && fixedRows.every((t) => fixedNames.every((n) => t.includes(`${n} (fixed)`))),
+          `rows without the fixed products: ${fixedRows}`);
+    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live") &&
+                     !document.querySelector(".stage .skeleton"));
+    const frontierRows = await page.$$eval(".frontier-table tbody .products", (c) => c.map((x) => x.textContent));
+    check(frontierRows.every((t) => fixedNames.every((n) => t.includes(n))), `frontier without the fixed products: ${frontierRows}`);
+    await click('.segmented [data-value="columns"]');
+    const firstParts = await page.$$eval(".contrib tbody tr th", (r) => r.slice(0, 2).map((x) => x.textContent));
+    check(firstParts.every((t) => t.includes("(fixed)")), `contributions do not start with the fixed products: ${firstParts}`);
+    await click('.segmented [data-value="line"]');
+
     // Cancel during the large example keeps the finished sizes; a new run works.
     await clickExample("Cafe");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
+    // Another data set clears the fixed products.
+    check(await page.$$eval("#fixed-list input:checked", (b) => b.length) === 0 &&
+          await page.$eval("#size-from", (e) => e.value) === "1", "the fixed products survive a new data set");
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length >= 2);
     await click("#run");
@@ -192,6 +215,18 @@ async function session(workers) {
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 3);
     const title = await page.$eval(".headline-title", (e) => e.textContent);
     check(title === "3 products reach 100.0% of respondents", `ratings title: ${title}`);
+    // A threshold change unfixes a product that then reaches no one, and says so.
+    await click('#fixed-list input[value="1"]');
+    await wait(() => /1 fixed/.test(document.getElementById("fixed-hint").textContent));
+    await page.evaluate(() => {
+      const i = document.getElementById("threshold-input");
+      i.value = "5";
+      i.dispatchEvent(new Event("change"));
+    });
+    await wait(() => /B reaches no respondent at this threshold, so it is no longer fixed/
+      .test(document.getElementById("fixed-hint").textContent));
+    const boxB = await page.$eval('#fixed-list input[value="1"]', (e) => [e.checked, e.disabled]);
+    check(!boxB[0] && boxB[1], `product B after the threshold change: ${boxB}`);
     await load("bad.csv", "A,B\n1,0\n1,x\n");
     await wait(() => !document.getElementById("data-error").hidden);
     const error = await page.$eval("#data-error", (e) => e.textContent);

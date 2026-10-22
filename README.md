@@ -65,6 +65,22 @@ turf_sizes(reach, sizes = 1:6)
 
 (The penetration and reach proportion columns are rounded here.)
 
+### Fixed products
+
+When some products must be in the portfolio, for example products that are already on the shelf, give their column indices as `fixed`. The size counts them, and the stages choose the other products.
+
+```r
+turf(reach, size = 5, fixed = c(1, 2))
+#> TURF portfolio of 5 products
+#> Products:    P1, P2, P5, P14, P16
+#> Fixed:       P1, P2
+#> Reach:        897 of 1000 respondents (89.7%)
+#> Frequency:    1718
+#> Penetration:  195.54
+```
+
+`turf_min_cover()` and `turf_sizes()` take `fixed` too. With fixed products, the default sizes of `turf_sizes()` start at the number of fixed products and end at the smallest portfolio that contains them and reaches every reachable respondent (13 products here).
+
 ## Example data
 
 The package includes four data sets from public studies and three simulated data sets. Ratings become a reach matrix with a threshold, as the last column shows. Each help page, for example `?ham`, describes the data and its source.
@@ -126,6 +142,8 @@ For integer x, the smallest feasible z<sub>i</sub> is 0 when a selected product 
 1. Reach: minimize the sum of z, which maximizes the number of respondents reached. This is the maximal covering location problem.
 2. Frequency: maximize the sum of r<sub>j</sub> x<sub>j</sub>, the total number of product and respondent pairs where the product reaches the respondent.
 3. Penetration: minimize the sum of x<sub>j</sub> / r<sub>j</sub>, which maximizes the harmonic mean of the individual reaches of the selected products. When reach and frequency are fixed, this prefers portfolios whose products have similar individual reach.
+
+With `fixed`, one more constraint, the sum of x<sub>j</sub> over the fixed products equal to their number, keeps them in every portfolio. A fixed product is not interchangeable with an identical free product, so the rows that order identical products leave the fixed ones out.
 
 The `tiebreak` argument selects and orders stages 2 and 3. For example, `tiebreak = character(0)` gives reach only. `turf_min_cover()` solves the set cover problem: the fewest products that together reach every respondent that some product reaches.
 

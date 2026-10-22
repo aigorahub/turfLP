@@ -307,6 +307,33 @@ select.input {
 input[type="number"].input { width: 5.5rem; }
 .range { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
 
+.fixed-filter { width: 100%; margin-bottom: 8px; }
+.fixed-list {
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: 4px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.fixed-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.fixed-item[hidden] { display: none; }
+.fixed-item:hover { background: var(--hover); }
+.fixed-item input { margin: 0; accent-color: var(--accent); }
+.fixed-item.is-disabled { color: var(--ink-2); cursor: default; }
+.fixed-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fixed-reach { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.fixed-none { padding: 4px 12px; font-size: 13px; }
+
 .stage-fields {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

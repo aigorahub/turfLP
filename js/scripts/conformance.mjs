@@ -126,6 +126,39 @@ for (const presolve of ["on", "off"]) {
     });
     count(`sizes (presolve ${presolve})`);
   }
+  // The fixed rule: the distinct fixed indices, sorted, all selected.
+  const checkFixed = (id, p, fixed) => {
+    const want = [...new Set(fixed)].sort((x, y) => x - y);
+    check(JSON.stringify(p.fixed) === JSON.stringify(want) && want.every((j) => p.products.includes(j)),
+          id, `fixed ${JSON.stringify(p.fixed)}, products ${JSON.stringify(p.products)}`);
+  };
+  for (const c of read("fixtures/fixed.json").cases) {
+    const { a, names } = input(c.input);
+    const fixed = c.fixed.map((j) => j - 1);
+    if (c.function === "turf") {
+      const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, fixed, maxPoolSeconds: Infinity });
+      check(p.warnings.length === 0, c.id, `warnings ${JSON.stringify(p.warnings)}`);
+      checkFields(c.id, a, names, p, c.size);
+      checkFixed(c.id, p, fixed);
+      checkExpected(c.id, a, p, c.expected);
+    } else if (c.function === "min_cover") {
+      const p = await turfMinCover(a, { names, fixed });
+      checkFields(c.id, a, names, p);
+      checkFixed(c.id, p, fixed);
+      check(p.size === c.expected.size && p.reach === c.expected.reachable, c.id,
+            `cover size ${p.size} reach ${p.reach}`);
+    } else {
+      const rows = await turfSizes(a, c.sizes, { tiebreak: c.tiebreak, names, fixed, maxPoolSeconds: Infinity });
+      check(JSON.stringify(rows.map((p) => p.size)) === JSON.stringify(c.expected.map((e) => e.size)),
+            c.id, "sizes");
+      rows.forEach((p, i) => {
+        checkFields(`${c.id}[${i}]`, a, names, p, c.expected[i].size);
+        checkFixed(`${c.id}[${i}]`, p, fixed);
+        checkExpected(`${c.id}[${i}]`, a, p, c.expected[i]);
+      });
+    }
+    count(`fixed (presolve ${presolve})`);
+  }
   for (const c of read("fixtures/bounded.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPool: c.max_pool,

@@ -1,0 +1,3082 @@
+{
+ "schema_version": 1,
+ "kind": "fixed",
+ "cases": [
+  {
+   "id": "identical-300/k1/frequency+penetration/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 1,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 87,
+    "frequency": 87,
+    "penetration": {
+     "fraction": "87/1",
+     "value": 87.0
+    }
+   }
+  },
+  {
+   "id": "identical-300/k1/penetration+frequency/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 87,
+    "penetration": {
+     "fraction": "87/1",
+     "value": 87.0
+    },
+    "frequency": 87
+   }
+  },
+  {
+   "id": "identical-300/k2/frequency+penetration/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 163,
+    "frequency": 193,
+    "penetration": {
+     "fraction": "18444/193",
+     "value": 95.56476683937824
+    }
+   }
+  },
+  {
+   "id": "identical-300/k2/penetration+frequency/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 163,
+    "penetration": {
+     "fraction": "18444/193",
+     "value": 95.56476683937824
+    },
+    "frequency": 193
+   }
+  },
+  {
+   "id": "identical-300/k3/frequency+penetration/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 204,
+    "frequency": 277,
+    "penetration": {
+     "fraction": "43036/471",
+     "value": 91.37154989384288
+    }
+   }
+  },
+  {
+   "id": "identical-300/k3/penetration+frequency/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 204,
+    "penetration": {
+     "fraction": "43036/471",
+     "value": 91.37154989384288
+    },
+    "frequency": 277
+   }
+  },
+  {
+   "id": "identical-300/k4/frequency+penetration/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 223,
+    "frequency": 352,
+    "penetration": {
+     "fraction": "12910800/149011",
+     "value": 86.64326794666165
+    }
+   }
+  },
+  {
+   "id": "identical-300/k4/penetration+frequency/fixed5",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "reach": 223,
+    "penetration": {
+     "fraction": "12910800/149011",
+     "value": 86.64326794666165
+    },
+    "frequency": 352
+   }
+  },
+  {
+   "id": "identical-300/k4/frequency+penetration/fixed12",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    12
+   ],
+   "expected": {
+    "reach": 223,
+    "frequency": 352,
+    "penetration": {
+     "fraction": "12910800/149011",
+     "value": 86.64326794666165
+    }
+   }
+  },
+  {
+   "id": "identical-300/k4/penetration+frequency/fixed12",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    12
+   ],
+   "expected": {
+    "reach": 223,
+    "penetration": {
+     "fraction": "12910800/149011",
+     "value": 86.64326794666165
+    },
+    "frequency": 352
+   }
+  },
+  {
+   "id": "identical-300/k2/frequency+penetration/fixed2-7",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2,
+    7
+   ],
+   "expected": {
+    "reach": 87,
+    "frequency": 174,
+    "penetration": {
+     "fraction": "87/1",
+     "value": 87.0
+    }
+   }
+  },
+  {
+   "id": "identical-300/k2/penetration+frequency/fixed2-7",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2,
+    7
+   ],
+   "expected": {
+    "reach": 87,
+    "penetration": {
+     "fraction": "87/1",
+     "value": 87.0
+    },
+    "frequency": 174
+   }
+  },
+  {
+   "id": "identical-300/k3/frequency+penetration/fixed2-7",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2,
+    7
+   ],
+   "expected": {
+    "reach": 163,
+    "frequency": 280,
+    "penetration": {
+     "fraction": "27666/299",
+     "value": 92.52842809364549
+    }
+   }
+  },
+  {
+   "id": "identical-300/k3/penetration+frequency/fixed2-7",
+   "function": "turf",
+   "input": "identical-300",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2,
+    7
+   ],
+   "expected": {
+    "reach": 163,
+    "penetration": {
+     "fraction": "27666/299",
+     "value": 92.52842809364549
+    },
+    "frequency": 280
+   }
+  },
+  {
+   "id": "tie-matrix/k1/reach/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 1,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 4
+   }
+  },
+  {
+   "id": "tie-matrix/k1/frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 1,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 4,
+    "frequency": 4
+   }
+  },
+  {
+   "id": "tie-matrix/k1/penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 1,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 4,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k1/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 1,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 4,
+    "frequency": 4,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k1/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 4,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    },
+    "frequency": 4
+   }
+  },
+  {
+   "id": "tie-matrix/k2/reach/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 7
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 7,
+    "frequency": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 7,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 7,
+    "frequency": 8,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 7,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    },
+    "frequency": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k3/reach/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 11
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "18/5",
+     "value": 3.6
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 11,
+    "penetration": {
+     "fraction": "18/5",
+     "value": 3.6
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "18/5",
+     "value": 3.6
+    },
+    "frequency": 11
+   }
+  },
+  {
+   "id": "tie-matrix/k4/reach/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k4/frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 16
+   }
+  },
+  {
+   "id": "tie-matrix/k4/penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k4/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 16,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k4/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    },
+    "frequency": 16
+   }
+  },
+  {
+   "id": "tie-matrix/k5/reach/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k5/frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 18
+   }
+  },
+  {
+   "id": "tie-matrix/k5/penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "75/23",
+     "value": 3.260869565217391
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k5/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 18,
+    "penetration": {
+     "fraction": "75/23",
+     "value": 3.260869565217391
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k5/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "75/23",
+     "value": 3.260869565217391
+    },
+    "frequency": 18
+   }
+  },
+  {
+   "id": "tie-matrix/k2/reach/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 6
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 6,
+    "frequency": 9
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 6,
+    "penetration": {
+     "fraction": "40/9",
+     "value": 4.444444444444445
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency+penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 6,
+    "frequency": 9,
+    "penetration": {
+     "fraction": "40/9",
+     "value": 4.444444444444445
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration+frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 6,
+    "penetration": {
+     "fraction": "40/9",
+     "value": 4.444444444444445
+    },
+    "frequency": 9
+   }
+  },
+  {
+   "id": "tie-matrix/k3/reach/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 12
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "180/47",
+     "value": 3.8297872340425534
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency+penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 12,
+    "penetration": {
+     "fraction": "180/47",
+     "value": 3.8297872340425534
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration+frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "180/47",
+     "value": 3.8297872340425534
+    },
+    "frequency": 12
+   }
+  },
+  {
+   "id": "tie-matrix/k4/reach/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k4/frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 16
+   }
+  },
+  {
+   "id": "tie-matrix/k4/penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k4/frequency+penetration/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 16,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k4/penetration+frequency/fixed5-2",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    5,
+    2
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    },
+    "frequency": 16
+   }
+  },
+  {
+   "id": "tie-matrix/k2/reach/fixednone",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [],
+   "fixed": [],
+   "expected": {
+    "reach": 7
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency/fixednone",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [],
+   "expected": {
+    "reach": 7,
+    "frequency": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration/fixednone",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [],
+   "expected": {
+    "reach": 7,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/frequency+penetration/fixednone",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [],
+   "expected": {
+    "reach": 7,
+    "frequency": 8,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k2/penetration+frequency/fixednone",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [],
+   "expected": {
+    "reach": 7,
+    "penetration": {
+     "fraction": "4/1",
+     "value": 4.0
+    },
+    "frequency": 8
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency+penetration/fixed4-1-4",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    4,
+    1,
+    4
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 10,
+    "penetration": {
+     "fraction": "90/31",
+     "value": 2.903225806451613
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration+frequency/fixed4-1-4",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    4,
+    1,
+    4
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "90/31",
+     "value": 2.903225806451613
+    },
+    "frequency": 10
+   }
+  },
+  {
+   "id": "tie-matrix/k5/frequency+penetration/fixed1-2-3-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 18,
+    "penetration": {
+     "fraction": "75/23",
+     "value": 3.260869565217391
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k5/penetration+frequency/fixed1-2-3-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 5,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "75/23",
+     "value": 3.260869565217391
+    },
+    "frequency": 18
+   }
+  },
+  {
+   "id": "tie-matrix/k3/frequency+penetration/fixed2-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 12,
+    "penetration": {
+     "fraction": "180/47",
+     "value": 3.8297872340425534
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k3/penetration+frequency/fixed2-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "180/47",
+     "value": 3.8297872340425534
+    },
+    "frequency": 12
+   }
+  },
+  {
+   "id": "tie-matrix/k4/frequency+penetration/fixed2-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "frequency": 16,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    }
+   }
+  },
+  {
+   "id": "tie-matrix/k4/penetration+frequency/fixed2-4-5",
+   "function": "turf",
+   "input": "tie-matrix",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": {
+    "reach": 8,
+    "penetration": {
+     "fraction": "120/31",
+     "value": 3.870967741935484
+    },
+    "frequency": 16
+   }
+  },
+  {
+   "id": "random-r-20/k1/reach/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 1,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 2
+   }
+  },
+  {
+   "id": "random-r-20/k1/frequency/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 1,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 2,
+    "frequency": 2
+   }
+  },
+  {
+   "id": "random-r-20/k1/penetration/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 1,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 2,
+    "penetration": {
+     "fraction": "2/1",
+     "value": 2.0
+    }
+   }
+  },
+  {
+   "id": "random-r-20/k1/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 1,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 2,
+    "frequency": 2,
+    "penetration": {
+     "fraction": "2/1",
+     "value": 2.0
+    }
+   }
+  },
+  {
+   "id": "random-r-20/k1/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 2,
+    "penetration": {
+     "fraction": "2/1",
+     "value": 2.0
+    },
+    "frequency": 2
+   }
+  },
+  {
+   "id": "random-r-20/k2/reach/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 3
+   }
+  },
+  {
+   "id": "random-r-20/k2/frequency/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 3
+   }
+  },
+  {
+   "id": "random-r-20/k2/penetration/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "4/3",
+     "value": 1.3333333333333333
+    }
+   }
+  },
+  {
+   "id": "random-r-20/k2/frequency+penetration/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 3,
+    "penetration": {
+     "fraction": "4/3",
+     "value": 1.3333333333333333
+    }
+   }
+  },
+  {
+   "id": "random-r-20/k2/penetration+frequency/fixed3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "4/3",
+     "value": 1.3333333333333333
+    },
+    "frequency": 3
+   }
+  },
+  {
+   "id": "random-r-20/k2/frequency+penetration/fixed4-3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    4,
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 3,
+    "penetration": {
+     "fraction": "4/3",
+     "value": 1.3333333333333333
+    }
+   }
+  },
+  {
+   "id": "random-r-20/k2/penetration+frequency/fixed4-3",
+   "function": "turf",
+   "input": "random-r-20",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    4,
+    3
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "4/3",
+     "value": 1.3333333333333333
+    },
+    "frequency": 3
+   }
+  },
+  {
+   "id": "random-r-7/k1/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 1,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 6,
+    "frequency": 6,
+    "penetration": {
+     "fraction": "6/1",
+     "value": 6.0
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k1/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 6,
+    "penetration": {
+     "fraction": "6/1",
+     "value": 6.0
+    },
+    "frequency": 6
+   }
+  },
+  {
+   "id": "random-r-7/k2/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 11,
+    "frequency": 12,
+    "penetration": {
+     "fraction": "6/1",
+     "value": 6.0
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k2/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 11,
+    "penetration": {
+     "fraction": "6/1",
+     "value": 6.0
+    },
+    "frequency": 12
+   }
+  },
+  {
+   "id": "random-r-7/k3/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 13,
+    "frequency": 15,
+    "penetration": {
+     "fraction": "9/2",
+     "value": 4.5
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k3/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 13,
+    "penetration": {
+     "fraction": "9/2",
+     "value": 4.5
+    },
+    "frequency": 15
+   }
+  },
+  {
+   "id": "random-r-7/k4/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 15,
+    "frequency": 17,
+    "penetration": {
+     "fraction": "24/7",
+     "value": 3.4285714285714284
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k4/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 15,
+    "penetration": {
+     "fraction": "24/7",
+     "value": 3.4285714285714284
+    },
+    "frequency": 17
+   }
+  },
+  {
+   "id": "random-r-7/k5/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 5,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 16,
+    "frequency": 19,
+    "penetration": {
+     "fraction": "3/1",
+     "value": 3.0
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k5/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 5,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 16,
+    "penetration": {
+     "fraction": "3/1",
+     "value": 3.0
+    },
+    "frequency": 19
+   }
+  },
+  {
+   "id": "random-r-7/k6/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 6,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "frequency": 21,
+    "penetration": {
+     "fraction": "36/13",
+     "value": 2.769230769230769
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k6/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 6,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "penetration": {
+     "fraction": "36/13",
+     "value": 2.769230769230769
+    },
+    "frequency": 21
+   }
+  },
+  {
+   "id": "random-r-7/k7/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 7,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "frequency": 24,
+    "penetration": {
+     "fraction": "14/5",
+     "value": 2.8
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k7/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 7,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "penetration": {
+     "fraction": "14/5",
+     "value": 2.8
+    },
+    "frequency": 24
+   }
+  },
+  {
+   "id": "random-r-7/k8/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 8,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "frequency": 27,
+    "penetration": {
+     "fraction": "48/17",
+     "value": 2.823529411764706
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k8/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 8,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "penetration": {
+     "fraction": "48/17",
+     "value": 2.823529411764706
+    },
+    "frequency": 27
+   }
+  },
+  {
+   "id": "random-r-7/k9/frequency+penetration/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 9,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "frequency": 30,
+    "penetration": {
+     "fraction": "54/19",
+     "value": 2.8421052631578947
+    }
+   }
+  },
+  {
+   "id": "random-r-7/k9/penetration+frequency/fixed6",
+   "function": "turf",
+   "input": "random-r-7",
+   "size": 9,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    6
+   ],
+   "expected": {
+    "reach": 17,
+    "penetration": {
+     "fraction": "54/19",
+     "value": 2.8421052631578947
+    },
+    "frequency": 30
+   }
+  },
+  {
+   "id": "cover-r-22/k2/frequency+penetration/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 7,
+    "frequency": 7,
+    "penetration": {
+     "fraction": "20/7",
+     "value": 2.857142857142857
+    }
+   }
+  },
+  {
+   "id": "cover-r-22/k2/penetration+frequency/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 7,
+    "penetration": {
+     "fraction": "20/7",
+     "value": 2.857142857142857
+    },
+    "frequency": 7
+   }
+  },
+  {
+   "id": "cover-r-22/k3/frequency+penetration/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 11,
+    "frequency": 13,
+    "penetration": {
+     "fraction": "45/13",
+     "value": 3.4615384615384617
+    }
+   }
+  },
+  {
+   "id": "cover-r-22/k3/penetration+frequency/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 11,
+    "penetration": {
+     "fraction": "45/13",
+     "value": 3.4615384615384617
+    },
+    "frequency": 13
+   }
+  },
+  {
+   "id": "cover-r-22/k4/frequency+penetration/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 13,
+    "frequency": 18,
+    "penetration": {
+     "fraction": "15/4",
+     "value": 3.75
+    }
+   }
+  },
+  {
+   "id": "cover-r-22/k4/penetration+frequency/fixed4",
+   "function": "turf",
+   "input": "cover-r-22",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "reach": 13,
+    "penetration": {
+     "fraction": "15/4",
+     "value": 3.75
+    },
+    "frequency": 18
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k1/reach/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 1,
+   "tiebreak": [],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 1
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k1/frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 1,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 1,
+    "frequency": 1
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k1/penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 1,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 1,
+    "penetration": {
+     "fraction": "1/1",
+     "value": 1.0
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k1/frequency+penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 1,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 1,
+    "frequency": 1,
+    "penetration": {
+     "fraction": "1/1",
+     "value": 1.0
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k1/penetration+frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 1,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 1,
+    "penetration": {
+     "fraction": "1/1",
+     "value": 1.0
+    },
+    "frequency": 1
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k2/reach/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 2,
+   "tiebreak": [],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k2/frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 2,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 4
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k2/penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 2,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "3/2",
+     "value": 1.5
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k2/frequency+penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 4,
+    "penetration": {
+     "fraction": "3/2",
+     "value": 1.5
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k2/penetration+frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "3/2",
+     "value": 1.5
+    },
+    "frequency": 4
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k3/reach/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 3,
+   "tiebreak": [],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k3/frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 3,
+   "tiebreak": [
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 6
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k3/penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 3,
+   "tiebreak": [
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "18/11",
+     "value": 1.6363636363636365
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k3/frequency+penetration/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "frequency": 6,
+    "penetration": {
+     "fraction": "18/11",
+     "value": 1.6363636363636365
+    }
+   }
+  },
+  {
+   "id": "gen-reach-only-abc/k3/penetration+frequency/fixed2",
+   "function": "turf",
+   "input": "gen-reach-only-abc",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    2
+   ],
+   "expected": {
+    "reach": 3,
+    "penetration": {
+     "fraction": "18/11",
+     "value": 1.6363636363636365
+    },
+    "frequency": 6
+   }
+  },
+  {
+   "id": "data-ham/k2/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 73,
+    "frequency": 95,
+    "penetration": {
+     "fraction": "4428/95",
+     "value": 46.61052631578947
+    }
+   }
+  },
+  {
+   "id": "data-ham/k2/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 73,
+    "penetration": {
+     "fraction": "4428/95",
+     "value": 46.61052631578947
+    },
+    "frequency": 95
+   }
+  },
+  {
+   "id": "data-ham/k3/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 105,
+    "frequency": 155,
+    "penetration": {
+     "fraction": "66420/1319",
+     "value": 50.35633055344958
+    }
+   }
+  },
+  {
+   "id": "data-ham/k3/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 105,
+    "penetration": {
+     "fraction": "66420/1319",
+     "value": 50.35633055344958
+    },
+    "frequency": 155
+   }
+  },
+  {
+   "id": "data-ham/k4/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 117,
+    "frequency": 209,
+    "penetration": {
+     "fraction": "88560/1729",
+     "value": 51.22035858877964
+    }
+   }
+  },
+  {
+   "id": "data-ham/k4/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 117,
+    "penetration": {
+     "fraction": "88560/1729",
+     "value": 51.22035858877964
+    },
+    "frequency": 209
+   }
+  },
+  {
+   "id": "data-ham/k5/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 5,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 121,
+    "frequency": 267,
+    "penetration": {
+     "fraction": "3210300/61211",
+     "value": 52.44645570240643
+    }
+   }
+  },
+  {
+   "id": "data-ham/k5/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 5,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 121,
+    "penetration": {
+     "fraction": "3210300/61211",
+     "value": 52.44645570240643
+    },
+    "frequency": 267
+   }
+  },
+  {
+   "id": "data-ham/k6/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 6,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "frequency": 303,
+    "penetration": {
+     "fraction": "1926180/39523",
+     "value": 48.73567289932444
+    }
+   }
+  },
+  {
+   "id": "data-ham/k6/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 6,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "penetration": {
+     "fraction": "1926180/39523",
+     "value": 48.73567289932444
+    },
+    "frequency": 303
+   }
+  },
+  {
+   "id": "data-ham/k7/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 7,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "frequency": 356,
+    "penetration": {
+     "fraction": "17014590/345107",
+     "value": 49.30236129664133
+    }
+   }
+  },
+  {
+   "id": "data-ham/k7/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 7,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "penetration": {
+     "fraction": "17014590/345107",
+     "value": 49.30236129664133
+    },
+    "frequency": 356
+   }
+  },
+  {
+   "id": "data-ham/k8/frequency+penetration/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 8,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "frequency": 400,
+    "penetration": {
+     "fraction": "2994567840/61653773",
+     "value": 48.570715047723034
+    }
+   }
+  },
+  {
+   "id": "data-ham/k8/penetration+frequency/fixed1-2",
+   "function": "turf",
+   "input": "data-ham",
+   "size": 8,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "reach": 123,
+    "penetration": {
+     "fraction": "2994567840/61653773",
+     "value": 48.570715047723034
+    },
+    "frequency": 400
+   }
+  },
+  {
+   "id": "data-icecream/k2/frequency+penetration/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 2,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 57,
+    "frequency": 62,
+    "penetration": {
+     "fraction": "705/31",
+     "value": 22.741935483870968
+    }
+   }
+  },
+  {
+   "id": "data-icecream/k2/penetration+frequency/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 2,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 57,
+    "penetration": {
+     "fraction": "705/31",
+     "value": 22.741935483870968
+    },
+    "frequency": 62
+   }
+  },
+  {
+   "id": "data-icecream/k3/frequency+penetration/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 3,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 79,
+    "frequency": 102,
+    "penetration": {
+     "fraction": "16920/637",
+     "value": 26.562009419152275
+    }
+   }
+  },
+  {
+   "id": "data-icecream/k3/penetration+frequency/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 3,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 79,
+    "penetration": {
+     "fraction": "16920/637",
+     "value": 26.562009419152275
+    },
+    "frequency": 102
+   }
+  },
+  {
+   "id": "data-icecream/k4/frequency+penetration/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 4,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 90,
+    "frequency": 145,
+    "penetration": {
+     "fraction": "970080/33031",
+     "value": 29.368774787321
+    }
+   }
+  },
+  {
+   "id": "data-icecream/k4/penetration+frequency/fixed7",
+   "function": "turf",
+   "input": "data-icecream",
+   "size": 4,
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "reach": 90,
+    "penetration": {
+     "fraction": "970080/33031",
+     "value": 29.368774787321
+    },
+    "frequency": 145
+   }
+  },
+  {
+   "id": "identical-300/min_cover/fixed5",
+   "function": "min_cover",
+   "input": "identical-300",
+   "fixed": [
+    5
+   ],
+   "expected": {
+    "size": 4,
+    "reachable": 223
+   }
+  },
+  {
+   "id": "identical-300/min_cover/fixed2-7",
+   "function": "min_cover",
+   "input": "identical-300",
+   "fixed": [
+    2,
+    7
+   ],
+   "expected": {
+    "size": 5,
+    "reachable": 223
+   }
+  },
+  {
+   "id": "cover-r-11/min_cover/fixed4",
+   "function": "min_cover",
+   "input": "cover-r-11",
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "size": 6,
+    "reachable": 13
+   }
+  },
+  {
+   "id": "cover-r-12/min_cover/fixed8",
+   "function": "min_cover",
+   "input": "cover-r-12",
+   "fixed": [
+    8
+   ],
+   "expected": {
+    "size": 4,
+    "reachable": 15
+   }
+  },
+  {
+   "id": "cover-r-22/min_cover/fixed4",
+   "function": "min_cover",
+   "input": "cover-r-22",
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "size": 6,
+    "reachable": 15
+   }
+  },
+  {
+   "id": "tie-matrix/min_cover/fixed1",
+   "function": "min_cover",
+   "input": "tie-matrix",
+   "fixed": [
+    1
+   ],
+   "expected": {
+    "size": 3,
+    "reachable": 8
+   }
+  },
+  {
+   "id": "tie-matrix/min_cover/fixednone",
+   "function": "min_cover",
+   "input": "tie-matrix",
+   "fixed": [],
+   "expected": {
+    "size": 3,
+    "reachable": 8
+   }
+  },
+  {
+   "id": "tie-matrix/min_cover/fixed2-4-5",
+   "function": "min_cover",
+   "input": "tie-matrix",
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": {
+    "size": 3,
+    "reachable": 8
+   }
+  },
+  {
+   "id": "tie-matrix/min_cover/fixed4-1-4",
+   "function": "min_cover",
+   "input": "tie-matrix",
+   "fixed": [
+    4,
+    1,
+    4
+   ],
+   "expected": {
+    "size": 3,
+    "reachable": 8
+   }
+  },
+  {
+   "id": "random-r-20/min_cover/fixed4",
+   "function": "min_cover",
+   "input": "random-r-20",
+   "fixed": [
+    4
+   ],
+   "expected": {
+    "size": 2,
+    "reachable": 3
+   }
+  },
+  {
+   "id": "data-ham/min_cover/fixed1-2",
+   "function": "min_cover",
+   "input": "data-ham",
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": {
+    "size": 6,
+    "reachable": 123
+   }
+  },
+  {
+   "id": "data-icecream/min_cover/fixed7",
+   "function": "min_cover",
+   "input": "data-icecream",
+   "fixed": [
+    7
+   ],
+   "expected": {
+    "size": 9,
+    "reachable": 109
+   }
+  },
+  {
+   "id": "data-ham/sizes/default/frequency+penetration/fixed1-2",
+   "function": "sizes",
+   "input": "data-ham",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": [
+    {
+     "size": 2,
+     "reach": 73,
+     "frequency": 95,
+     "penetration": {
+      "fraction": "4428/95",
+      "value": 46.61052631578947
+     }
+    },
+    {
+     "size": 3,
+     "reach": 105,
+     "frequency": 155,
+     "penetration": {
+      "fraction": "66420/1319",
+      "value": 50.35633055344958
+     }
+    },
+    {
+     "size": 4,
+     "reach": 117,
+     "frequency": 209,
+     "penetration": {
+      "fraction": "88560/1729",
+      "value": 51.22035858877964
+     }
+    },
+    {
+     "size": 5,
+     "reach": 121,
+     "frequency": 267,
+     "penetration": {
+      "fraction": "3210300/61211",
+      "value": 52.44645570240643
+     }
+    },
+    {
+     "size": 6,
+     "reach": 123,
+     "frequency": 303,
+     "penetration": {
+      "fraction": "1926180/39523",
+      "value": 48.73567289932444
+     }
+    }
+   ]
+  },
+  {
+   "id": "tie-matrix/sizes/3-2/penetration+frequency/fixed1-2",
+   "function": "sizes",
+   "input": "tie-matrix",
+   "sizes": [
+    3,
+    2
+   ],
+   "tiebreak": [
+    "penetration",
+    "frequency"
+   ],
+   "fixed": [
+    1,
+    2
+   ],
+   "expected": [
+    {
+     "size": 3,
+     "reach": 8,
+     "penetration": {
+      "fraction": "3/1",
+      "value": 3.0
+     },
+     "frequency": 10
+    },
+    {
+     "size": 2,
+     "reach": 5,
+     "penetration": {
+      "fraction": "8/3",
+      "value": 2.6666666666666665
+     },
+     "frequency": 6
+    }
+   ]
+  },
+  {
+   "id": "tie-matrix/sizes/default/frequency+penetration/fixed2-4-5",
+   "function": "sizes",
+   "input": "tie-matrix",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    2,
+    4,
+    5
+   ],
+   "expected": [
+    {
+     "size": 3,
+     "reach": 8,
+     "frequency": 12,
+     "penetration": {
+      "fraction": "180/47",
+      "value": 3.8297872340425534
+     }
+    }
+   ]
+  },
+  {
+   "id": "identical-300/sizes/default/frequency+penetration/fixed5",
+   "function": "sizes",
+   "input": "identical-300",
+   "sizes": null,
+   "tiebreak": [
+    "frequency",
+    "penetration"
+   ],
+   "fixed": [
+    5
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 87,
+     "frequency": 87,
+     "penetration": {
+      "fraction": "87/1",
+      "value": 87.0
+     }
+    },
+    {
+     "size": 2,
+     "reach": 163,
+     "frequency": 193,
+     "penetration": {
+      "fraction": "18444/193",
+      "value": 95.56476683937824
+     }
+    },
+    {
+     "size": 3,
+     "reach": 204,
+     "frequency": 277,
+     "penetration": {
+      "fraction": "43036/471",
+      "value": 91.37154989384288
+     }
+    },
+    {
+     "size": 4,
+     "reach": 223,
+     "frequency": 352,
+     "penetration": {
+      "fraction": "12910800/149011",
+      "value": 86.64326794666165
+     }
+    }
+   ]
+  },
+  {
+   "id": "random-r-20/sizes/default/reach/fixed3",
+   "function": "sizes",
+   "input": "random-r-20",
+   "sizes": null,
+   "tiebreak": [],
+   "fixed": [
+    3
+   ],
+   "expected": [
+    {
+     "size": 1,
+     "reach": 2
+    },
+    {
+     "size": 2,
+     "reach": 3
+    }
+   ]
+  }
+ ]
+}

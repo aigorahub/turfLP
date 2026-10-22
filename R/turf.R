@@ -31,6 +31,10 @@
 #' If portfolios still tie after the last stage, the solver returns one of
 #' them.
 #'
+#' With `fixed`, every portfolio considered contains the fixed products, so
+#' the stages choose only the other `size - length(fixed)` products. A row
+#' \eqn{\sum_{j \in F} x_j = |F|} adds this to the model.
+#'
 #' @param reach A matrix or data frame with one row per respondent and one
 #'   column per product. A value of 1 (or `TRUE`) means that the product
 #'   reaches the respondent. All other values must be 0 (or `FALSE`). Column
@@ -39,6 +43,9 @@
 #' @param tiebreak A character vector of tie-break criteria to apply after
 #'   reach, in order. Use any of `"frequency"` and `"penetration"`, or
 #'   `character(0)` for reach only.
+#' @param fixed Column indices of products that the portfolio must contain,
+#'   or `NULL` for none. `size` counts them. Each fixed product must reach at
+#'   least one respondent. Duplicates are ignored.
 #'
 #' @return An object of class `turf_portfolio`, a list with these elements:
 #'   \describe{
@@ -53,6 +60,8 @@
 #'     \item{`penetration`}{Harmonic mean of the individual reaches of the
 #'       selected products.}
 #'     \item{`respondents`}{Number of respondents (rows of `reach`).}
+#'     \item{`fixed`}{Column indices of the fixed products, sorted, or
+#'       `integer(0)` when there are none.}
 #'   }
 #'
 #' @references
@@ -82,14 +91,23 @@
 #'
 #' # Reach only, with no tie-break
 #' turf(reach, size = 4, tiebreak = character(0))
+#'
+#' # Products 1 and 2 must be in the portfolio
+#' turf(reach, size = 4, fixed = c(1, 2))
 #' @export
-turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
+turf <- function(reach, size, tiebreak = c("frequency", "penetration"),
+                 fixed = NULL) {
   reach <- as_reach_matrix(reach)
   tiebreak <- check_tiebreak(tiebreak)
 
   prod_reach <- colSums(reach)
   cand <- which(prod_reach > 0)
   size <- check_size(size, length(cand))
+  fixed <- check_fixed_reach(check_fixed(fixed, reach), reach)
+  if (size < length(fixed)) {
+    stop(sprintf("`size` is %d, but %d products are fixed.", size,
+                 length(fixed)), call. = FALSE)
+  }
 
   # Respondents that no product reaches can never count toward reach, so they
   # stay out of the model.
@@ -120,14 +138,23 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
     c(rep(z, length.out = n), rep(x, length.out = m), pen)
   }
 
+  # Candidate positions of the fixed products.
+  fix_pos <- match(fixed, cand)
+  if (length(fix_pos) > 0) {
+    model <- add_row(model, coef = on_vars(x = replace(numeric(m), fix_pos, 1)),
+                     dir = "==", rhs = length(fix_pos))
+  }
+
   # Identical products give identical portfolios when swapped. Select them in
   # column order (x_first >= x_second >= ...), so that each set of equivalent
-  # portfolios is searched once.
+  # portfolios is searched once. A fixed product is not interchangeable with
+  # its twins, so it takes no part: a row with it would force the twins in.
   col_keys <- vapply(seq_len(m), function(j) {
     paste(which(a[, j] == 1), collapse = ",")
   }, character(1))
-  for (j in which(duplicated(col_keys))) {
-    prev <- max(which(col_keys[seq_len(j - 1)] == col_keys[j]))
+  free <- setdiff(seq_len(m), fix_pos)
+  for (j in free[duplicated(col_keys[free])]) {
+    prev <- max(free[free < j & col_keys[free] == col_keys[j]])
     model <- add_row(model, coef = on_vars(x = replace(numeric(m), c(prev, j),
                                                       c(1, -1))),
                      dir = ">=", rhs = 0)
@@ -176,7 +203,8 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
       }
       x <- sol[x_vars]
       selected <- x > 0.5
-      if (anyNA(x) || sum(selected) != size || any(abs(x - selected) > 1e-6)) {
+      if (anyNA(x) || sum(selected) != size || any(abs(x - selected) > 1e-6) ||
+          !all(selected[fix_pos])) {
         if (is.null(previous)) {
           stop(sprintf(
             "HiGHS returned an invalid solution in the %s stage.",
@@ -304,7 +332,7 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
     }
   }
 
-  new_portfolio(reach, cand[selected])
+  new_portfolio(reach, cand[selected], fixed)
 }
 
 #' Find the smallest portfolio that reaches every reachable respondent
@@ -313,9 +341,14 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
 #' products such that every respondent that some product reaches is reached
 #' by at least one selected product. Larger portfolios cannot add reach, so
 #' for reach this is the largest size worth passing to [turf()]. Larger
-#' portfolios can still add frequency.
+#' portfolios can still add frequency. With `fixed`, it finds the smallest
+#' portfolio that contains the fixed products and reaches every reachable
+#' respondent.
 #'
 #' @inheritParams turf
+#' @param fixed Column indices of products that the portfolio must contain,
+#'   or `NULL` for none. Each fixed product must reach at least one
+#'   respondent. Duplicates are ignored.
 #' @return An object of class `turf_portfolio`. See [turf()] for its
 #'   elements. When several portfolios of the minimum size exist, the solver
 #'   returns one of them.
@@ -323,13 +356,16 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration")) {
 #' set.seed(1234)
 #' reach <- turf_simulate()
 #' turf_min_cover(reach)
+#' turf_min_cover(reach, fixed = 1)
 #' @export
-turf_min_cover <- function(reach) {
+turf_min_cover <- function(reach, fixed = NULL) {
   reach <- as_reach_matrix(reach)
+  fixed <- check_fixed(fixed, reach)
   cand <- which(colSums(reach) > 0)
   if (length(cand) == 0) {
     stop("No product reaches any respondent.", call. = FALSE)
   }
+  fixed <- check_fixed_reach(fixed, reach)
 
   a <- reach[rowSums(reach) > 0, cand, drop = FALSE]
   hits <- which(a == 1, arr.ind = TRUE)
@@ -339,19 +375,25 @@ turf_min_cover <- function(reach) {
     rhs = rep(1, nrow(a))
   )
   x_vars <- seq_len(ncol(a))
+  fix_pos <- match(fixed, cand)
+  if (length(fix_pos) > 0) {
+    model <- add_row(model, coef = replace(numeric(ncol(a)), fix_pos, 1),
+                     dir = "==", rhs = length(fix_pos))
+  }
   sol <- solve_lp("min", rep(1, ncol(a)), model, x_vars, "set cover")
   selected <- sol > 0.5
 
   # Check the solver's result from the selected products, as turf() does
-  # (docs/algorithm.md section 11): every model respondent is covered and
-  # the solution is integral.
+  # (docs/algorithm.md section 11): every model respondent is covered, the
+  # solution is integral, and it has every fixed product.
   covered <- rowSums(a[, selected, drop = FALSE]) > 0
-  if (anyNA(sol) || !all(covered) || any(abs(sol - selected) > 1e-6)) {
+  if (anyNA(sol) || !all(covered) || any(abs(sol - selected) > 1e-6) ||
+      !all(selected[fix_pos])) {
     stop("HiGHS returned an invalid solution in the set cover stage.",
          call. = FALSE)
   }
 
-  new_portfolio(reach, cand[selected])
+  new_portfolio(reach, cand[selected], fixed)
 }
 
 #' Find the best portfolio for each of several sizes
@@ -361,7 +403,8 @@ turf_min_cover <- function(reach) {
 #'
 #' @inheritParams turf
 #' @param sizes The portfolio sizes to solve. The default is every size from
-#'   1 to the size from [turf_min_cover()].
+#'   1 (or the number of fixed products) to the size from [turf_min_cover()]
+#'   with the same `fixed`.
 #' @return A data frame with one row per size and the columns `size`,
 #'   `reach`, `reach_prop`, `frequency`, `penetration`, and `products`. The
 #'   `products` column holds the names of the selected products, separated
@@ -370,14 +413,16 @@ turf_min_cover <- function(reach) {
 #' set.seed(1234)
 #' reach <- turf_simulate(n_respondents = 300, n_products = 15)
 #' turf_sizes(reach, sizes = 1:4)
+#' turf_sizes(reach, fixed = c(1, 2))
 #' @export
 turf_sizes <- function(reach, sizes = NULL,
-                       tiebreak = c("frequency", "penetration")) {
+                       tiebreak = c("frequency", "penetration"), fixed = NULL) {
   reach <- as_reach_matrix(reach)
+  fixed <- check_fixed_reach(check_fixed(fixed, reach), reach)
   if (is.null(sizes)) {
-    sizes <- seq_len(turf_min_cover(reach)$size)
+    sizes <- seq.int(max(1L, length(fixed)), turf_min_cover(reach, fixed)$size)
   }
-  results <- lapply(sizes, function(k) turf(reach, k, tiebreak))
+  results <- lapply(sizes, function(k) turf(reach, k, tiebreak, fixed))
 
   data.frame(
     size = vapply(results, function(p) p$size, integer(1)),
@@ -396,6 +441,10 @@ turf_sizes <- function(reach, sizes = NULL,
 print.turf_portfolio <- function(x, ...) {
   cat("TURF portfolio of", x$size, "products\n")
   cat("Products:   ", paste(x$names, collapse = ", "), "\n")
+  if (length(x$fixed) > 0) {
+    cat("Fixed:      ", paste(x$names[match(x$fixed, x$products)],
+                              collapse = ", "), "\n")
+  }
   cat(sprintf(
     "Reach:        %d of %d respondents (%.1f%%)\n",
     x$reach, x$respondents, 100 * x$reach_prop
@@ -443,6 +492,36 @@ check_size <- function(size, max_size) {
     ), call. = FALSE)
   }
   as.integer(size)
+}
+
+# The type and range checks of `fixed` (docs/algorithm.md section 1). Returns
+# the indices as given, so that the zero-reach check names the first bad one.
+# No indexing with `[` here: 0 and negative indices must fail the range check.
+check_fixed <- function(fixed, reach) {
+  if (length(fixed) == 0) {
+    return(integer(0))
+  }
+  if (!is.numeric(fixed) || !all(is.finite(fixed)) ||
+      any(fixed != round(fixed))) {
+    stop("`fixed` must be a vector of whole-number product indices.",
+         call. = FALSE)
+  }
+  if (any(fixed < 1 | fixed > ncol(reach))) {
+    stop(sprintf("`fixed` must hold product indices from 1 to %d.",
+                 ncol(reach)), call. = FALSE)
+  }
+  as.integer(fixed)
+}
+
+# Every fixed product must reach someone: others are not candidates, and
+# their penetration term would be 1 / 0. Returns the distinct indices, sorted.
+check_fixed_reach <- function(fixed, reach) {
+  zero <- fixed[colSums(reach)[fixed] == 0]
+  if (length(zero) > 0) {
+    stop(sprintf("Fixed product %s reaches no respondent.",
+                 colnames(reach)[zero[1]]), call. = FALSE)
+  }
+  sort(unique(fixed))
 }
 
 check_tiebreak <- function(tiebreak) {
@@ -549,7 +628,7 @@ add_row <- function(model, coef, dir, rhs) {
   model
 }
 
-new_portfolio <- function(reach, products) {
+new_portfolio <- function(reach, products, fixed = integer(0)) {
   products <- sort(unname(products))
   prod_reach <- colSums(reach)[products]
   reached <- sum(rowSums(reach[, products, drop = FALSE]) > 0)
@@ -562,7 +641,8 @@ new_portfolio <- function(reach, products) {
       reach_prop = reached / nrow(reach),
       frequency = sum(prod_reach),
       penetration = length(products) / sum(1 / prod_reach),
-      respondents = nrow(reach)
+      respondents = nrow(reach),
+      fixed = fixed
     ),
     class = "turf_portfolio"
   )

@@ -71,6 +71,20 @@ describe("worker", () => {
     expect(replies).toEqual([expect.objectContaining({ type: "stages", id: 6, stop: "cancelled" })]);
   });
 
+  it("passes the fixed products to the run, the cover, and the analysis", async () => {
+    const fixed = [6, 8];
+    const run = await ask({ type: "run", id: 7, matrix, sizes: [2, 3], tiebreak: ["frequency"], fixed });
+    const ps = run.flatMap((r) => (r.type === "size" ? [r.portfolio] : []));
+    expect(ps.map((p) => p.fixed)).toEqual([fixed, fixed]);
+    for (const p of ps) expect(fixed.every((j) => p.products.includes(j))).toBe(true);
+    const [c] = await ask({ type: "cover", id: 8, matrix, fixed });
+    expect(c.type === "cover" && c.portfolio.fixed).toEqual(fixed);
+    const an = await ask({ type: "analyze", id: 9, matrix, products: [...ps[1].products], tiebreak: ["frequency"], fixed });
+    const fr = an.at(-1)!;
+    expect(fr.type === "frontier" && fr.stop).toBe("complete");
+    if (fr.type === "frontier") for (const q of fr.points) expect(fixed.every((j) => q.products.includes(j))).toBe(true);
+  });
+
   it("ignores a cancel for no analysis", async () => {
     expect(await ask({ type: "cancel", id: 99 })).toEqual([]);
   });

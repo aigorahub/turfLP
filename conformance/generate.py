@@ -163,11 +163,14 @@ def near_tie(best, other, max_reach, k):
     return 0 < gap <= 2 * tolerance(scaled_best, k)
 
 
-def portfolios(mat, k):
-    n = math.comb(len(mat.cand), k)
+def portfolios(mat, k, fixed=()):
+    """Every portfolio of k candidates that contains the 0-based `fixed` products."""
+    fixed = tuple(sorted(set(fixed)))
+    free = [j for j in mat.cand if j not in fixed]
+    n = math.comb(len(free), k - len(fixed))
     if n > MAX_COMBINATIONS:
-        raise Excluded("C(%d, %d) = %d portfolios" % (len(mat.cand), k, n))
-    return combinations(mat.cand, k)
+        raise Excluded("C(%d, %d) = %d portfolios" % (len(free), k - len(fixed), n))
+    return (tuple(sorted(fixed + rest)) for rest in combinations(free, k - len(fixed)))
 
 
 def union_count(mat, sel):
@@ -177,11 +180,12 @@ def union_count(mat, sel):
     return u.bit_count()
 
 
-def optimum(mat, k, order):
-    """Exact lexicographic optimum values for reach then `order`."""
+def optimum(mat, k, order, fixed=()):
+    """Exact lexicographic optimum values for reach then `order`, over the
+    portfolios that contain the 0-based `fixed` products."""
     best_reach = -1
     eligible = []
-    for sel in portfolios(mat, k):
+    for sel in portfolios(mat, k, fixed):
         r = union_count(mat, sel)
         if r > best_reach:
             best_reach, eligible = r, [sel]
@@ -208,11 +212,11 @@ def optimum(mat, k, order):
     return expected
 
 
-def min_cover(mat):
+def min_cover(mat, fixed=()):
     if not mat.cand:
         raise Excluded("no product reaches any respondent")
-    for k in range(1, len(mat.cand) + 1):
-        for sel in portfolios(mat, k):
+    for k in range(max(1, len(set(fixed))), len(mat.cand) + 1):
+        for sel in portfolios(mat, k, fixed):
             if union_count(mat, sel) == mat.reachable:
                 return {"size": k, "reachable": mat.reachable}
     raise AssertionError("unreachable")
@@ -275,6 +279,57 @@ SIZES_RECIPES = [
     ("random-r-18", None, ["frequency"]),
     ("random-r-16", None, ["frequency", "penetration"]),
     ("cover-r-5", [1, 1, 2], ["frequency", "penetration"]),
+]
+
+# Fixed-product cases. `fixed` is 1-based, as in docs/algorithm.md, and is
+# passed as written: duplicates and order are part of some cases.
+FIXED_TURF_RECIPES = [
+    # A fixed product that is the later twin of free products (columns 1 to 12
+    # are identical): the symmetry rows must not force its twins in.
+    ("identical-300", [1, 2, 3, 4], [5], FULL_ORDERS),
+    ("identical-300", [4], [12], FULL_ORDERS),
+    # Two fixed twins.
+    ("identical-300", [2, 3], [2, 7], FULL_ORDERS),
+    ("tie-matrix", "all", [3], ORDERS),
+    ("tie-matrix", [2, 3, 4], [5, 2], ORDERS),
+    ("tie-matrix", [2], [], ORDERS),
+    # Duplicated and unordered indices.
+    ("tie-matrix", [3], [4, 1, 4], FULL_ORDERS),
+    # Every candidate fixed.
+    ("tie-matrix", [5], [1, 2, 3, 4, 5], FULL_ORDERS),
+    # Fixed products that already reach every reachable respondent.
+    ("tie-matrix", [3, 4], [2, 4, 5], FULL_ORDERS),
+    # Fixed columns after a column that reaches no one.
+    ("random-r-20", "all", [3], ORDERS),
+    ("random-r-20", [2], [4, 3], FULL_ORDERS),
+    ("random-r-7", "all", [6], FULL_ORDERS),
+    ("cover-r-22", [2, 3, 4], [4], FULL_ORDERS),
+    ("gen-reach-only-abc", "all", [2], ORDERS),
+    ("data-ham", "all", [1, 2], FULL_ORDERS),
+    ("data-icecream", [2, 3, 4], [7], FULL_ORDERS),
+]
+
+FIXED_COVER_RECIPES = [
+    ("identical-300", [5]),
+    ("identical-300", [2, 7]),
+    ("cover-r-11", [4]),
+    ("cover-r-12", [8]),
+    ("cover-r-22", [4]),
+    ("tie-matrix", [1]),
+    ("tie-matrix", []),
+    ("tie-matrix", [2, 4, 5]),
+    ("tie-matrix", [4, 1, 4]),
+    ("random-r-20", [4]),
+    ("data-ham", [1, 2]),
+    ("data-icecream", [7]),
+]
+
+FIXED_SIZES_RECIPES = [
+    ("data-ham", None, [1, 2], ["frequency", "penetration"]),
+    ("tie-matrix", [3, 2], [1, 2], ["penetration", "frequency"]),
+    ("tie-matrix", None, [2, 4, 5], ["frequency", "penetration"]),
+    ("identical-300", None, [5], ["frequency", "penetration"]),
+    ("random-r-20", None, [3], []),
 ]
 
 W2 = ("The search for the penetration optimum stopped ({reason}). The penetration "
@@ -380,6 +435,39 @@ def build(input_texts):
         sizes_cases.append({"id": cid, "input": name, "sizes": sizes,
                             "tiebreak": order, "expected": rows})
 
+    fixed_cases = []
+    for name, sizes, fixed, orders in FIXED_TURF_RECIPES:
+        mat = mats[name]
+        f0 = [j - 1 for j in fixed]
+        ks = range(max(1, len(set(f0))), len(mat.cand) + 1) if sizes == "all" else sizes
+        for k in ks:
+            for order in orders:
+                cid = "%s/k%d/%s/fixed%s" % (name, k, "+".join(order) or "reach",
+                                             "-".join(map(str, fixed)) or "none")
+                try:
+                    exp = optimum(mat, k, order, f0)
+                except Excluded as e:
+                    excluded.append({"case": cid, "reason": str(e)})
+                    continue
+                fixed_cases.append({"id": cid, "function": "turf", "input": name, "size": k,
+                                    "tiebreak": order, "fixed": fixed, "expected": exp})
+    for name, fixed in FIXED_COVER_RECIPES:
+        cid = "%s/min_cover/fixed%s" % (name, "-".join(map(str, fixed)) or "none")
+        exp = min_cover(mats[name], [j - 1 for j in fixed])
+        fixed_cases.append({"id": cid, "function": "min_cover", "input": name, "fixed": fixed,
+                            "expected": exp})
+    for name, sizes, fixed, order in FIXED_SIZES_RECIPES:
+        mat = mats[name]
+        f0 = [j - 1 for j in fixed]
+        ks = (list(range(max(1, len(set(f0))), min_cover(mat, f0)["size"] + 1))
+              if sizes is None else sizes)
+        rows = [dict(size=k, **optimum(mat, k, order, f0)) for k in ks]
+        cid = "%s/sizes/%s/%s/fixed%s" % (name, "default" if sizes is None else
+                                          "-".join(map(str, sizes)), "+".join(order) or "reach",
+                                          "-".join(map(str, fixed)) or "none")
+        fixed_cases.append({"id": cid, "function": "sizes", "input": name, "sizes": sizes,
+                            "tiebreak": order, "fixed": fixed, "expected": rows})
+
     bounded_cases = []
     for rec in BOUNDED_RECIPES:
         mat = mats[rec["input"]]
@@ -401,6 +489,7 @@ def build(input_texts):
         "sizes.json": {"schema_version": SCHEMA_VERSION, "kind": "sizes", "cases": sizes_cases},
         "bounded.json": {"schema_version": SCHEMA_VERSION, "kind": "bounded",
                          "cases": bounded_cases},
+        "fixed.json": {"schema_version": SCHEMA_VERSION, "kind": "fixed", "cases": fixed_cases},
         "comparator.json": {"schema_version": SCHEMA_VERSION, "kind": "comparator",
                             "cases": comparator_cases()},
         "format.json": {"schema_version": SCHEMA_VERSION, "kind": "format",

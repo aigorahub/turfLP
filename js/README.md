@@ -14,8 +14,8 @@ npm package names are lower case, so the package is `turflp`. To install the dev
 
 ```sh
 git clone https://github.com/aigorahub/turfLP.git
-cd turfLP/js && npm ci && npm pack          # writes turflp-0.2.0.tgz
-cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.2.0.tgz
+cd turfLP/js && npm ci && npm pack          # writes turflp-0.3.0.tgz
+cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.3.0.tgz
 ```
 
 ## Usage
@@ -32,8 +32,12 @@ console.log(await turf(reach, 2, { names: ham.columns }));
 // {
 //   products: [ 3, 4 ], names: [ 'N4', 'S1' ], size: 2, reach: 98,
 //   reachProp: 0.7716535433070866, frequency: 118, penetration: 58.98305084745762,
-//   respondents: 127, warnings: []
+//   respondents: 127, fixed: [], warnings: []
 // }
+
+// Product N1 (column 0) must be in the portfolio; the stages choose the other two.
+const p = await turf(reach, 3, { names: ham.columns, fixed: [0] });
+console.log(p.names, p.reach);   // [ 'N1', 'N4', 'S1' ] 110
 
 for (const p of await turfSizes(reach, [1, 2, 3, 4], { names: ham.columns })) {
   console.log(p.size, p.reach, p.names.join(", "));
@@ -48,26 +52,28 @@ for (const p of await turfSizes(reach, [1, 2, 3, 4], { names: ham.columns })) {
 
 ```ts
 turf(reach, size, options?): Promise<Portfolio>
-turfMinCover(reach, options?: { names? }): Promise<Portfolio>
+turfMinCover(reach, options?: { names?, fixed? }): Promise<Portfolio>
 turfSizes(reach, sizes?, options?): Promise<Portfolio[]>
 loadSolver(options?: { locateFile?, wasmBinary?, wasmModule? }): Promise<void>
 
 interface TurfOptions {
   tiebreak?: ("frequency" | "penetration")[];   // default ["frequency", "penetration"]
   names?: string[];                             // default P1, P2, ...
+  fixed?: number[];                             // 0-based columns every portfolio contains; default []
   maxPool?: number;                             // default 1000
   maxPoolSeconds?: number;                      // default 30
 }
 
 interface Portfolio {
   products: number[]; names: string[]; size: number; reach: number; reachProp: number;
-  frequency: number; penetration: number; respondents: number; warnings: string[];
+  frequency: number; penetration: number; respondents: number; fixed: number[]; warnings: string[];
 }
 ```
 
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
-- `turfMinCover` finds the fewest products that together reach every respondent that some product reaches.
-- `turfSizes` solves several sizes. The default is every size from 1 to the minimum cover size.
+- `fixed` lists the 0-based column indices of products that every portfolio must contain, for example products already on the shelf. `size` counts them, and the stages choose the other products. Each fixed product must reach at least one respondent; duplicates are ignored.
+- `turfMinCover` finds the fewest products that together reach every respondent that some product reaches, with the `fixed` products among them.
+- `turfSizes` solves several sizes. The default is every size from 1 (or the number of fixed products) to the minimum cover size with the same `fixed`.
 - `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (the bytes of `highs.wasm`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file, for example in a browser worker ([dashboard/](../dashboard/) does this).
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 

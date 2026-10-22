@@ -108,10 +108,11 @@ function csvField(s: string): string {
 
 /** The results as CSV, one row per size. */
 export function resultsCsv(results: SizeResult[]): string {
-  const head = "size,reach,reach_percent,frequency,penetration,products,seconds";
+  const head = "size,reach,reach_percent,frequency,penetration,products,fixed,seconds";
   const lines = results.map(({ portfolio: p, seconds }) => [
     p.size, p.reach, (100 * p.reachProp).toFixed(2), p.frequency, p.penetration.toFixed(4),
-    csvField(p.names.join("; ")), seconds.toFixed(3),
+    csvField(p.names.join("; ")), csvField(p.fixed.map((j) => p.names[p.products.indexOf(j)]).join("; ")),
+    seconds.toFixed(3),
   ].join(","));
   return [head, ...lines].join("\n") + "\n";
 }

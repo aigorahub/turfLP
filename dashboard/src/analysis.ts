@@ -41,7 +41,10 @@ class Stopped extends Error {
   constructor(readonly reason: Stop) { super(reason); }
 }
 
-/** The size-k model of docs/algorithm.md section 3, without the penetration variable. */
+/**
+ * The size-k model of docs/algorithm.md section 3, without the penetration
+ * variable. With `fixed`, every portfolio of the model contains those columns.
+ */
 class SizeModel {
   readonly n: number;
   readonly m: number;
@@ -56,15 +59,20 @@ class SizeModel {
   readonly base: solver.Model;
   /** The model without those rows, so that counts include each order of identical products. */
   readonly plain: solver.Model;
+  /** Candidate positions of the fixed columns. */
+  readonly fixPos: number[];
   private readonly sums: Int32Array;
 
-  constructor(readonly matrix: Matrix, readonly size: number) {
+  constructor(readonly matrix: Matrix, readonly size: number, fixed: readonly number[] = []) {
     const { rows, cols, data } = matrix;
     this.sums = new Int32Array(cols);
     for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) this.sums[j] += data[i * cols + j];
     this.cand = [];
     for (let j = 0; j < cols; j++) if (this.sums[j] > 0) this.cand.push(j);
     if (size < 1 || size > this.cand.length) throw new RangeError(`No portfolio of ${size} products reaches anyone.`);
+    this.fixPos = [...new Set(fixed)].map((j) => this.cand.indexOf(j));
+    if (this.fixPos.includes(-1)) throw new RangeError("A fixed product reaches no one.");
+    if (this.fixPos.length > size) throw new RangeError(`A portfolio of ${size} cannot hold ${this.fixPos.length} fixed products.`);
     const kept: number[] = [];
     for (let i = 0; i < rows; i++) if (this.cand.some((j) => data[i * cols + j] === 1)) kept.push(i);
     const n = (this.n = kept.length);
@@ -95,10 +103,16 @@ class SizeModel {
     let model = new solver.Model(nVars, {
       starts, indices: Int32Array.from(idx), values: new Float64Array(idx.length).fill(1), lower, upper,
     });
+    if (this.fixPos.length) {
+      model = model.addRow(this.fixPos.map((k) => n + k), new Float64Array(this.fixPos.length).fill(1),
+                           this.fixPos.length, this.fixPos.length);
+    }
     this.plain = model;
-    // Identical products: keep one order, as the package does.
+    // Identical free products: keep one order, as the package does. A fixed
+    // product takes no part, or the row would force its twins in.
     const seen = new Map<string, number>();
     this.colRows.forEach((rs, k) => {
+      if (this.fixPos.includes(k)) return;
       const key = rs.join(",");
       const prev = seen.get(key);
       if (prev !== undefined) model = model.addRow([n + prev, n + k], [1, -1], 0, Infinity);
@@ -174,7 +188,7 @@ class SizeModel {
       if (!(Math.abs(x) <= 1e-6 || Math.abs(x - 1) <= 1e-6)) throw new Stopped("invalid");
       if (x > 0.5) { sel[k] = 1; count++; }
     }
-    if (count !== this.size) throw new Stopped("invalid");
+    if (count !== this.size || this.fixPos.some((k) => !sel[k])) throw new Stopped("invalid");
     return sel;
   }
 }
@@ -189,9 +203,10 @@ async function pause(between: Between | undefined): Promise<void> {
  * and how many portfolios are at least as good up to each stage.
  */
 export async function stageInfo(matrix: Matrix, products: readonly number[], tiebreak: readonly Criterion[],
-                                options: { seconds?: number; between?: Between } = {}): Promise<{ stages: StageInfo[]; stop: Stop }> {
+                                options: { seconds?: number; between?: Between; fixed?: readonly number[] } = {}):
+    Promise<{ stages: StageInfo[]; stop: Stop }> {
   await solver.getSolver();
-  const sm = new SizeModel(matrix, products.length);
+  const sm = new SizeModel(matrix, products.length, options.fixed);
   const chosen = sm.selection(products);
   const p = sm.point(chosen);
   const deadline = performance.now() / 1000 + (options.seconds ?? 20);
@@ -283,6 +298,8 @@ export interface FrontierOptions {
   between?: Between;
   /** Called with each point as it is found, from most reach to most frequency. */
   onPoint?: (p: Point) => void;
+  /** Columns that every portfolio contains. */
+  fixed?: readonly number[];
 }
 
 /**
@@ -294,11 +311,14 @@ export interface FrontierOptions {
 export async function frontier(matrix: Matrix, size: number, options: FrontierOptions = {}):
     Promise<{ points: Point[]; maxFrequency: number; stop: Stop }> {
   await solver.getSolver();
-  const sm = new SizeModel(matrix, size);
+  const sm = new SizeModel(matrix, size, options.fixed);
   const deadline = performance.now() / 1000 + (options.seconds ?? 30);
   const maxPoints = options.maxPoints ?? 40;
-  // The most frequency is the sum of the largest column sums; no solve needed.
-  const maxFrequency = [...sm.candReach].sort((a, b) => b - a).slice(0, size).reduce((a, b) => a + b, 0);
+  // The most frequency is the reach of the fixed columns plus the largest
+  // column sums of the others; no solve needed.
+  const fixedReach = sm.fixPos.reduce((s, k) => s + sm.candReach[k], 0);
+  const maxFrequency = fixedReach + [...sm.candReach].filter((_, k) => !sm.fixPos.includes(k))
+    .sort((a, b) => b - a).slice(0, size - sm.fixPos.length).reduce((a, b) => a + b, 0);
   const points: Point[] = [];
   let stop: Stop = "complete";
   try {

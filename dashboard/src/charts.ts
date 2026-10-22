@@ -418,6 +418,8 @@ export interface BarsOptions {
   respondents: number;
   /** Column indices of the selected portfolio; null before a run. */
   selected: ReadonlySet<number> | null;
+  /** Column indices of the fixed products. */
+  fixed?: ReadonlySet<number>;
 }
 
 /** Individual reach of each product, largest first. */
@@ -432,19 +434,20 @@ export function productBars(host: HTMLElement, o: BarsOptions): void {
   listEl.setAttribute("role", "list");
   for (const j of order) {
     const inPortfolio = o.selected?.has(j) ?? false;
+    const isFixed = o.fixed?.has(j) ?? false;
     const row = html("div", `bar-row${o.selected ? (inPortfolio ? " is-in" : " is-out") : ""}`, undefined, listEl);
     row.setAttribute("role", "listitem");
     row.tabIndex = 0;
     row.dataset.product = String(j);
-    const name = html("span", "bar-name", o.names[j], row);
-    name.title = o.names[j];
+    const name = html("span", "bar-name", isFixed ? `${o.names[j]} (fixed)` : o.names[j], row);
+    name.title = name.textContent!;
     const track = html("span", "bar-track", undefined, row);
     const fill = html("span", "bar-fill", undefined, track);
     fill.style.width = `${(100 * o.productReach[j]) / max}%`;
     const prop = o.productReach[j] / o.respondents;
     html("span", "bar-value", percent(prop), row);
     row.setAttribute("aria-label",
-      `${o.names[j]}: reaches ${percent(prop)}${inPortfolio ? ", in the portfolio" : ""}`);
+      `${o.names[j]}: reaches ${percent(prop)}${isFixed ? ", fixed" : ""}${inPortfolio ? ", in the portfolio" : ""}`);
     const show = () => {
       const r = row.getBoundingClientRect();
       const h = host.getBoundingClientRect();
@@ -452,7 +455,8 @@ export function productBars(host: HTMLElement, o: BarsOptions): void {
       tooltip.show([
         { text: o.names[j], strong: true },
         { text: `Reaches ${count(o.productReach[j])} of ${count(o.respondents)} (${percent(prop)})` },
-        ...(inPortfolio ? [{ text: "In the selected portfolio", muted: true }] : []),
+        ...(isFixed ? [{ text: "Fixed: in every portfolio", muted: true }] : []),
+        ...(inPortfolio && !isFixed ? [{ text: "In the selected portfolio", muted: true }] : []),
       ], t.left - h.left + (t.width * o.productReach[j]) / max, r.top - h.top);
     };
     row.addEventListener("pointerenter", show);

@@ -179,3 +179,61 @@ describe("stackColumns", () => {
     expect(addedInOrder(matrix, [1, 0])[0]).toBe(measure([1]).reach);
   });
 });
+
+describe("fixed products", () => {
+  const fixed = [6, 8];
+  const withFixed = (k: number) => combos(t.cols, k).filter((c) => fixed.every((j) => c.includes(j))).map(measure);
+
+  it.each([2, 3, 5])("the trade-off of size %i matches every portfolio with the fixed products", async (k) => {
+    const all = withFixed(k);
+    const pareto = all.filter((p) => !all.some((q) =>
+      q.reach >= p.reach && q.frequency >= p.frequency && (q.reach > p.reach || q.frequency > p.frequency)));
+    const want = [...new Map(pareto.map((p) => [`${p.reach}|${p.frequency}`, p])).values()]
+      .sort((a, b) => b.reach - a.reach)
+      .map((p) => [p.reach, p.frequency]);
+    const res = await frontier(matrix, k, { fixed });
+    // Without the fixed products in the maximum, the search would stop at "limit" or run past the frontier.
+    expect(res.stop).toBe("complete");
+    expect(res.points.map((p) => [p.reach, p.frequency])).toEqual(want);
+    expect(res.maxFrequency).toBe(Math.max(...all.map((p) => p.frequency)));
+    for (const p of res.points) expect(fixed.every((j) => p.products.includes(j))).toBe(true);
+  });
+
+  it.each([3, 5])("the stages of size %i count only portfolios with the fixed products", async (k) => {
+    const chosen = await turf(rows, k, { tiebreak: ["frequency", "penetration"], fixed });
+    const all = withFixed(k);
+    expect(chosen.reach).toBe(Math.max(...all.map((p) => p.reach)));
+    const res = await stageInfo(matrix, [...chosen.products], ["frequency", "penetration"], { fixed });
+    expect(res.stop).toBe("complete");
+    const atReach = all.filter((p) => p.reach >= chosen.reach);
+    const atFreq = atReach.filter((p) => p.frequency >= chosen.frequency);
+    const [s1, s2] = res.stages;
+    expect(s2.worst).toBe(Math.min(...atReach.map((p) => p.frequency)));
+    expect([s1.ties, s1.tiesAtLeast]).toEqual([Math.min(atReach.length, TIE_CAP), atReach.length >= TIE_CAP]);
+    expect(s2.ties).toBe(Math.min(atFreq.length, TIE_CAP));
+  });
+
+  it("does not force the twin of a fixed product in", async () => {
+    // A and B are identical. With B fixed, {B, C} has the most reach.
+    const a = [[1, 1, 0], [1, 1, 0], [0, 0, 1]];
+    const m = { rows: 3, cols: 3, data: Uint8Array.from(a.flat()), names: ["A", "B", "C"] };
+    const res = await stageInfo(m, [1, 2], ["frequency"], { fixed: [1] });
+    expect(res.stop).toBe("complete");
+    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[1, false], [1, false]]);
+    const fr = await frontier(m, 2, { fixed: [1] });
+    expect([fr.stop, fr.maxFrequency, fr.points.map((p) => [p.reach, p.frequency])])
+      .toEqual(["complete", 4, [[3, 3], [2, 4]]]);
+  });
+
+  it("puts the fixed products first in the contributions and at the bottom of each column", () => {
+    const parts = contributions(matrix, [0, 1, 6], [6]);
+    expect(parts[0]).toEqual({ product: 6, added: measure([6]).reach });
+    expect(parts.reduce((s, p) => s + p.added, 0)).toBe(measure([0, 1, 6]).reach);
+    const portfolios = [{ products: [6, 8] }, { products: [0, 6, 8] }, { products: [0, 1, 6, 8] }];
+    const { slots, columns } = stackColumns(matrix, portfolios, fixed);
+    expect([slots.get(6), slots.get(8)].sort()).toEqual([0, 1]);
+    for (const parts of columns) {
+      expect(parts.slice(0, 2).map((p) => p.products[0]).sort()).toEqual(fixed);
+    }
+  });
+});

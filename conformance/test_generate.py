@@ -93,6 +93,25 @@ class CoverTest(unittest.TestCase):
             g.min_cover(matrix([[0, 0], [0, 0]]))
 
 
+class FixedTest(unittest.TestCase):
+    def test_portfolios_contain_the_fixed_products(self):
+        # A and B are identical; fixing the later twin B must not bring A in.
+        m = matrix([[1, 1, 0], [1, 1, 0], [0, 0, 1]], ["A", "B", "C"])
+        self.assertEqual(list(g.portfolios(m, 2, [1])), [(0, 1), (1, 2)])
+        self.assertEqual(g.optimum(m, 2, ["frequency"], [1]), {"reach": 3, "frequency": 3})
+        self.assertEqual(list(g.portfolios(m, 2, [1, 1])), [(0, 1), (1, 2)])
+
+    def test_tie_matrix_with_product_1_fixed(self):
+        # Product 1 reaches rows 6 and 7. With it, the best second product is
+        # 5 (rows 1, 2, 4, 5, 8): reach 7, frequency 2 + 5. Without it, the
+        # optimum has frequency 8.
+        m = matrix(TIE)
+        self.assertEqual(g.optimum(m, 2, ["frequency"], [0]), {"reach": 7, "frequency": 7})
+        self.assertEqual(g.optimum(m, 1, ["frequency"], [0]), {"reach": 2, "frequency": 2})
+        # 1, 3, 5 reaches all 8 rows, and no pair with 1 does.
+        self.assertEqual(g.min_cover(m, [0]), {"size": 3, "reachable": 8})
+
+
 class ComparatorTest(unittest.TestCase):
     def test_threshold_is_exact(self):
         for case in g.comparator_cases():
@@ -113,6 +132,8 @@ class FixtureTest(unittest.TestCase):
     def test_penetration_value_matches_fraction(self):
         import json
         cases = json.loads((g.FIXTURES / "turf.json").read_text())["cases"]
+        cases += [c for c in json.loads((g.FIXTURES / "fixed.json").read_text())["cases"]
+                  if c["function"] == "turf"]
         for c in cases:
             pen = c["expected"].get("penetration")
             if pen:
