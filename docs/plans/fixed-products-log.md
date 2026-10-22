@@ -13,3 +13,4 @@
 - 2026-10-21: John freed disk space (22 GB free). astra B3 at ee157f8: two blockers (dict accepted; fixed=[10**400] raised OverflowError). Dict rejected in ab53c30; overflow fixed next, test fails without the fix. astra weekly limit now 0%: grok and agy review from here. agy restarted again.
 - 2026-10-21: B4 done: dashboard fixed products (settings list with filter, run/cover/analyze carry fixed, analysis fixed row and maxFrequency, contributions fixed first, marks, CSV column, data and threshold rules). typecheck, vitest 58, build, test:browser worker and page mode pass.
 - 2026-10-21: B5 done: READMEs, NEWS 0.3.0, version 0.3.0 with lock files.
+- 2026-10-21: B4 review at 740b0ca: grok GREEN (advisory: more than 8 fixed products share the top "other" color segment; display only). B4 and B5 review at 1efc350: agy GREEN, gates in a clean clone pass. CI on 1efc350 running.
