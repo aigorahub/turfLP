@@ -192,9 +192,49 @@ test_that("bad input gives clear errors", {
   expect_error(turf(data.frame(a = c("x", "y")), 1), "numeric or logical")
 })
 
+test_that("fixed products give exact errors, in order", {
+  msg <- function(expr) tryCatch(expr, error = conditionMessage)
+  type <- "`fixed` must be a vector of whole-number product indices."
+  for (bad in list("1", 1.5, NA, TRUE, Inf)) {
+    expect_identical(msg(turf(tie_matrix, 2, fixed = bad)), type)
+  }
+  range <- "`fixed` must hold product indices from 1 to 5."
+  for (bad in list(0, -1, 6, c(1, 6))) {
+    expect_identical(msg(turf(tie_matrix, 2, fixed = bad)), range)
+  }
+  with_zero <- cbind(tie_matrix, 0, 0)
+  expect_identical(msg(turf(with_zero, 2, fixed = c(2, 7, 6))),
+                   "Fixed product P7 reaches no respondent.")
+  expect_identical(msg(turf(tie_matrix, 1, fixed = c(1, 2, 2))),
+                   "`size` is 1, but 2 products are fixed.")
+  # The size checks come first, and turf_sizes() checks `fixed` before any size.
+  expect_identical(msg(turf(tie_matrix, 6, fixed = 0)),
+                   "`size` is 6, but only 5 products reach at least one respondent.")
+  expect_identical(msg(turf_sizes(tie_matrix, integer(0), fixed = 0)), range)
+  expect_identical(msg(turf_min_cover(matrix(0, 3, 3), fixed = 1)),
+                   "No product reaches any respondent.")
+  expect_identical(msg(turf_min_cover(with_zero, fixed = 6)),
+                   "Fixed product P6 reaches no respondent.")
+  expect_identical(turf(tie_matrix, 2, fixed = NULL), turf(tie_matrix, 2))
+  expect_identical(turf(tie_matrix, 2, fixed = integer(0))$fixed, integer(0))
+})
+
+test_that("a fixed product does not force its identical twins in", {
+  # Product 5 is a copy of product 2. With 5 fixed, the best partner is 3
+  # (reach 7, frequency 8); a symmetry row x2 >= x5 would force 2 in.
+  twin <- cbind(tie_matrix[, 1:4], tie_matrix[, 2])
+  p <- turf(twin, 2, fixed = 5)
+  expect_identical(p$products, c(3L, 5L))
+  expect_identical(p$fixed, 5L)
+  expect_identical(turf_min_cover(twin, fixed = 5)$fixed, 5L)
+  expect_true(5 %in% turf_min_cover(twin, fixed = 5)$products)
+})
+
 test_that("print() shows the portfolio", {
   expect_output(print(turf(tie_matrix, 2)), "P2, P3")
   expect_output(print(turf(tie_matrix, 2)), "7 of 8 respondents")
+  expect_output(print(turf(tie_matrix, 2, fixed = 1)), "Fixed: +P1")
+  expect_false(any(grepl("Fixed", capture.output(print(turf(tie_matrix, 2))))))
 })
 
 test_that("a later stage cannot make an earlier criterion worse", {

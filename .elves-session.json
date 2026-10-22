@@ -28,31 +28,31 @@
       "acceptance": [
         {
           "criterion": "R turf(), turf_min_cover(), and turf_sizes() accept fixed and pass every conformance fixture with Rscript conformance/run_r.R, and run_r.R loads the fixed cases and passes fixed into each call.",
-          "evidence": "",
+          "evidence": "Rscript conformance/run_r.R: all conformance fixtures pass, fixed: 155 cases (run_r.R loops fixtures('fixed') and calls turf/turf_min_cover/turf_sizes with fixed = the case indices).",
           "id": "B2-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "testthat covers each new error message and the case of a fixed product that is the later twin of a free product, and R CMD check gives no new NOTE, WARNING, or ERROR.",
-          "evidence": "",
+          "evidence": "tests/testthat/test-turf.R: 'fixed products give exact errors, in order' (each message by exact text) and 'a fixed product does not force its identical twins in'; identical-300 size 2 fixed 5 is Infeasible with the old symmetry rows (checked with a patched copy). R CMD check --as-cran: only WARNING is 'Insufficient package version (submitted: 0.2.0, existing: 0.2.0)', cleared by the B5 bump; recheck at terminal.",
           "id": "B2-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Calls without fixed give the same results as before (existing tests and fixtures pass unchanged).",
-          "evidence": "",
+          "evidence": "testthat suite and the 1629 turf, 82 min_cover, 12 sizes, 5 bounded fixtures pass unchanged; turf(tie_matrix, 2, fixed = NULL) is identical to turf(tie_matrix, 2).",
           "id": "B2-A3",
-          "met": false
+          "met": true
         },
         {
           "criterion": "print() of a portfolio with fixed products shows a Fixed: line with the product names, and no such line without them.",
-          "evidence": "",
+          "evidence": "test-turf.R print test: 'Fixed: +P1' with fixed = 1, no 'Fixed' line without fixed.",
           "id": "B2-A4",
-          "met": false
+          "met": true
         }
       ],
       "id": "B2",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [

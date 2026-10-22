@@ -4,13 +4,17 @@
 \alias{turf_min_cover}
 \title{Find the smallest portfolio that reaches every reachable respondent}
 \usage{
-turf_min_cover(reach)
+turf_min_cover(reach, fixed = NULL)
 }
 \arguments{
 \item{reach}{A matrix or data frame with one row per respondent and one
 column per product. A value of 1 (or \code{TRUE}) means that the product
 reaches the respondent. All other values must be 0 (or \code{FALSE}). Column
 names are used as product names.}
+
+\item{fixed}{Column indices of products that the portfolio must contain,
+or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
+least one respondent. Duplicates are ignored.}
 }
 \value{
 An object of class \code{turf_portfolio}. See \code{\link[=turf]{turf()}} for its
@@ -22,10 +26,13 @@ returns one of them.
 products such that every respondent that some product reaches is reached
 by at least one selected product. Larger portfolios cannot add reach, so
 for reach this is the largest size worth passing to \code{\link[=turf]{turf()}}. Larger
-portfolios can still add frequency.
+portfolios can still add frequency. With \code{fixed}, it finds the smallest
+portfolio that contains the fixed products and reaches every reachable
+respondent.
 }
 \examples{
 set.seed(1234)
 reach <- turf_simulate()
 turf_min_cover(reach)
+turf_min_cover(reach, fixed = 1)
 }

@@ -4,7 +4,12 @@
 \alias{turf_sizes}
 \title{Find the best portfolio for each of several sizes}
 \usage{
-turf_sizes(reach, sizes = NULL, tiebreak = c("frequency", "penetration"))
+turf_sizes(
+  reach,
+  sizes = NULL,
+  tiebreak = c("frequency", "penetration"),
+  fixed = NULL
+)
 }
 \arguments{
 \item{reach}{A matrix or data frame with one row per respondent and one
@@ -13,11 +18,16 @@ reaches the respondent. All other values must be 0 (or \code{FALSE}). Column
 names are used as product names.}
 
 \item{sizes}{The portfolio sizes to solve. The default is every size from
-1 to the size from \code{\link[=turf_min_cover]{turf_min_cover()}}.}
+1 (or the number of fixed products) to the size from \code{\link[=turf_min_cover]{turf_min_cover()}}
+with the same \code{fixed}.}
 
 \item{tiebreak}{A character vector of tie-break criteria to apply after
 reach, in order. Use any of \code{"frequency"} and \code{"penetration"}, or
 \code{character(0)} for reach only.}
+
+\item{fixed}{Column indices of products that the portfolio must contain,
+or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
+least one respondent. Duplicates are ignored.}
 }
 \value{
 A data frame with one row per size and the columns \code{size},
@@ -33,4 +43,5 @@ the results as one table.
 set.seed(1234)
 reach <- turf_simulate(n_respondents = 300, n_products = 15)
 turf_sizes(reach, sizes = 1:4)
+turf_sizes(reach, fixed = c(1, 2))
 }

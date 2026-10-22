@@ -4,7 +4,7 @@
 \alias{turf}
 \title{Find the product portfolio with maximum reach}
 \usage{
-turf(reach, size, tiebreak = c("frequency", "penetration"))
+turf(reach, size, tiebreak = c("frequency", "penetration"), fixed = NULL)
 }
 \arguments{
 \item{reach}{A matrix or data frame with one row per respondent and one
@@ -17,6 +17,10 @@ names are used as product names.}
 \item{tiebreak}{A character vector of tie-break criteria to apply after
 reach, in order. Use any of \code{"frequency"} and \code{"penetration"}, or
 \code{character(0)} for reach only.}
+
+\item{fixed}{Column indices of products that the portfolio must contain,
+or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
+least one respondent. Duplicates are ignored.}
 }
 \value{
 An object of class \code{turf_portfolio}, a list with these elements:
@@ -32,6 +36,8 @@ products.}
 \item{\code{penetration}}{Harmonic mean of the individual reaches of the
 selected products.}
 \item{\code{respondents}}{Number of respondents (rows of \code{reach}).}
+\item{\code{fixed}}{Column indices of the fixed products, sorted, or
+\code{integer(0)} when there are none.}
 }
 }
 \description{
@@ -67,6 +73,10 @@ have similar individual reach.
 
 If portfolios still tie after the last stage, the solver returns one of
 them.
+
+With \code{fixed}, every portfolio considered contains the fixed products, so
+the stages choose only the other \code{size - length(fixed)} products. A row
+\eqn{\sum_{j \in F} x_j = |F|} adds this to the model.
 }
 
 \examples{
@@ -76,6 +86,9 @@ turf(reach, size = 4)
 
 # Reach only, with no tie-break
 turf(reach, size = 4, tiebreak = character(0))
+
+# Products 1 and 2 must be in the portfolio
+turf(reach, size = 4, fixed = c(1, 2))
 }
 \references{
 Serra, D. (2013). Implementing TURF analysis through binary linear

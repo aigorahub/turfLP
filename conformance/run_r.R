@@ -86,7 +86,8 @@ fixtures <- function(kind) {
                      simplifyVector = FALSE)$cases
 }
 
-counts <- c(turf = 0, min_cover = 0, sizes = 0, bounded = 0, comparator = 0)
+counts <- c(turf = 0, min_cover = 0, sizes = 0, bounded = 0, fixed = 0,
+            comparator = 0)
 
 # Exact fixtures run with no pool time limit (conformance/README.md).
 options(turfLP.max_pool_seconds = Inf)
@@ -137,6 +138,58 @@ for (case in fixtures("sizes")) {
     check_expected(sprintf("%s[%d]", case$id, i), row, e[setdiff(names(e), "size")])
   }
   counts["sizes"] <- counts["sizes"] + 1
+}
+
+# The fixed rule (conformance/README.md): the result reports the distinct
+# fixed indices, sorted, and contains every one of them.
+check_fixed <- function(id, p, fixed) {
+  want <- sort(unique(as.integer(fixed)))
+  if (!identical(as.integer(p$fixed), want) || !all(want %in% p$products)) {
+    fail(id, "fixed ", paste(p$fixed, collapse = ","), ", products ",
+         paste(p$products, collapse = ","))
+  }
+}
+
+for (case in fixtures("fixed")) {
+  a <- input(case$input)
+  fx <- as.integer(unlist(case$fixed))
+  tb <- unlist(case$tiebreak)
+  if (is.null(tb)) tb <- character(0)
+  if (case$`function` == "turf") {
+    p <- tryCatch(turf(a, case$size, tb, fixed = fx), error = function(e) e,
+                  warning = function(w) w)
+    if (inherits(p, "condition")) {
+      fail(case$id, conditionMessage(p))
+      next
+    }
+    check_fields(case$id, a, p, case$size)
+    check_fixed(case$id, p, fx)
+    check_expected(case$id, p, case$expected)
+  } else if (case$`function` == "min_cover") {
+    p <- turf_min_cover(a, fixed = fx)
+    check_fields(case$id, a, p)
+    check_fixed(case$id, p, fx)
+    if (p$size != case$expected$size) fail(case$id, "cover size ", p$size)
+    if (p$reach != case$expected$reachable) fail(case$id, "cover reach ", p$reach)
+  } else {
+    sizes <- if (is.null(case$sizes)) NULL else unlist(case$sizes)
+    tab <- turf_sizes(a, sizes, tb, fixed = fx)
+    want <- vapply(case$expected, function(e) e$size, numeric(1))
+    if (!identical(as.numeric(tab$size), want)) {
+      fail(case$id, "sizes ", paste(tab$size, collapse = ","))
+      next
+    }
+    for (i in seq_along(case$expected)) {
+      e <- case$expected[[i]]
+      rid <- sprintf("%s[%d]", case$id, i)
+      p <- turf(a, e$size, tb, fixed = fx)
+      check_fields(rid, a, p, e$size)
+      check_fixed(rid, p, fx)
+      if (p$reach != tab$reach[i]) fail(rid, "sizes row differs from turf()")
+      check_expected(rid, as.list(tab[i, ]), e[setdiff(names(e), "size")])
+    }
+  }
+  counts["fixed"] <- counts["fixed"] + 1
 }
 
 for (case in fixtures("bounded")) {
