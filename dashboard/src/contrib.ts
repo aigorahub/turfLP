@@ -50,8 +50,10 @@ export function addedInOrder(matrix: Matrix, ordered: readonly number[]): number
 export const PRODUCT_COLORS = 8;
 
 export interface StackPart {
-  /** Product columns of the segment: one, or several for "other". */
+  /** Product columns of the segment: one, or several for "other" or for the fixed group. */
   products: number[];
+  /** The segment holds all the fixed products (see stackColumns). */
+  fixed: boolean;
   added: number;
   /** Color slot: 0 to PRODUCT_COLORS - 1, or PRODUCT_COLORS for "other". */
   slot: number;
@@ -65,26 +67,33 @@ export interface StackPart {
  * by slot, so a product sits at the same place in the order everywhere and the
  * fixed products are at the bottom; a segment is the reach the product adds to
  * those below it. Products past the last color form one "other" segment on top.
+ * With PRODUCT_COLORS or more fixed products, the others would get no color, so
+ * the fixed products form one segment in slot 0 and the others start at slot 1.
  */
 export function stackColumns(matrix: Matrix, portfolios: readonly { products: readonly number[] }[],
                              fixed: readonly number[] = []): { slots: Map<number, number>; columns: StackPart[][] } {
   const slots = new Map<number, number>();
-  for (const c of contributions(matrix, fixed, fixed)) slots.set(c.product, slots.size);
+  const group = fixed.length >= PRODUCT_COLORS;
+  for (const c of contributions(matrix, fixed, fixed)) slots.set(c.product, group ? 0 : slots.size);
+  let next = group ? 1 : slots.size;
   for (const p of portfolios) {
-    for (const c of contributions(matrix, p.products, fixed)) if (!slots.has(c.product)) slots.set(c.product, slots.size);
+    for (const c of contributions(matrix, p.products, fixed)) if (!slots.has(c.product)) slots.set(c.product, next++);
   }
+  // Greedy order within a slot: slot 0 of the fixed group holds several products.
+  const rank = new Map([...slots.keys()].map((j, k) => [j, k]));
   const columns = portfolios.map((p) => {
-    const ordered = [...p.products].sort((a, b) => slots.get(a)! - slots.get(b)!);
+    const ordered = [...p.products].sort((a, b) => rank.get(a)! - rank.get(b)!);
     const added = addedInOrder(matrix, ordered);
     const parts: StackPart[] = [];
     ordered.forEach((j, k) => {
       const slot = Math.min(slots.get(j)!, PRODUCT_COLORS);
+      const inGroup = group && fixed.includes(j);
       const last = parts.at(-1);
-      if (slot === PRODUCT_COLORS && last?.slot === PRODUCT_COLORS) {
+      if (last && (inGroup ? last.fixed : slot === PRODUCT_COLORS && last.slot === PRODUCT_COLORS && !last.fixed)) {
         last.products.push(j);
         last.added += added[k];
       } else {
-        parts.push({ products: [j], added: added[k], slot });
+        parts.push({ products: [j], added: added[k], slot, fixed: inGroup });
       }
     });
     return parts;

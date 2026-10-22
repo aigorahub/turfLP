@@ -418,6 +418,7 @@ turf_min_cover <- function(reach, fixed = NULL) {
 turf_sizes <- function(reach, sizes = NULL,
                        tiebreak = c("frequency", "penetration"), fixed = NULL) {
   reach <- as_reach_matrix(reach)
+  tiebreak <- check_tiebreak(tiebreak)
   fixed <- check_fixed_reach(check_fixed(fixed, reach), reach)
   if (is.null(sizes)) {
     sizes <- seq.int(max(1L, length(fixed)), turf_min_cover(reach, fixed)$size)

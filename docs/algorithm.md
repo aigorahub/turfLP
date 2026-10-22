@@ -30,9 +30,9 @@ Errors, in this order, with these exact messages:
 
 The checks run in this order:
 
-- `turf()`: the `reach` checks, `size`, then the two `fixed` checks, the zero-reach check, and the `size` against `f` check.
+- `turf()`: the `reach` checks, `tiebreak` and in the ports the limits (section 14), `size`, then the two `fixed` checks, the zero-reach check, and the `size` against `f` check.
 - `turf_min_cover()`: the `reach` checks, the two `fixed` checks, `No product reaches any respondent.`, then the zero-reach check.
-- `turf_sizes()`: the `reach` checks, then the two `fixed` checks and the zero-reach check, before any solve and also when `sizes` is empty. Each size is then checked as in `turf()`.
+- `turf_sizes()`: the `reach` checks, `tiebreak` and in the ports the limits, then the two `fixed` checks and the zero-reach check, before any solve and also when `sizes` is empty. Each size is then checked as in `turf()`.
 
 Product names come from the column names. When there are none, the names are `P1`, `P2`, and so on (1-based in every language).
 

@@ -1,3 +1,8 @@
+# turfLP (development version)
+
+- `turf_sizes()` checks `tiebreak` before `fixed`, and also when `sizes` is empty, as `turf()` and the Python and JavaScript ports do.
+- Dashboard: the fixed-product list sorts by name or by reach. A change to the fixed products no longer stops a run in progress. With 8 or more fixed products, the columns show them as one segment, so the other products keep their own colors.
+
 # turfLP 0.3.0
 
 - `turf()`, `turf_min_cover()`, and `turf_sizes()` take `fixed`: column indices of products that the portfolio must contain. `size` counts them, and the stages choose the other products. The default sizes of `turf_sizes()` start at the number of fixed products. Portfolios have a `fixed` element, and `print()` shows the fixed products.

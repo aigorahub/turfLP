@@ -198,8 +198,11 @@ export function reachCurve(host: HTMLElement, o: CurveOptions): void {
 export interface Column {
   size: number;
   reach: number;
-  /** Segments from the bottom, with the respondents each adds and its color slot (8 is "other"). */
-  parts: { name: string; names: string[]; added: number; slot: number }[];
+  /**
+   * Segments from the bottom, with the respondents each adds and its color slot (8 is "other").
+   * `fixed` marks the one segment that holds all the fixed products.
+   */
+  parts: { name: string; names: string[]; added: number; slot: number; fixed?: boolean }[];
 }
 
 export interface ColumnsOptions {
@@ -292,7 +295,7 @@ export function contributionList(host: HTMLElement, column: Column, respondents:
     name.scope = "row";
     const sw = html("span", "contrib-swatch", undefined, name);
     sw.style.background = slotColor(p.slot);
-    name.append(p.names.length > 1 ? `Other: ${list(p.names)}` : p.name);
+    name.append(p.fixed ? `Fixed: ${list(p.names)}` : p.names.length > 1 ? `Other: ${list(p.names)}` : p.name);
     html("td", "num", `${k === 0 ? "" : "+"}${(100 * p.added / respondents).toFixed(1)}`, tr);
     html("td", "num muted", percent(total / respondents), tr);
   });

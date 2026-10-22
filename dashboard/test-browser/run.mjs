@@ -177,6 +177,27 @@ async function session(workers) {
     check(firstParts.every((t) => t.includes("(fixed)")), `contributions do not start with the fixed products: ${firstParts}`);
     await click('.segmented [data-value="line"]');
 
+    // The fixed-product list sorts by reach, high to low and then low to high, and by name.
+    const listed = () => page.$$eval("#fixed-list .fixed-item", (items) => items.map((i) => ({
+      name: i.querySelector(".fixed-name").textContent, reach: parseFloat(i.querySelector(".fixed-reach").textContent),
+    })));
+    await click('.fixed-sort[data-sort="reach"]');
+    const high = await listed();
+    check(JSON.stringify(high.map((i) => i.reach)) === JSON.stringify(high.map((i) => i.reach).sort((a, b) => b - a)),
+          `not sorted by reach, high to low: ${high.map((i) => i.reach)}`);
+    check(high.length > 1 && high[0].reach > high.at(-1).reach, "the example has products of equal reach only");
+    await click('.fixed-sort[data-sort="reach"]');
+    const low = await listed();
+    check(low[0].reach === Math.min(...low.map((i) => i.reach)), "a second click does not reverse the order");
+    await click('.fixed-sort[data-sort="name"]');
+    const names = (await listed()).map((i) => i.name);
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+    check(JSON.stringify(names) === JSON.stringify([...names].sort(collator.compare)), `not sorted by name: ${names}`);
+    check(JSON.stringify(high.map((i) => i.name).sort()) === JSON.stringify([...names].sort()),
+          "sorting changed the set of products");
+    check(await page.$$eval("#fixed-list input:checked", (b) => b.map((x) => x.value).sort().join()) === "6,8",
+          "sorting changed the fixed products");
+
     // Cancel during the large example keeps the finished sizes; a new run works.
     await clickExample("Cafe");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
@@ -185,8 +206,12 @@ async function session(workers) {
           await page.$eval("#size-from", (e) => e.value) === "1", "the fixed products survive a new data set");
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length >= 2);
+    // A fixed-product change during a run leaves the run going; it keeps its own settings.
+    await click('#fixed-list input[value="0"]');
+    check(await page.$eval("#run", (e) => e.textContent) === "Cancel", "a fixed-product change stopped the run");
     await click("#run");
     await idle();
+    await click("#fixed-clear");
     const cancelled = await page.$$eval(".size-table tbody tr", (rows) => rows.filter((r) => r.textContent.includes("Cancelled")).length);
     check(cancelled > 0, "Cancel did not stop the run");
     await page.evaluate(() => {
