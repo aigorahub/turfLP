@@ -93,7 +93,8 @@ def check_fixed(fixed, cols):
     for j in fixed:
         if not isinstance(j, numbers.Real) or isinstance(j, (bool, np.bool_)):
             raise TypeError("`fixed` must be a vector of whole-number product indices.")
-        if not math.isfinite(j) or j != int(j):
+        # An int needs no float conversion, which overflows above about 1e308.
+        if not isinstance(j, numbers.Integral) and (not math.isfinite(j) or j != int(j)):
             raise ValueError("`fixed` must be a vector of whole-number product indices.")
     if any(j < 0 or j > cols - 1 for j in fixed):
         raise ValueError("`fixed` must hold product indices from 0 to %d." % (cols - 1))
