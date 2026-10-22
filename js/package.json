@@ -1,6 +1,6 @@
 {
   "name": "turflp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "TURF analysis (total unduplicated reach and frequency) with integer linear programming",
   "license": "MIT",
   "author": "John Ennis <john.m.ennis@aigora.com>",
@@ -37,6 +37,8 @@
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "gen:datasets": "node scripts/gen-datasets.mjs",
+    "bench": "node scripts/bench.mjs",
+    "probe:highs": "node scripts/highs-probe.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:conformance": "node scripts/conformance.mjs"

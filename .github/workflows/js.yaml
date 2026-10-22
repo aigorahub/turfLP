@@ -46,6 +46,8 @@ jobs:
           cache-dependency-path: js/package-lock.json
       - run: npm ci
         working-directory: js
+      - run: node --experimental-strip-types scripts/supervisor-test.mjs
+        working-directory: js/examples/nextjs
       - run: node scripts/standalone-test.mjs
         working-directory: js/examples/nextjs
 

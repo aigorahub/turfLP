@@ -9,4 +9,9 @@ export default {
   // highs.wasm file next to its own module instead of inside a bundle.
   serverExternalPackages: ["turflp", "highs"],
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
+  // The route starts workers/solve.mjs by path, so the tracer cannot see it or
+  // the packages it imports.
+  outputFileTracingIncludes: {
+    "/api/turf": ["./workers/**", "./node_modules/turflp/**", "./node_modules/highs/**"],
+  },
 };

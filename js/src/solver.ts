@@ -1,6 +1,7 @@
 // HiGHS through the npm package `highs` (WebAssembly). Mirrors solve_lp() in
 // R/turf.R with the settings of docs/algorithm.md section 13.
 
+import { GROUP_RATIO } from "./prepare.js";
 import highsImport from "highs";
 import type { Highs, InitOptions } from "highs";
 
@@ -92,7 +93,20 @@ export function loadedSolver(): Highs {
 
 // Presolve is the one named difference from R. Tests switch it off to run the
 // conformance suite a second time.
-export const settings = { presolve: "on" as "on" | "off" };
+export const settings = {
+  presolve: "on" as "on" | "off",
+  // "on" leaves out the respondents that the fixed products reach and gives
+  // respondents reached by the same products one weighted row (when there are
+  // few enough groups, see groupRatio); "off" builds
+  // one row per reachable respondent, the reference model.
+  reduce: "on" as "on" | "off",
+  // The largest share of groups among the rows left for which those rows are
+  // grouped (prepare.ts GROUP_RATIO); 1 groups whenever two rows are equal.
+  groupRatio: GROUP_RATIO,
+  // "on" skips a stage whose optimum a cheap portfolio meets at a proved bound
+  // (docs/algorithm.md section 7); "off" solves every stage.
+  skip: "on" as "on" | "off",
+};
 // Options of the most recent solve, read back from HiGHS. Tests check them.
 export const lastOptions: Record<string, unknown> = {};
 const OPTION_NAMES = [
@@ -145,6 +159,19 @@ export class Model {
   }
 }
 
+/** One timed phase of a solve, for benchmarks. */
+export interface TraceEvent {
+  phase: string;
+  ms: number;
+  stage?: string;
+  rows?: number;
+  cols?: number;
+  nnz?: number;
+}
+// Benchmarks set `trace.sink` to time the phases of each solve. Off by default,
+// so a normal solve does no extra work.
+export const trace: { sink: ((event: TraceEvent) => void) | null } = { sink: null };
+
 export type SolveResult = Float64Array | null | "time" | "invalid";
 
 /**
@@ -158,7 +185,16 @@ export function solve(
 ): SolveResult {
   const h = loadedSolver();
   const n = model.nVars;
+  const sink = trace.sink;
+  let t = sink ? performance.now() : 0;
+  const lap = (phase: string, extra: Partial<TraceEvent> = {}) => {
+    if (!sink) return;
+    const now = performance.now();
+    sink({ phase, ms: now - t, stage, ...extra });
+    t = now;
+  };
   const { starts, indices, values, lower, upper } = model.csr();
+  lap("csr", { rows: lower.length, cols: n, nnz: starts[lower.length] });
   const colUpper = new Float64Array(n).fill(h.infinity);
   const integrality = new Int32Array(n);
   for (const j of binary) {
@@ -181,6 +217,7 @@ export function solve(
       matrix: { format: "csr", numRows: lower.length, numCols: n, starts, indices, values },
       integrality: integrality as unknown as Int32Array,
     });
+    lap("passModel");
     // The WebAssembly build is single-threaded and rejects thread options.
     const options: Record<string, number | string | boolean> = {
       output_flag: false,
@@ -193,6 +230,7 @@ export function solve(
     if (Number.isFinite(timeLimit)) options.time_limit = timeLimit;
     m.options.set(options);
     const result = m.run().modelStatus;
+    lap("run");
     for (const name of OPTION_NAMES) lastOptions[name] = m.options.get(name);
     if (result === status.optimal) return Float64Array.from(m.getSolution().colValue);
     // No model here is unbounded, so "unbounded or infeasible" means infeasible.

@@ -1,5 +1,7 @@
 // Run the shared conformance fixtures (conformance/README.md) and the large
-// regression cases against the built package, with presolve on and off.
+// regression cases against the built package, with presolve on and off, and
+// with the reduced model (the default) and the unreduced reference model, and
+// with the skip checks of a stage at a proved bound.
 // Plain Node.js, because each solve blocks the thread for a long time on the
 // largest inputs, which a test runner's worker messages do not tolerate.
 //
@@ -8,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { turf, turfMinCover, turfSizes } from "../dist/index.js";
 import { formatG, worseOnEarlier } from "../dist/core.js";
 import { loadedSolver, settings } from "../dist/solver.js";
+import { GROUP_RATIO } from "../dist/prepare.js";
 
 const root = new URL("../../conformance/", import.meta.url);
 const read = (path) => JSON.parse(readFileSync(new URL(path, root), "utf8"));
@@ -97,15 +100,25 @@ function checkExpected(id, a, p, e) {
 const counts = {};
 const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
-for (const presolve of ["on", "off"]) {
+// groupRatio 1 groups every set of equal rows, so the weighted rows are checked
+// on inputs that the default ratio leaves ungrouped.
+// The default first (skip on); groupRatio 1 groups every set of equal rows, so
+// the weighted rows are checked on inputs that the default ratio leaves ungrouped.
+for (const [presolve, reduce, skip, groupRatio] of [
+  ["on", "on", "on", GROUP_RATIO], ["off", "on", "on", GROUP_RATIO], ["on", "off", "on", GROUP_RATIO],
+  ["on", "on", "off", GROUP_RATIO], ["on", "on", "on", 1]]) {
   settings.presolve = presolve;
+  settings.reduce = reduce;
+  settings.skip = skip;
+  settings.groupRatio = groupRatio;
+  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, groupRatio ${groupRatio}`;
   for (const c of read("fixtures/turf.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
     check(p.warnings.length === 0, c.id, `warnings ${JSON.stringify(p.warnings)}`);
     checkFields(c.id, a, names, p, c.size);
     checkExpected(c.id, a, p, c.expected);
-    count(`turf (presolve ${presolve})`);
+    count(`turf (${mode})`);
   }
   for (const c of read("fixtures/min_cover.json").cases) {
     const { a, names } = input(c.input);
@@ -113,7 +126,7 @@ for (const presolve of ["on", "off"]) {
     checkFields(c.id, a, names, p);
     check(p.size === c.expected.size && p.reach === c.expected.reachable, c.id,
           `cover size ${p.size} reach ${p.reach}`);
-    count(`min_cover (presolve ${presolve})`);
+    count(`min_cover (${mode})`);
   }
   for (const c of read("fixtures/sizes.json").cases) {
     const { a, names } = input(c.input);
@@ -124,7 +137,7 @@ for (const presolve of ["on", "off"]) {
       checkFields(`${c.id}[${i}]`, a, names, p, c.expected[i].size);
       checkExpected(`${c.id}[${i}]`, a, p, c.expected[i]);
     });
-    count(`sizes (presolve ${presolve})`);
+    count(`sizes (${mode})`);
   }
   // The fixed rule: the distinct fixed indices, sorted, all selected.
   const checkFixed = (id, p, fixed) => {
@@ -157,7 +170,7 @@ for (const presolve of ["on", "off"]) {
         checkExpected(`${c.id}[${i}]`, a, p, c.expected[i]);
       });
     }
-    count(`fixed (presolve ${presolve})`);
+    count(`fixed (${mode})`);
   }
   for (const c of read("fixtures/bounded.json").cases) {
     const { a, names } = input(c.input);
@@ -167,10 +180,13 @@ for (const presolve of ["on", "off"]) {
           `warnings ${JSON.stringify(p.warnings)}`);
     checkFields(c.id, a, names, p, c.size);
     checkExpected(c.id, a, p, c.expected);
-    count(`bounded (presolve ${presolve})`);
+    count(`bounded (${mode})`);
   }
 }
 settings.presolve = "on";
+settings.reduce = "on";
+settings.skip = "on";
+settings.groupRatio = GROUP_RATIO;
 
 const obj = { name: "x", direction: "min", value: (v) => v };
 for (const c of read("fixtures/comparator.json").cases) {
@@ -183,21 +199,29 @@ for (const c of read("fixtures/format.json").cases) {
   count("format");
 }
 
-// Large regression cases from tests/testthat/test-turf.R.
+// Large regression cases from tests/testthat/test-turf.R, with the reduced and
+// the unreduced model: their unique optima must not change.
 const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
-let p = await turf(input("stage-40000").a, 2, { tiebreak: ["penetration", "frequency"] });
-check(same(p.products, [0, 1]) && p.penetration === 20000, "stage-40000", JSON.stringify(p.products));
-p = await turf(input("retry-35043").a, 2, { tiebreak: ["penetration", "frequency"] });
-check(same(p.products, [2, 3]) && p.frequency === 42720, "retry-35043", JSON.stringify(p.products));
-p = await turf(input("near-42000").a, 2, { tiebreak: ["penetration", "frequency"] });
-check(same(p.products, [0, 1]), "near-42000", JSON.stringify(p.products));
-p = await turf(input("flood-402").a, 2, { tiebreak: ["penetration", "frequency"], maxPoolSeconds: Infinity });
-check(same(p.products, [400, 401]) && p.warnings.length === 0, "flood-402", JSON.stringify(p));
-p = await turf(input("flood-402").a, 2, { tiebreak: ["penetration", "frequency"], maxPool: 50,
-                                           maxPoolSeconds: Infinity });
-check(same(p.products, [400, 401]) && /penetration optimum stopped/.test(p.warnings.join(" ")),
-      "flood-402 max_pool 50", JSON.stringify(p));
-counts.regression = 5;
+for (const [reduce, groupRatio] of [["on", GROUP_RATIO], ["on", 1], ["off", GROUP_RATIO]]) {
+  settings.reduce = reduce;
+  settings.groupRatio = groupRatio;
+  const tag = (id) => `${id} (reduce ${reduce}, groupRatio ${groupRatio})`;
+  let p = await turf(input("stage-40000").a, 2, { tiebreak: ["penetration", "frequency"] });
+  check(same(p.products, [0, 1]) && p.penetration === 20000, tag("stage-40000"), JSON.stringify(p.products));
+  p = await turf(input("retry-35043").a, 2, { tiebreak: ["penetration", "frequency"] });
+  check(same(p.products, [2, 3]) && p.frequency === 42720, tag("retry-35043"), JSON.stringify(p.products));
+  p = await turf(input("near-42000").a, 2, { tiebreak: ["penetration", "frequency"] });
+  check(same(p.products, [0, 1]), tag("near-42000"), JSON.stringify(p.products));
+  p = await turf(input("flood-402").a, 2, { tiebreak: ["penetration", "frequency"], maxPoolSeconds: Infinity });
+  check(same(p.products, [400, 401]) && p.warnings.length === 0, tag("flood-402"), JSON.stringify(p));
+  p = await turf(input("flood-402").a, 2, { tiebreak: ["penetration", "frequency"], maxPool: 50,
+                                             maxPoolSeconds: Infinity });
+  check(same(p.products, [400, 401]) && /penetration optimum stopped/.test(p.warnings.join(" ")),
+        tag("flood-402 max_pool 50"), JSON.stringify(p));
+}
+settings.reduce = "on";
+settings.groupRatio = GROUP_RATIO;
+counts.regression = 15;
 
 const v = loadedSolver().version;
 console.log(`highs ${v.string} (${v.gitHash})`);
