@@ -177,6 +177,9 @@ async function session(workers) {
           `rows without the fixed products: ${fixedRows}`);
     await click(".deep-dive .button-secondary");
     await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    const caption = await page.$eval(".deep-dive .block-title .muted", (e) => e.textContent);
+    check(caption === "No portfolio of this size with the fixed products beats a point on both reach and frequency.",
+          `trade-off caption with fixed products: ${caption}`);
     const frontierRows = await page.$$eval(".frontier-table tbody .products", (c) => c.map((x) => x.textContent));
     check(frontierRows.every((t) => fixedNames.every((n) => t.includes(n))), `frontier without the fixed products: ${frontierRows}`);
     await click('.segmented [data-value="columns"]');

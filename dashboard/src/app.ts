@@ -845,7 +845,9 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
 
   const sub = el("div", "block-title", undefined, section);
   el("h4", "sub-title", "Reach and frequency trade-off", sub);
-  el("p", "muted", "No portfolio of this size beats a point on both reach and frequency.", sub);
+  el("p", "muted", run.fixed.length
+    ? "No portfolio of this size with the fixed products beats a point on both reach and frequency."
+    : "No portfolio of this size beats a point on both reach and frequency.", sub);
   if (a.points.length === 0) {
     const msg = el("p", "muted", undefined, section);
     if (a.status === "error") { msg.className = "error"; msg.textContent = a.message ?? "The analysis stopped with an error."; }
