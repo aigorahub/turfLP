@@ -251,9 +251,11 @@ class SizeModel {
    * only to within its tolerance, so, as the package does (docs/algorithm.md
    * section 8), the portfolios within that tolerance of the first one are
    * searched, up to MAX_POOL of them, and the best is kept exactly.
-   * `complete` is false when the search stopped at that limit.
+   * `complete` is false when the search stopped at that limit. `between`
+   * runs before each search solve, so a cancel stops the search.
    */
-  bestPenetration(reach: number, frequency: number, deadline: number): { sel: Uint8Array; complete: boolean } {
+  async bestPenetration(reach: number, frequency: number, deadline: number,
+                        between?: Between): Promise<{ sel: Uint8Array; complete: boolean }> {
     let mod = this.atLeastFrequency(this.atLeastReach(this.base, reach), frequency);
     const first = this.solve("min", this.penCoef, mod, deadline);
     if (!first) throw new Stopped("invalid");
@@ -269,6 +271,7 @@ class SizeModel {
     let last = first;
     let complete = false;
     for (let i = 0; i < MAX_POOL; i++) {
+      await pause(between);
       mod = this.exclude(mod, last);
       const next = this.solve("min", this.penCoef, mod, deadline);
       if (!next) { complete = true; break; }
@@ -476,7 +479,7 @@ export async function frontier(matrix: Matrix, size: number, options: FrontierOp
           frequency = sm.point(b).frequency;
         }
         await pause(options.between);
-        const best = sm.bestPenetration(reach, frequency, deadline);
+        const best = await sm.bestPenetration(reach, frequency, deadline, options.between);
         if (!best.complete) penetrationLimited = true;
         pt = sm.point(best.sel);
       }

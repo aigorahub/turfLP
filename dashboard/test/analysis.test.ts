@@ -145,6 +145,18 @@ describe("frontier", () => {
     }
   });
 
+  it("stops the penetration search when asked", async () => {
+    // Every product reaches 19 of 20 respondents, so every portfolio of 10 ties on all three criteria
+    // and the search for the best penetration would run to its limit of 1,000 solves.
+    const n = 20;
+    const a = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 0 : 1)));
+    const m = { rows: n, cols: n, data: Uint8Array.from(a.flat()), names: a.map((_, j) => `P${j}`) };
+    const products = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let calls = 0;
+    const res = await frontier(m, 10, { chosen: { products, tiebreak: ["frequency"] }, between: async () => ++calls < 3 });
+    expect([res.stop, res.points.length, calls]).toEqual(["cancelled", 0, 3]);
+  });
+
   it("finds the most popular products that reach the most when products tie on reach at the cut", async () => {
     // A reaches 3; B, C, and D reach 2 each. A and B reach the same respondents, so {A, B} reaches 3 and {A, C} 4.
     const a = [[1, 1, 0, 0], [1, 1, 0, 1], [1, 0, 1, 1], [0, 0, 1, 0]];
