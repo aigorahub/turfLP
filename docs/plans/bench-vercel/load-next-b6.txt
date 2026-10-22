@@ -1,0 +1,15 @@
+ok   first: HTTP 200, 3696 ms, solve 2942 ms, cached false
+ok   second (cache): HTTP 200, 75 ms, solve 2942 ms, cached true
+ok   fixed: [0,4]
+ok   malformed JSON: HTTP 400 {"error":"the request body is not JSON"}
+ok   fixed out of range: HTTP 400 {"error":"`fixed` must hold product indices from 0 to 4."}
+ok   too many cells: HTTP 413 {"error":"problem too large for a request; use a background job"}
+ok   past the deadline: HTTP 504, 2484 ms
+ok   after the deadline: HTTP 200, 609 ms
+all checks passed
+{"conc":1,"n":40,"statuses":{"200":40},"median":778,"p95":984,"max":1065,"solveMedian":719,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}
+{"conc":2,"n":40,"statuses":{"200":40},"median":1499,"p95":4109,"max":4250,"solveMedian":750,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}
+{"conc":4,"n":40,"statuses":{"200":40},"median":2263,"p95":2381,"max":2924,"solveMedian":583,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}
+{"conc":8,"n":40,"statuses":{"200":38,"503":2},"median":2013,"p95":3352,"max":3628,"solveMedian":595,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}
+{"conc":1,"n":40,"statuses":{"200":40},"median":635,"p95":727,"max":910,"solveMedian":584,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}
+{"conc":2,"n":40,"statuses":{"200":40},"median":1153,"p95":1181,"max":1250,"solveMedian":575,"reach":[185],"deployment":"dpl_1PSf9DqQLZkJiPxdc7k7jfpXt5Nf"}

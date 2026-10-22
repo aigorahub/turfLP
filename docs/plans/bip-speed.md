@@ -75,10 +75,10 @@ Acceptance criteria:
 ### Batch 6 [B6]: Bounded Next.js requests on Vercel
 
 Acceptance criteria:
-- [ ] B6-A1: fixed works through HTTP; malformed input and limits give 400, 413, 429 or 503, 504, and 500 as stated.
-- [ ] B6-A2: Solves run off the request thread; a whole-job deadline terminates a worker, and no capacity is lost after a timeout or crash.
-- [ ] B6-A3: The deployed example in turflp-bench meets the latency and resource budget of B1.
-- [ ] B6-A4: The durable-job and tenant parts are built as John decides, or recorded as an issue.
+- [x] B6-A1: fixed works through HTTP; malformed input and limits give 400, 413, 429 or 503, 504, and 500 as stated.
+- [x] B6-A2: Solves run off the request thread; a whole-job deadline terminates a worker, and no capacity is lost after a timeout or crash.
+- [x] B6-A3: The deployed example in turflp-bench meets the latency and resource budget of B1.
+- [x] B6-A4: The durable-job and tenant parts are built as John decides, or recorded as an issue.
 
 ### Batch 7 [B7]: Conditional native HiGHS comparison
 
