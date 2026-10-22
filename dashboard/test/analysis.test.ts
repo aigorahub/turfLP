@@ -173,9 +173,9 @@ describe("frontier", () => {
   });
 
   it("stops when asked", async () => {
-    let calls = 0;
-    // Three solves per point: reach, frequency, penetration.
-    const res = await frontier(matrix, 2, { between: async () => ++calls < 4 });
+    // Cancel at the first pause after the first point.
+    let found = 0;
+    const res = await frontier(matrix, 2, { onPoint: () => found++, between: async () => found === 0 });
     expect(res.stop).toBe("cancelled");
     expect(res.points.length).toBe(1);
   });
