@@ -128,6 +128,8 @@ const state = {
   fixed: [] as number[],
   /** Why products were unfixed, after a threshold change. */
   fixedNote: null as string | null,
+  // Order of the fixed-product list: column order until a heading is clicked.
+  fixedSort: null as { key: "name" | "reach"; desc: boolean } | null,
   run: null as Run | null,
   selected: null as number | null,
   chartMode: "line" as "line" | "columns",
@@ -702,9 +704,10 @@ function renderResults(): void {
   const columns: Column[] = done.map((s, k) => ({
     size: s, reach: run.results.get(s)!.portfolio.reach,
     parts: stacks.columns[k].map((part) => ({
-      name: part.products.length === 1 ? marked(part.products, run)[0] : `${part.products.length} other products`,
-      names: marked(part.products, run),
-      added: part.added, slot: part.slot,
+      name: part.fixed ? `${part.products.length} fixed products`
+        : part.products.length === 1 ? marked(part.products, run)[0] : `${part.products.length} other products`,
+      names: part.fixed ? part.products.map((j) => run.names[j]) : marked(part.products, run),
+      added: part.added, slot: part.slot, fixed: part.fixed,
     })),
   }));
   const draw = state.chartMode === "line"
@@ -1041,6 +1044,7 @@ function renderPreview(host: HTMLElement, l: Loaded, summary: ReachSummary): voi
 // the solver's replies.
 
 let fixedItems: { label: HTMLLabelElement; box: HTMLInputElement; name: string }[] = [];
+const fixedSortButtons: Record<"name" | "reach", HTMLButtonElement | null> = { name: null, reach: null };
 
 function buildFixedList(): void {
   ui.fixedList.replaceChildren();
@@ -1049,6 +1053,19 @@ function buildFixedList(): void {
   const summary = state.summary;
   ui.fixedFilter.hidden = !l || l.table.cols < FIXED_FILTER_FROM;
   if (!l || !summary) return;
+  const head = el("div", "fixed-head", undefined, ui.fixedList);
+  for (const [key, text] of [["name", "Product"], ["reach", "Reach"]] as const) {
+    const b = el("button", "fixed-sort", text, head);
+    b.type = "button";
+    b.dataset.sort = key;
+    b.addEventListener("click", () => {
+      const now = state.fixedSort;
+      // A first click sorts names A to Z and reach high to low; the next click reverses.
+      state.fixedSort = { key, desc: now?.key === key ? !now.desc : key === "reach" };
+      sortFixed();
+    });
+    fixedSortButtons[key] = b;
+  }
   l.table.names.forEach((name, j) => {
     const label = el("label", "fixed-item", undefined, ui.fixedList);
     const box = el("input", undefined, undefined, label);
@@ -1062,6 +1079,34 @@ function buildFixedList(): void {
     fixedItems.push({ label, box, name });
   });
   el("p", "muted fixed-none", "No product matches the filter.", ui.fixedList).hidden = true;
+  sortFixed();
+}
+
+const byName = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+/** Put the list in the chosen order. The items move; fixedItems stays in column order. */
+function sortFixed(): void {
+  const summary = state.summary;
+  const sort = state.fixedSort;
+  const order = fixedItems.map((_, j) => j);
+  if (sort && summary) {
+    const sign = sort.desc ? -1 : 1;
+    // Ties keep column order.
+    order.sort((a, b) => sign * (sort.key === "name"
+      ? byName.compare(fixedItems[a].name, fixedItems[b].name)
+      : summary.productReach[a] - summary.productReach[b]) || a - b);
+  }
+  const empty = ui.fixedList.querySelector(".fixed-none");
+  for (const j of order) ui.fixedList.insertBefore(fixedItems[j].label, empty);
+  for (const key of ["name", "reach"] as const) {
+    const b = fixedSortButtons[key];
+    if (!b) continue;
+    const active = sort?.key === key;
+    b.classList.toggle("is-active", active);
+    b.textContent = (key === "name" ? "Product" : "Reach") + (active ? (sort.desc ? " \u2193" : " \u2191") : "");
+    b.setAttribute("aria-label", `Sort by ${key === "name" ? "name" : "reach"}` +
+      (active ? `, now ${key === "name" ? (sort.desc ? "Z to A" : "A to Z") : (sort.desc ? "high to low" : "low to high")}` : ""));
+  }
 }
 
 function renderFixed(): void {
@@ -1087,8 +1132,9 @@ function renderFixed(): void {
   ui.fixedClear.hidden = f === 0;
 }
 
+// A run in progress goes on: it keeps its own fixed products, the cover request
+// waits behind it in the solver queue, and the finished run shows as stale.
 function setFixed(fixed: number[]): void {
-  if (state.run?.status === "running") cancelRun();
   cancelAnalyses();
   state.fixed = [...new Set(fixed)].sort((a, b) => a - b);
   state.fixedNote = null;

@@ -171,7 +171,22 @@ describe("stackColumns", () => {
     const portfolios = Array.from({ length: n }, (_, k) => ({ products: Array.from({ length: k + 1 }, (_, j) => j) }));
     const last = stackColumns(m, portfolios).columns.at(-1)!;
     expect(last.length).toBe(PRODUCT_COLORS + 1);
-    expect(last.at(-1)).toEqual({ products: [8, 9, 10, 11], added: 4, slot: PRODUCT_COLORS });
+    expect(last.at(-1)).toEqual({ products: [8, 9, 10, 11], added: 4, slot: PRODUCT_COLORS, fixed: false });
+  });
+
+  it("puts the fixed products in one segment when they would take every color", () => {
+    // One more fixed product than colors: without the group, no other product gets a color.
+    const n = PRODUCT_COLORS + 4;
+    const m = { rows: n, cols: n, data: Uint8Array.from({ length: n * n }, (_, i) => (i % (n + 1) === 0 ? 1 : 0)),
+                names: Array.from({ length: n }, (_, j) => `P${j}`) };
+    const fixed = Array.from({ length: PRODUCT_COLORS + 1 }, (_, j) => j);
+    const portfolios = [fixed, [...fixed, 9], [...fixed, 9, 10]].map((products) => ({ products }));
+    const last = stackColumns(m, portfolios, fixed).columns.at(-1)!;
+    expect(last).toEqual([
+      { products: fixed, added: fixed.length, slot: 0, fixed: true },
+      { products: [9], added: 1, slot: 1, fixed: false },
+      { products: [10], added: 1, slot: 2, fixed: false },
+    ]);
   });
 
   it("counts what each product adds in the given order", () => {

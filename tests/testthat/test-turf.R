@@ -211,6 +211,8 @@ test_that("fixed products give exact errors, in order", {
   expect_identical(msg(turf(tie_matrix, 6, fixed = 0)),
                    "`size` is 6, but only 5 products reach at least one respondent.")
   expect_identical(msg(turf_sizes(tie_matrix, integer(0), fixed = 0)), range)
+  # turf_sizes() checks `tiebreak` before `fixed`, as the ports do, and also with no sizes.
+  expect_error(turf_sizes(tie_matrix, integer(0), tiebreak = "reach", fixed = 0), "should be one of")
   expect_identical(msg(turf_min_cover(matrix(0, 3, 3), fixed = 1)),
                    "No product reaches any respondent.")
   expect_identical(msg(turf_min_cover(with_zero, fixed = 6)),
