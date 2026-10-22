@@ -1,0 +1,26 @@
+U=<deployment url> S=<deployment url>
+dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc
+ok   first: HTTP 200, 5866 ms, solve 5061 ms, cached false
+ok   second (cache): HTTP 200, 93 ms, solve 5061 ms, cached true
+ok   fixed: [0,4]
+ok   malformed JSON: HTTP 400 {"error":"the request body is not JSON"}
+ok   fixed out of range: HTTP 400 {"error":"`fixed` must hold product indices from 0 to 4."}
+ok   too many cells: HTTP 413 {"error":"problem too large for a request; use a background job"}
+ok   past the deadline: HTTP 504, 2311 ms
+ok   after the deadline: HTTP 200, 417 ms
+all checks passed
+{"conc":1,"n":100,"statuses":{"200":100},"median":2028,"p95":2160,"max":2470,"solveMedian":1975,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":2,"n":100,"statuses":{"200":100},"median":3281,"p95":3451,"max":4108,"solveMedian":1637,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":4,"n":100,"statuses":{"200":100},"median":6535,"p95":6600,"max":6653,"solveMedian":1632,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":8,"n":100,"statuses":{"200":69,"503":31},"median":6517,"p95":8281,"max":8345,"solveMedian":1648,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":1,"n":100,"statuses":{"200":100},"median":1687,"p95":1718,"max":1752,"solveMedian":1635,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":2,"n":100,"statuses":{"200":100},"median":3262,"p95":3316,"max":3392,"solveMedian":1632,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":4,"n":100,"statuses":{"200":100},"median":6505,"p95":6657,"max":6865,"solveMedian":1626,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":8,"n":100,"statuses":{"200":55,"503":45},"median":5004,"p95":8204,"max":8229,"solveMedian":1643,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":1,"n":100,"statuses":{"200":100},"median":1689,"p95":1739,"max":1976,"solveMedian":1637,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":2,"n":100,"statuses":{"200":100},"median":3240,"p95":3276,"max":3358,"solveMedian":1618,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":4,"n":100,"statuses":{"200":100},"median":6588,"p95":6652,"max":6688,"solveMedian":1645,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+{"conc":8,"n":100,"statuses":{"200":67,"503":33},"median":5384,"p95":8258,"max":8389,"solveMedian":1656,"reach":[185],"deployment":"dpl_7nnqcEuEdSQ3PmY2XT6Crev6KgAc"}
+done
+
+[exited with code 0]
