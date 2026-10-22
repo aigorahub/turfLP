@@ -1,8 +1,11 @@
 // Extra solves for the dashboard, outside the turfLP package: how each stage
 // of the optimization narrows the choice, and the trade-off between reach and
-// frequency at one portfolio size. The model is the one of docs/algorithm.md
-// section 3, built again here so that the published package does not change.
+// frequency at one portfolio size. The model is the reduced model of
+// docs/algorithm.md section 3, built here from the package's prepared data and
+// coverage groups so that the published package API does not change.
 
+import * as bits from "../../js/src/bitset.js";
+import { groupRows, prepare, type Prepared } from "../../js/src/prepare.js";
 import * as solver from "../../js/src/solver.js";
 import type { Criterion } from "../../js/src/index.js";
 import type { Matrix } from "./worker.js";
@@ -43,13 +46,18 @@ class Stopped extends Error {
 
 /**
  * The size-k model of docs/algorithm.md section 3, without the penetration
- * variable. With `fixed`, every portfolio of the model contains those columns.
+ * variable, in its reduced form: the respondents that the fixed columns reach
+ * leave the model, and respondents reached by the same candidates share one
+ * row of weight w_g. Reach values and bounds in the model are uncovered
+ * respondents; the public reach is computed from the original data.
  */
 class SizeModel {
-  readonly n: number;
+  /** Number of coverage rows (groups). */
+  readonly groupCount: number;
+  /** Respondents that some candidate reaches. */
+  readonly reachable: number;
   readonly m: number;
-  readonly cand: number[];
-  readonly colRows: number[][];
+  readonly cand: readonly number[];
   readonly candReach: Float64Array;
   readonly xVars: Int32Array;
   readonly reachCoef: Float64Array;
@@ -61,40 +69,40 @@ class SizeModel {
   readonly plain: solver.Model;
   /** Candidate positions of the fixed columns. */
   readonly fixPos: number[];
-  private readonly sums: Int32Array;
+  private readonly prep: Prepared;
+  private readonly weight: Float64Array;
 
   constructor(readonly matrix: Matrix, readonly size: number, fixed: readonly number[] = []) {
-    const { rows, cols, data } = matrix;
-    this.sums = new Int32Array(cols);
-    for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) this.sums[j] += data[i * cols + j];
-    this.cand = [];
-    for (let j = 0; j < cols; j++) if (this.sums[j] > 0) this.cand.push(j);
+    const prep = (this.prep = prepare(matrix));
+    this.cand = prep.cand;
     if (size < 1 || size > this.cand.length) throw new RangeError(`No portfolio of ${size} products reaches anyone.`);
     this.fixPos = [...new Set(fixed)].map((j) => this.cand.indexOf(j));
     if (this.fixPos.includes(-1)) throw new RangeError("A fixed product reaches no one.");
     if (this.fixPos.length > size) throw new RangeError(`A portfolio of ${size} cannot hold ${this.fixPos.length} fixed products.`);
-    const kept: number[] = [];
-    for (let i = 0; i < rows; i++) if (this.cand.some((j) => data[i * cols + j] === 1)) kept.push(i);
-    const n = (this.n = kept.length);
+    const groups = groupRows(prep, this.fixPos, true);
+    this.weight = groups.weight;
+    this.reachable = prep.reachableCount;
+    const n = (this.groupCount = groups.weight.length);
     const m = (this.m = this.cand.length);
-    this.colRows = this.cand.map(() => []);
-    kept.forEach((i, ii) => this.cand.forEach((j, k) => { if (data[i * cols + j] === 1) this.colRows[k].push(ii); }));
-    this.candReach = Float64Array.from(this.cand, (j) => this.sums[j]);
+    this.candReach = Float64Array.from(this.cand, (j) => prep.colReach[j]);
     const maxR = Math.max(...this.candReach);
     this.xVars = Int32Array.from({ length: m }, (_, k) => n + k);
     const nVars = n + m;
-    // Reach: minimize the respondents not reached. Frequency: maximize. Penetration: minimize.
-    this.reachCoef = new Float64Array(nVars).fill(1, 0, n);
+    // Reach: minimize the uncovered respondents. Frequency: maximize. Penetration: minimize.
+    this.reachCoef = new Float64Array(nVars);
+    this.reachCoef.set(groups.weight);
     this.freqCoef = new Float64Array(nVars);
     this.freqCoef.set(this.candReach, n);
     this.penCoef = new Float64Array(nVars);
     this.penCoef.set(Float64Array.from(this.candReach, (x) => maxR / x), n);
 
-    const entries: number[][] = Array.from({ length: n }, (_, i) => [i]);
-    this.colRows.forEach((rs, k) => { for (const i of rs) entries[i].push(n + k); });
     const starts = new Int32Array(n + 2);
     const idx: number[] = [];
-    entries.forEach((e, i) => { idx.push(...e); starts[i + 1] = idx.length; });
+    for (let g = 0; g < n; g++) {
+      idx.push(g);
+      for (let t = groups.start[g]; t < groups.start[g + 1]; t++) idx.push(n + groups.index[t]);
+      starts[g + 1] = idx.length;
+    }
     for (let k = 0; k < m; k++) idx.push(n + k);
     starts[n + 1] = idx.length;
     const lower = new Float64Array(n + 1).fill(1);
@@ -108,16 +116,17 @@ class SizeModel {
                            this.fixPos.length, this.fixPos.length);
     }
     this.plain = model;
-    // Identical free products: keep one order, as the package does. A fixed
-    // product takes no part, or the row would force its twins in.
-    const seen = new Map<string, number>();
-    this.colRows.forEach((rs, k) => {
-      if (this.fixPos.includes(k)) return;
-      const key = rs.join(",");
-      const prev = seen.get(key);
-      if (prev !== undefined) model = model.addRow([n + prev, n + k], [1, -1], 0, Infinity);
-      seen.set(key, k);
-    });
+    // Identical free products, by their columns over the full input: keep one
+    // order, as the package does. A fixed product takes no part, or the row
+    // would force its twins in.
+    const isFixed = new Uint8Array(m);
+    for (const k of this.fixPos) isFixed[k] = 1;
+    for (let k = 0; k < m; k++) {
+      if (isFixed[k]) continue;
+      let prev = prep.twinOf[k];
+      while (prev >= 0 && isFixed[prev]) prev = prep.twinOf[prev];
+      if (prev >= 0) model = model.addRow([n + prev, n + k], [1, -1], 0, Infinity);
+    }
     this.base = model;
   }
 
@@ -132,8 +141,9 @@ class SizeModel {
     return sel;
   }
 
+  /** The portfolio's values, from the original data. */
   point(sel: Uint8Array): Point {
-    const hit = new Uint8Array(this.n);
+    const union = new Uint32Array(this.prep.reachable.length);
     const products: number[] = [];
     let frequency = 0;
     let inverse = 0;
@@ -142,20 +152,25 @@ class SizeModel {
       products.push(this.cand[k]);
       frequency += this.candReach[k];
       inverse += 1 / this.candReach[k];
-      for (const i of this.colRows[k]) hit[i] = 1;
+      bits.orInto(union, this.prep.sets[k]);
     });
-    return { products, reach: hit.reduce((a, b) => a + b, 0), frequency, penetration: products.length / inverse };
+    return { products, reach: bits.count(union), frequency, penetration: products.length / inverse };
   }
 
   penSum(sel: Uint8Array): number {
     let s = 0;
-    sel.forEach((v, k) => { if (v) s += this.penCoef[this.n + k]; });
+    sel.forEach((v, k) => { if (v) s += this.penCoef[this.groupCount + k]; });
     return s;
   }
 
+  /**
+   * Portfolios that reach at least `reach` respondents (covered units): in the
+   * model, at most `reachable - reach` weighted respondents uncovered. With no
+   * coverage row left, the row is the constant 0, which HiGHS checks.
+   */
   atLeastReach(mod: solver.Model, reach: number): solver.Model {
-    return mod.addRow(Int32Array.from({ length: this.n }, (_, i) => i), new Float64Array(this.n).fill(1),
-                      -Infinity, this.n - reach);
+    return mod.addRow(Int32Array.from({ length: this.groupCount }, (_, g) => g), this.weight,
+                      -Infinity, this.reachable - reach);
   }
 
   atLeastFrequency(mod: solver.Model, frequency: number): solver.Model {
@@ -164,12 +179,12 @@ class SizeModel {
 
   atMostPenSum(mod: solver.Model, sum: number): solver.Model {
     const tol = 16 * this.size * EPS * Math.max(1, Math.abs(sum));
-    return mod.addRow(this.xVars, this.penCoef.subarray(this.n), -Infinity, sum + tol);
+    return mod.addRow(this.xVars, this.penCoef.subarray(this.groupCount), -Infinity, sum + tol);
   }
 
   exclude(mod: solver.Model, sel: Uint8Array): solver.Model {
     const ix: number[] = [];
-    sel.forEach((v, k) => { if (v) ix.push(this.n + k); });
+    sel.forEach((v, k) => { if (v) ix.push(this.groupCount + k); });
     return mod.addRow(ix, new Float64Array(ix.length).fill(1), -Infinity, this.size - 1);
   }
 
@@ -184,7 +199,7 @@ class SizeModel {
     const sel = new Uint8Array(this.m);
     let count = 0;
     for (let k = 0; k < this.m; k++) {
-      const x = sol[this.n + k];
+      const x = sol[this.groupCount + k];
       if (!(Math.abs(x) <= 1e-6 || Math.abs(x - 1) <= 1e-6)) throw new Stopped("invalid");
       if (x > 0.5) { sel[k] = 1; count++; }
     }

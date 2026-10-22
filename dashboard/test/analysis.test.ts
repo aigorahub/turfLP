@@ -252,3 +252,36 @@ describe("fixed products", () => {
     }
   });
 });
+
+describe("duplicate respondents", () => {
+  // 90 respondents from 9 response patterns, so the solves run on weighted rows; a
+  // weight left out or counted twice changes a reach below.
+  const patterns = [[1, 0, 0, 1, 0, 0, 1], [0, 1, 0, 0, 1, 0, 0], [1, 1, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 1, 0],
+                    [0, 0, 0, 1, 1, 0, 0], [1, 0, 1, 0, 0, 0, 1], [0, 0, 0, 0, 0, 1, 1], [0, 1, 1, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]];
+  const a = Array.from({ length: 90 }, (_, i) => patterns[(i * 7 + (i % 4)) % patterns.length]);
+  const m = { rows: a.length, cols: 7, data: Uint8Array.from(a.flat()), names: ["A", "B", "C", "D", "E", "F", "G"] };
+
+  it.each([[3, []], [3, [6]], [4, [0, 5]]] as const)("size %i with fixed %j matches every portfolio", async (k, fixed) => {
+    const all = combos(m.cols, k).filter((c) => fixed.every((j) => c.includes(j))).map((p) => measureIn(a, p));
+    const pareto = all.filter((p) => !all.some((q) =>
+      q.reach >= p.reach && q.frequency >= p.frequency && (q.reach > p.reach || q.frequency > p.frequency)));
+    const want = [...new Map(pareto.map((p) => [`${p.reach}|${p.frequency}`, p])).values()]
+      .sort((x, y) => y.reach - x.reach)
+      .map((p) => [p.reach, p.frequency]);
+    const fr = await frontier(m, k, { fixed: [...fixed] });
+    expect(fr.stop).toBe("complete");
+    expect(fr.points.map((p) => [p.reach, p.frequency])).toEqual(want);
+
+    const chosen = await turf(a, k, { tiebreak: ["frequency", "penetration"], fixed: [...fixed] });
+    expect(chosen.reach).toBe(Math.max(...all.map((p) => p.reach)));
+    const res = await stageInfo(m, [...chosen.products], ["frequency", "penetration"], { fixed: [...fixed] });
+    const atReach = all.filter((p) => p.reach >= chosen.reach);
+    const atFreq = atReach.filter((p) => p.frequency >= chosen.frequency);
+    const [s1, s2] = res.stages;
+    expect([s1.ties, s2.worst, s2.ties]).toEqual([
+      Math.min(atReach.length, TIE_CAP), Math.min(...atReach.map((p) => p.frequency)), Math.min(atFreq.length, TIE_CAP)]);
+    const parts = contributions(m, [...chosen.products], [...fixed]);
+    expect(parts.reduce((s, p) => s + p.added, 0)).toBe(chosen.reach);
+  });
+});

@@ -67,10 +67,10 @@ Acceptance criteria:
 ### Batch 5 [B5]: Dashboard
 
 Acceptance criteria:
-- [ ] B5-A1: The dashboard uses the same preparation and reduction rules, with distinct names for group count, reachable count, and respondent count.
-- [ ] B5-A2: Dashboard analysis and package results agree; weighted frontier and tie-count fixtures pass; contributions sum to the original reach.
-- [ ] B5-A3: typecheck, test, build, and test:browser pass in both browser modes, with the fixed-change-during-run, sort, filter, and focus behavior kept.
-- [ ] B5-A4: Preparation is per run, cancellation and the queued cover work, and no buffer the UI uses is detached.
+- [x] B5-A1: The dashboard uses the same preparation and reduction rules, with distinct names for group count, reachable count, and respondent count.
+- [x] B5-A2: Dashboard analysis and package results agree; weighted frontier and tie-count fixtures pass; contributions sum to the original reach.
+- [x] B5-A3: typecheck, test, build, and test:browser pass in both browser modes, with the fixed-change-during-run, sort, filter, and focus behavior kept.
+- [x] B5-A4: Preparation is per run, cancellation and the queued cover work, and no buffer the UI uses is detached.
 
 ### Batch 6 [B6]: Bounded Next.js requests on Vercel
 

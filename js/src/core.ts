@@ -179,6 +179,18 @@ export async function turf(reach: ReachMatrix, size: number, options: TurfOption
   return turfSync(prepare(r), size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
 }
 
+/**
+ * turf() on data that prepare() made once, for code in this repository that
+ * solves many sizes of one input one at a time (the dashboard). It is not part
+ * of the package API (src/index.ts).
+ */
+export async function turfPrepared(p: Prepared, size: number, options: TurfOptions = {}): Promise<Portfolio> {
+  const tiebreak = checkTiebreak(options.tiebreak);
+  checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
+  await solver.getSolver();
+  return turfSync(p, size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
+}
+
 // Time one phase for solver.trace, when a benchmark has set its sink.
 function timed<T>(phase: string, f: () => T): T {
   const sink = solver.trace.sink;

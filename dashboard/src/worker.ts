@@ -2,7 +2,10 @@
 // not block the page. If the browser cannot start the worker, the page loads
 // this script and calls handle() itself.
 
-import { loadSolver, turf, turfMinCover, type Criterion, type Portfolio } from "../../js/src/index.js";
+import { loadSolver, turfMinCover, type Criterion, type Portfolio } from "../../js/src/index.js";
+import { turfPrepared } from "../../js/src/core.js";
+import { asReach } from "../../js/src/input.js";
+import { prepare } from "../../js/src/prepare.js";
 import { frontier, stageInfo, type Between, type Point, type StageInfo, type Stop } from "./analysis.js";
 
 export interface Matrix {
@@ -80,12 +83,13 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
       const p = await turfMinCover(rowsOf(msg.matrix), { names: msg.matrix.names, fixed: msg.fixed });
       post({ type: "cover", id: msg.id, portfolio: plain(p) });
     } else {
-      const reach = rowsOf(msg.matrix);
+      // Prepared once for every size of the run; each size still reports on its own.
+      const prepared = prepare(asReach(rowsOf(msg.matrix), msg.matrix.names));
       for (const size of msg.sizes) {
         if (between && !(await between())) return;
         post({ type: "start", id: msg.id, size });
         const t0 = performance.now();
-        const p = await turf(reach, size, { tiebreak: msg.tiebreak, names: msg.matrix.names, fixed: msg.fixed });
+        const p = await turfPrepared(prepared, size, { tiebreak: msg.tiebreak, fixed: msg.fixed });
         post({ type: "size", id: msg.id, portfolio: plain(p), seconds: (performance.now() - t0) / 1000 });
       }
       post({ type: "done", id: msg.id });
