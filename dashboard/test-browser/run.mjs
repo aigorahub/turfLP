@@ -103,22 +103,24 @@ async function session(workers) {
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
 
     // The deep dive runs only on request.
-    check(!(await page.$(".frontier-table")) && !(await page.$(".stage .skeleton")), "the deep dive ran before it was asked for");
+    check(!(await page.$(".frontier-table")) && !(await page.$(".comparison")), "the deep dive ran before it was asked for");
     await click(".deep-dive .button-secondary");
     // Focus on a product bar survives the renders of the analysis replies.
     await page.evaluate(() => document.querySelector('.bar-row[data-product="0"]').focus());
-    // The comparison, the stages, and the trade-off of the selected size, then the columns with what each product adds.
-    await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
-                     document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    // The comparison and the trade-off of the selected size, then the columns with what each product adds.
+    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
     const comparison = await page.$$eval(".comparison p", (c) => c.map((x) => x.textContent));
-    check(comparison.length === 2 && /^The 3 most popular products reach 67\.5% \(81\)\. This portfolio reaches 6 more respondents/.test(comparison[0]) &&
-          comparison[1].startsWith("Greedy also reaches the most possible"), `comparison: ${comparison}`);
+    check(comparison.length === 2 && comparison[0] === "The 3 most popular products reach 81 (67.5%), 6 fewer." &&
+          comparison[1] === "Greedy, which adds the best product one at a time, reaches as many.", `comparison: ${comparison}`);
     check(await page.evaluate(() => document.activeElement?.getAttribute("data-product")) === "0",
           "a solver reply moved the focus from the product bar");
-    const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
-    check(stage1 === "72.5%", `stage 1 value: ${stage1}`);
     const frontierTop = await page.$eval(".frontier-table tbody tr td", (e) => e.textContent);
-    check(frontierTop === "72.5% (87)", `first frontier point: ${frontierTop}`);
+    check(frontierTop === "87 (72.5%)", `first frontier point: ${frontierTop}`);
+    // Penetration only breaks ties: no table, stat, or chart shows it. The trade-off marks all respondents.
+    const shown = await page.evaluate(() => [...document.querySelectorAll("#results th, #results .stat dt")].map((e) => e.textContent));
+    check(!shown.some((t) => /penetration|^Time$/i.test(t)), `penetration or time is shown: ${shown}`);
+    const all = await page.$eval(".frontier .ceiling-label", (e) => e.textContent);
+    check(all === "All 120 respondents", `respondents line: ${all}`);
     await click('.segmented [data-value="columns"]');
     check(await page.$$eval(".columns .column", (c) => c.length) === 8, "the columns chart does not have 8 columns");
     const parts = await page.$$eval(".contrib tbody tr", (rows) => rows.map((r) => r.lastElementChild.textContent));
@@ -135,7 +137,6 @@ async function session(workers) {
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
     await idle();
-    await wait(() => document.querySelectorAll(".stage").length === 1);
     await page.evaluate(() => {
       const s = document.getElementById("stage2");
       s.value = "frequency";
@@ -175,8 +176,10 @@ async function session(workers) {
     check(fixedRows.length > 1 && fixedRows.every((t) => fixedNames.every((n) => t.includes(`${n} (fixed)`))),
           `rows without the fixed products: ${fixedRows}`);
     await click(".deep-dive .button-secondary");
-    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live") &&
-                     !document.querySelector(".stage .skeleton"));
+    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    const caption = await page.$eval(".deep-dive .block-title .muted", (e) => e.textContent);
+    check(caption === "No portfolio of this size with the fixed products beats a point on both reach and frequency.",
+          `trade-off caption with fixed products: ${caption}`);
     const frontierRows = await page.$$eval(".frontier-table tbody .products", (c) => c.map((x) => x.textContent));
     check(frontierRows.every((t) => fixedNames.every((n) => t.includes(n))), `frontier without the fixed products: ${frontierRows}`);
     await click('.segmented [data-value="columns"]');

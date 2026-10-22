@@ -1,5 +1,5 @@
-// Extra solves for the dashboard, outside the turfLP package: how each stage
-// of the optimization narrows the choice, and the trade-off between reach and
+// Extra solves for the dashboard's deep dive, outside the turfLP package: the
+// simple choices to compare with, and the trade-off between reach and
 // frequency at one portfolio size. The model is the reduced model of
 // docs/algorithm.md section 3, built here from the package's prepared data and
 // coverage groups so that the published package API does not change.
@@ -20,21 +20,6 @@ export interface Point {
 
 export type Stop = "complete" | "time" | "cancelled" | "limit" | "invalid";
 
-export interface StageInfo {
-  criterion: "reach" | Criterion;
-  /** Value of the chosen portfolio. */
-  value: number;
-  /** Worst value among portfolios at least as good on the earlier stages; null for reach. */
-  worst: number | null;
-  /** Portfolios at least as good on this stage and the earlier ones, up to TIE_CAP. */
-  ties: number;
-  /** True when the count stopped at the cap or the time limit, so `ties` is a lower bound. */
-  tiesAtLeast: boolean;
-}
-
-export const TIE_CAP = 20;
-// Solves per range or count that may return portfolios outside the bounds, before the count stops.
-const MAX_REJECTS = 50;
 // Portfolios searched for the best penetration of one frontier point, as the package's pool.
 const MAX_POOL = 1000;
 const EPS = 2 ** -52;
@@ -65,10 +50,8 @@ class SizeModel {
   readonly reachCoef: Float64Array;
   readonly freqCoef: Float64Array;
   readonly penCoef: Float64Array;
-  /** The model with one order kept for identical products; the frontier and the ranges use it. */
+  /** The model with one order kept for identical products. */
   readonly base: solver.Model;
-  /** The model without those rows, so that counts include each order of identical products. */
-  readonly plain: solver.Model;
   /** Candidate positions of the fixed columns. */
   readonly fixPos: number[];
   private readonly prep: Prepared;
@@ -117,7 +100,6 @@ class SizeModel {
       model = model.addRow(this.fixPos.map((k) => n + k), new Float64Array(this.fixPos.length).fill(1),
                            this.fixPos.length, this.fixPos.length);
     }
-    this.plain = model;
     // Identical free products, by their columns over the full input: keep one
     // order, as the package does. A fixed product takes no part, or the row
     // would force its twins in.
@@ -313,101 +295,6 @@ class SizeModel {
 
 async function pause(between: Between | undefined): Promise<void> {
   if (between && !(await between())) throw new Stopped("cancelled");
-}
-
-/**
- * For the chosen portfolio, the value of each stage, the worst value of each
- * tie-break stage among portfolios at least as good on the earlier stages,
- * and how many portfolios are at least as good up to each stage.
- */
-export async function stageInfo(matrix: Matrix, products: readonly number[], tiebreak: readonly Criterion[],
-                                options: { seconds?: number; between?: Between; fixed?: readonly number[] } = {}):
-    Promise<{ stages: StageInfo[]; stop: Stop }> {
-  await solver.getSolver();
-  const sm = new SizeModel(matrix, products.length, options.fixed);
-  const chosen = sm.selection(products);
-  const p = sm.point(chosen);
-  const deadline = performance.now() / 1000 + (options.seconds ?? 20);
-  const criteria: ("reach" | Criterion)[] = ["reach", ...tiebreak];
-  const stages: StageInfo[] = criteria.map((c) => ({
-    criterion: c, value: c === "reach" ? p.reach : c === "frequency" ? p.frequency : p.penetration,
-    worst: null, ties: 0, tiesAtLeast: true,
-  }));
-  // Models with the bounds of the stages up to s, with and without the rows for identical products.
-  const penBound = sm.penSum(chosen);
-  const penTol = 16 * sm.size * 2 ** -52 * Math.max(1, Math.abs(penBound));
-  const bound = (mod: solver.Model, c: "reach" | Criterion) =>
-    c === "reach" ? sm.atLeastReach(mod, p.reach)
-      : c === "frequency" ? sm.atLeastFrequency(mod, p.frequency) : sm.atMostPenSum(mod, penBound);
-  const upTo: solver.Model[] = [];
-  const plainUpTo: solver.Model[] = [];
-  let mod = sm.base;
-  let plain = sm.plain;
-  for (const c of criteria) {
-    mod = bound(mod, c); upTo.push(mod);
-    plain = bound(plain, c); plainUpTo.push(plain);
-  }
-  // The solver meets a bound only to within its tolerance, so check each portfolio
-  // exactly, with the comparison tolerance of the package for penetration.
-  const meets = (sel: Uint8Array, through: number) => {
-    const q = sm.point(sel);
-    return criteria.slice(0, through + 1).every((c) =>
-      c === "reach" ? q.reach >= p.reach
-        : c === "frequency" ? q.frequency >= p.frequency : sm.penSum(sel) <= penBound + penTol);
-  };
-  let stop: Stop = "complete";
-  try {
-    // Ranges first: they cost one solve each.
-    for (let s = 1; s < criteria.length; s++) {
-      const c = criteria[s];
-      let m1 = upTo[s - 1];
-      let worst: Uint8Array | null = null;
-      for (let t = 0; t < MAX_REJECTS && !worst; t++) {
-        await pause(options.between);
-        const sel = c === "frequency"
-          ? sm.solve("min", sm.freqCoef, m1, deadline)
-          : sm.solve("max", sm.penCoef, m1, deadline);
-        // The chosen portfolio meets the bounds, so a solve that finds none is wrong.
-        if (!sel) throw new Stopped("invalid");
-        if (meets(sel, s - 1)) worst = sel;
-        else m1 = sm.exclude(m1, sel);
-      }
-      if (!worst) throw new Stopped("limit");
-      const w = sm.point(worst);
-      stages[s].worst = c === "frequency" ? w.frequency : w.penetration;
-    }
-    // Then the counts, which stop at the cap.
-    for (let s = 0; s < criteria.length; s++) {
-      // A later stage keeps no more portfolios than the one before it.
-      if (s > 0 && stages[s - 1].ties === 1 && !stages[s - 1].tiesAtLeast) {
-        stages[s].ties = 1;
-        stages[s].tiesAtLeast = false;
-        continue;
-      }
-      let m2 = plainUpTo[s];
-      let count = 0;
-      let rejects = 0;
-      stages[s].tiesAtLeast = true;
-      while (count < TIE_CAP && rejects < MAX_REJECTS) {
-        await pause(options.between);
-        const sel = sm.solve("min", new Float64Array(sm.base.nVars), m2, deadline);
-        if (!sel) { stages[s].tiesAtLeast = false; break; }
-        if (meets(sel, s)) {
-          count++;
-          stages[s].ties = count;
-        } else {
-          rejects++;
-        }
-        m2 = sm.exclude(m2, sel);
-      }
-      stages[s].ties = Math.max(count, 1);
-    }
-  } catch (e) {
-    if (!(e instanceof Stopped)) throw e;
-    stop = e.reason;
-    for (const st of stages) st.ties = Math.max(st.ties, 1);
-  }
-  return { stages, stop };
 }
 
 export interface FrontierOptions {

@@ -203,12 +203,7 @@ fieldset:disabled .field-label, fieldset:disabled .muted { color: var(--ink-2); 
   min-width: 0;
 }
 
-/* The reach chart and the stages side by side when the results are wide enough. */
 .split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
-@media (min-width: 1280px) {
-  .split { grid-template-columns: minmax(0, 7fr) minmax(20rem, 5fr); }
-  .split > :only-child { grid-column: 1 / -1; }
-}
 
 @media (max-width: 880px) {
   body { height: auto; display: block; }
@@ -531,29 +526,6 @@ input[type="number"].input { width: 5.5rem; }
 .tip-strong { font-weight: 600; }
 .tip-muted { opacity: 0.8; }
 
-/* Stages */
-
-.stages { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); column-gap: 24px; }
-.stage {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
-  align-items: baseline;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-}
-.stage:first-child { border-top: 0; padding-top: 0; }
-.stage-name { display: flex; flex-direction: column; }
-.stage-number { font-size: 12px; line-height: 18px; color: var(--ink-2); }
-.stage-criterion { font-size: 14px; line-height: 20px; font-weight: 600; }
-.stage-value { font-size: 20px; line-height: 28px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.stage-detail { font-size: 14px; line-height: 20px; color: var(--ink-3); }
-
-@container (max-width: 600px) {
-  .stages { grid-template-columns: minmax(0, 1fr) max-content; }
-  .stage-detail { grid-column: 1 / -1; margin-top: 4px; }
-}
-
 /* Tables */
 
 .table-wrap { overflow-x: auto; margin: 0 -8px; }
@@ -590,7 +562,7 @@ input[type="number"].input { width: 5.5rem; }
   vertical-align: middle;
   animation: pulse 1.4s ease-in-out infinite;
 }
-.results-table td.text .skeleton, .stage-detail .skeleton { width: 12rem; }
+.results-table td.text .skeleton { width: 12rem; }
 @keyframes pulse { 50% { opacity: 0.45; } }
 
 .warnings h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }

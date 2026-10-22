@@ -6,7 +6,7 @@ import { loadSolver, turfMinCover, type Criterion, type Portfolio } from "../../
 import { turfPrepared } from "../../js/src/core.js";
 import { asReach } from "../../js/src/input.js";
 import { prepare } from "../../js/src/prepare.js";
-import { baselines, frontier, stageInfo, type Between, type Point, type StageInfo, type Stop } from "./analysis.js";
+import { baselines, frontier, type Between, type Point, type Stop } from "./analysis.js";
 
 export interface Matrix {
   rows: number;
@@ -21,9 +21,9 @@ export type Request =
   | { type: "cover"; id: number; matrix: Matrix; fixed?: number[] }
   | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[]; fixed?: number[] }
   // The deep dive into one portfolio of a run: the simple choices to compare
-  // with, the stages, and the reach and frequency trade-off.
+  // with, and the reach and frequency trade-off.
   | { type: "analyze"; id: number; matrix: Matrix; products: number[]; tiebreak: Criterion[];
-      fixed?: number[]; seconds?: { baselines: number; stages: number; frontier: number }; maxPoints?: number;
+      fixed?: number[]; seconds?: { baselines: number; frontier: number }; maxPoints?: number;
       // True when the run found the portfolio with no warning, so it is optimal and the frontier can start from it.
       optimal?: boolean }
   // Stop an analysis at its next solve. Handled at once, not in turn.
@@ -36,7 +36,6 @@ export type Reply =
   | { type: "size"; id: number; portfolio: Portfolio; seconds: number }
   | { type: "done"; id: number }
   | { type: "baselines"; id: number; mostPopular: Point | null; greedy: Point; stop: Stop }
-  | { type: "stages"; id: number; stages: StageInfo[]; stop: Stop }
   | { type: "point"; id: number; point: Point }
   | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop; penetrationLimited: boolean }
   | { type: "error"; id: number | null; message: string };
@@ -72,10 +71,6 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
       const base = await baselines(msg.matrix, size, { ...options, seconds: msg.seconds?.baselines, fixed: msg.fixed });
       post({ type: "baselines", id: msg.id, ...base });
       if (base.stop === "cancelled") return;
-      const st = await stageInfo(msg.matrix, msg.products, msg.tiebreak,
-                                 { ...options, seconds: msg.seconds?.stages, fixed: msg.fixed });
-      post({ type: "stages", id: msg.id, ...st });
-      if (st.stop === "cancelled") return;
       const fr = await frontier(msg.matrix, size, {
         ...options, seconds: msg.seconds?.frontier, maxPoints: msg.maxPoints, fixed: msg.fixed,
         chosen: msg.optimal ? { products: msg.products, tiebreak: msg.tiebreak } : undefined,
