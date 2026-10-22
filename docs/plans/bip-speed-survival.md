@@ -35,5 +35,5 @@ When the baseline and B3 benchmarks finish: log them, run the interleaved primar
 - Python: `cd python && uv sync --locked --extra test && uv run --locked pytest`
 - JS: `cd js && npm ci && npm run typecheck && npm test && npm run build && npm run test:conformance`
 - Dashboard (after js build): `cd dashboard && npm ci && npm run typecheck && npm test && npm run build && npm run test:browser`
-- Next.js (after js build): `cd js/examples/nextjs && node scripts/standalone-test.mjs`
+- Next.js (after js build): `cd js/examples/nextjs && node --experimental-strip-types scripts/supervisor-test.mjs && node scripts/standalone-test.mjs`
 - If an npm audit request stalls, use --no-audit and record it.

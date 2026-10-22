@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "start": "next start",
+    "test:supervisor": "node --experimental-strip-types scripts/supervisor-test.mjs",
     "test:standalone": "node scripts/standalone-test.mjs"
   },
   "dependencies": {

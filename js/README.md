@@ -153,11 +153,11 @@ All 18 completed cases with fewer than 3 million portfolios were checked against
 
 - Use the Node.js runtime (`export const runtime = "nodejs"`). The Edge runtime cannot load the solver.
 - Add `serverExternalPackages: ["turflp", "highs"]` to `next.config`, so that `highs` finds `highs.wasm` next to its own module.
-- Start `loadSolver()` at module level and await it in the handler, so that each function instance loads the solver once.
-- Set `maxDuration` with headroom (the example uses 60 seconds), as an operational ceiling, not a guarantee. The penetration pool and a later frequency search each have a 30-second budget, the reach stage and the first penetration solve have none, and a running solve cannot be interrupted. A request only stays within the ceiling because the size rule below keeps it small.
-- Solve in the request only below a size limit that fits your latency budget (the example accepts up to 200 x 40 cells and size 8, which took well under a second in the tests above). Decide before the solve: send larger problems, and any problem whose time you cannot predict (for example data with many near-identical products), to a background job (for example an Inngest function) that calls the same `turf()`.
+- Solve in a worker thread, not on the request thread: a running solve cannot be interrupted, but a worker can be terminated. The example keeps one worker per function instance, runs one solve at a time (two solves in one Vercel instance share its CPU), queues at most 4 more, and terminates the worker when a request passes its 50-second deadline. Its README lists the HTTP status of each case.
+- Set `maxDuration` above that deadline (the example uses 60 seconds). The penetration pool and a later frequency search each have a 30-second budget, and the reach stage and the first penetration solve have none, so only the deadline bounds a request.
+- Solve in the request only below a size limit that fits your latency budget (the example accepts up to 200 x 40 cells and size 8). Decide before the solve: send larger problems, and any problem whose time you cannot predict (for example data with many near-identical products), to a background job (for example an Inngest function) that calls the same `turf()`.
 
-The example's `scripts/standalone-test.mjs` builds it against the packed package with `output: "standalone"`, copies the traced output outside the checkout, starts it, and checks a fixed benchmark request against the exact expected values. That checks the file tracing that Vercel uses; it is not a Vercel deployment.
+The example's `scripts/standalone-test.mjs` builds it against the packed package with `output: "standalone"`, copies the traced output outside the checkout, starts it, checks a fixed benchmark request against the exact expected values, and checks the HTTP limits and the deadline. That checks the file tracing that Vercel uses; it is not a Vercel deployment.
 
 ## Limits and warnings
 
