@@ -13,16 +13,22 @@ export interface CacheKeyInput {
   names: unknown;
 }
 
+// JSON writes an omitted value as null; the package reads an omitted tiebreak
+// as frequency then penetration and null as reach only.
+const OMITTED = { omitted: true };
+
 /**
  * Omitted, null, and empty fixed sets are one key; a list of whole numbers is
- * keyed sorted and without repeats, as the package reads it.
+ * keyed sorted and without repeats, as the package reads it. An omitted
+ * tiebreak or names list is a different key from null.
  */
 export function cacheKey(k: CacheKeyInput): string {
   let fixed = k.fixed ?? [];
   if (Array.isArray(fixed) && fixed.every((j) => Number.isInteger(j))) {
     fixed = [...new Set(fixed as number[])].sort((a, b) => a - b);
   }
-  const text = JSON.stringify([k.version, k.reach, k.size, fixed, k.tiebreak ?? null, k.names ?? null]);
+  const given = (v: unknown) => (v === undefined ? OMITTED : v);
+  const text = JSON.stringify([k.version, k.reach, k.size, fixed, given(k.tiebreak), given(k.names)]);
   return createHash("sha256").update(text).digest("hex");
 }
 
@@ -30,7 +36,7 @@ export class ResultCache {
   private readonly maxBytes: number;
   private readonly ttlMs: number;
   // Map order is insertion order: a hit moves its entry to the end.
-  private readonly entries = new Map<string, { body: string; at: number }>();
+  private readonly entries = new Map<string, { body: string; bytes: number; at: number }>();
   private bytes = 0;
 
   constructor(maxBytes: number, ttlMs: number) {
@@ -43,7 +49,7 @@ export class ResultCache {
     if (!e) return undefined;
     this.entries.delete(key);
     if (now - e.at > this.ttlMs) {
-      this.bytes -= e.body.length;
+      this.bytes -= e.bytes;
       return undefined;
     }
     this.entries.set(key, e);
@@ -51,18 +57,20 @@ export class ResultCache {
   }
 
   set(key: string, body: string, now = Date.now()): void {
-    if (body.length > this.maxBytes) return;
+    // UTF-8 bytes, not UTF-16 code units: product names can be any text.
+    const bytes = Buffer.byteLength(body, "utf8");
+    if (bytes > this.maxBytes) return;
     const old = this.entries.get(key);
     if (old) {
       this.entries.delete(key);
-      this.bytes -= old.body.length;
+      this.bytes -= old.bytes;
     }
-    this.entries.set(key, { body, at: now });
-    this.bytes += body.length;
+    this.entries.set(key, { body, bytes, at: now });
+    this.bytes += bytes;
     for (const [k, e] of this.entries) {
       if (this.bytes <= this.maxBytes) break;
       this.entries.delete(k);
-      this.bytes -= e.body.length;
+      this.bytes -= e.bytes;
     }
   }
 

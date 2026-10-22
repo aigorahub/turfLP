@@ -54,6 +54,8 @@ export class Supervisor {
    * result may still serve a later request.
    */
   run(msg: Record<string, unknown>, signal?: AbortSignal): Promise<Outcome> {
+    // An abort listener added now would never fire.
+    if (signal?.aborted) return Promise.resolve({ ok: false, status: 499, error: "request aborted" });
     if (this.active && this.queue.length >= this.opts.queueCap) {
       return Promise.resolve({ ok: false, status: 503, error: "the solver is busy; try again" });
     }

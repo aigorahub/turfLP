@@ -80,6 +80,12 @@ await check("an aborted request leaves the queue; the active job finishes", asyn
   ac.abort();
   assert.equal((await b).ok ? 200 : (await b).status, 499);
   assert.deepEqual(await a, { ok: true, value: 200 });
+  // A request aborted before it arrives never runs.
+  const busy = s.run(sleep(100));
+  const late = await s.run(sleep(10), ac.signal);
+  assert.equal(late.ok ? 200 : late.status, 499);
+  assert.equal(s.load, 1);
+  await busy;
 });
 
 await check("cache keys: fixed sets as the package reads them; every other field counts", () => {
@@ -88,6 +94,8 @@ await check("cache keys: fixed sets as the package reads them; every other field
   assert.equal(cacheKey({ ...base, fixed: [] }), k);
   assert.equal(cacheKey({ ...base, fixed: null }), k);
   assert.equal(cacheKey({ ...base, fixed: [1, 0, 1] }), cacheKey({ ...base, fixed: [0, 1] }));
+  // null is reach only; an omitted tiebreak is frequency then penetration.
+  assert.notEqual(cacheKey({ ...base, tiebreak: null }), k);
   for (const change of [{ version: "2" }, { reach: [[1, 0], [1, 1]] }, { size: 2 }, { fixed: [0] },
                         { tiebreak: ["penetration"] }, { names: ["a", "b"] }]) {
     assert.notEqual(cacheKey({ ...base, ...change }), k, JSON.stringify(change));
@@ -104,6 +112,9 @@ await check("the cache keeps its byte bound and drops old entries", () => {
   assert.deepEqual([c.get("a", 20), c.get("b", 20), c.get("c", 20)], ["x".repeat(60), undefined, "z".repeat(30)]);
   assert.ok(c.size <= 100);
   c.set("big", "w".repeat(101), 30);
+  assert.equal(c.get("big", 30), undefined);
+  // 34 characters, 102 UTF-8 bytes: over the bound.
+  c.set("big", "\u4e2d".repeat(34), 30);
   assert.equal(c.get("big", 30), undefined);
   assert.equal(c.get("c", 2_000), undefined);
 });
