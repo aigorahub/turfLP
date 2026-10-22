@@ -346,6 +346,9 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration"),
 #' respondent.
 #'
 #' @inheritParams turf
+#' @param fixed Column indices of products that the portfolio must contain,
+#'   or `NULL` for none. Each fixed product must reach at least one
+#'   respondent. Duplicates are ignored.
 #' @return An object of class `turf_portfolio`. See [turf()] for its
 #'   elements. When several portfolios of the minimum size exist, the solver
 #'   returns one of them.

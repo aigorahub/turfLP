@@ -13,8 +13,8 @@ reaches the respondent. All other values must be 0 (or \code{FALSE}). Column
 names are used as product names.}
 
 \item{fixed}{Column indices of products that the portfolio must contain,
-or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
-least one respondent. Duplicates are ignored.}
+or \code{NULL} for none. Each fixed product must reach at least one
+respondent. Duplicates are ignored.}
 }
 \value{
 An object of class \code{turf_portfolio}. See \code{\link[=turf]{turf()}} for its
