@@ -111,14 +111,19 @@ async function session(workers) {
     await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
                      document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
     const comparison = await page.$$eval(".comparison p", (c) => c.map((x) => x.textContent));
-    check(comparison.length === 2 && /^The 3 most popular products reach 67\.5% \(81\)\. This portfolio reaches 6 more respondents/.test(comparison[0]) &&
+    check(comparison.length === 2 && /^The 3 most popular products reach 81 respondents \(67\.5%\)\. This portfolio reaches 6 more respondents/.test(comparison[0]) &&
           comparison[1].startsWith("Greedy also reaches the most possible"), `comparison: ${comparison}`);
     check(await page.evaluate(() => document.activeElement?.getAttribute("data-product")) === "0",
           "a solver reply moved the focus from the product bar");
     const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
     check(stage1 === "72.5%", `stage 1 value: ${stage1}`);
     const frontierTop = await page.$eval(".frontier-table tbody tr td", (e) => e.textContent);
-    check(frontierTop === "72.5% (87)", `first frontier point: ${frontierTop}`);
+    check(frontierTop === "87 (72.5%)", `first frontier point: ${frontierTop}`);
+    // Penetration only breaks ties: no table, stat, or chart shows it. The trade-off marks all respondents.
+    const shown = await page.evaluate(() => [...document.querySelectorAll("#results th, #results .stat dt")].map((e) => e.textContent));
+    check(!shown.some((t) => /penetration/i.test(t)), `penetration is shown: ${shown}`);
+    const all = await page.$eval(".frontier .ceiling-label", (e) => e.textContent);
+    check(all === "All 120 respondents", `respondents line: ${all}`);
     await click('.segmented [data-value="columns"]');
     check(await page.$$eval(".columns .column", (c) => c.length) === 8, "the columns chart does not have 8 columns");
     const parts = await page.$$eval(".contrib tbody tr", (rows) => rows.map((r) => r.lastElementChild.textContent));

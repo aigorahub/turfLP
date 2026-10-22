@@ -1,6 +1,7 @@
 # turfLP (development version)
 
 - Dashboard: the extra solves for one size run only on request, as a deep dive. The deep dive compares the optimal portfolio with the most popular products and with the greedy portfolio, and gives the reach each one gives up. Each point of the reach and frequency trade-off now has the best penetration of the portfolios with its reach and frequency, and the trade-off reuses the run's portfolio and the most popular products instead of solving for them again.
+- Dashboard: penetration only breaks ties, so the results no longer show its value. The CSV download keeps it. The trade-off chart gives reach in respondents, as frequency is, with a dotted line at all respondents.
 
 # turfLP 0.4.0
 

@@ -308,7 +308,6 @@ export function contributionList(host: HTMLElement, column: Column, respondents:
 export interface FrontierPoint {
   reach: number;
   frequency: number;
-  penetration: number;
   names: readonly string[];
 }
 
@@ -346,26 +345,29 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   const all = [...o.points, o.chosen, ...[o.mostPopular, o.greedy].filter((q): q is FrontierPoint => !!q)];
   const fLo = Math.min(...all.map((p) => p.frequency));
   const fHi = Math.max(o.maxFrequency, ...all.map((p) => p.frequency));
-  const rLo = Math.min(...all.map((p) => p.reach)) / o.respondents;
-  const rHi = Math.max(...all.map((p) => p.reach)) / o.respondents;
+  // Reach in respondents, like frequency, up to all respondents: the dotted line.
+  const rLo = Math.min(...all.map((p) => p.reach));
+  const rHi = o.respondents;
   // Pad both ranges, so that the end points are not on the frame.
   const fPad = Math.max(1, (fHi - fLo) * 0.08);
-  const rPad = Math.max(0.005, (rHi - rLo) * 0.12);
+  const rPad = Math.max(1, (rHi - rLo) * 0.08);
   // About one frequency label per 90 pixels, so that the labels do not touch.
   const fStep = niceStep(fHi - fLo + 2 * fPad, Math.max(2, Math.min(6, Math.floor(iw / 90))), true);
-  const rStep = niceStep(rHi - rLo + 2 * rPad, 4);
+  const rStep = niceStep(rHi - rLo + 2 * rPad, 4, true);
   const x0 = Math.floor((fLo - fPad) / fStep) * fStep;
   const x1 = Math.ceil((fHi + fPad) / fStep) * fStep;
   const y0 = Math.max(0, Math.floor((rLo - rPad) / rStep) * rStep);
-  const y1 = Math.min(1, Math.ceil((rHi + rPad) / rStep) * rStep);
+  const y1 = Math.ceil((rHi + rPad) / rStep) * rStep;
   const x = (v: number) => m.left + ((v - x0) / (x1 - x0)) * iw;
-  const y = (prop: number) => m.top + (1 - (prop - y0) / (y1 - y0)) * ih;
+  const y = (v: number) => m.top + (1 - (v - y0) / (y1 - y0)) * ih;
 
-  const digits = Math.max(0, -Math.floor(Math.log10(100 * rStep) + 1e-9));
   for (let v = y0; v <= y1 + 1e-9; v += rStep) {
     svg("line", { x1: m.left, x2: f.width - m.right, y1: y(v), y2: y(v), class: Math.abs(v - y0) < 1e-9 ? "axis" : "grid" }, f.root);
-    text(f.root, m.left - 8, y(v), "tick", `${(100 * v).toFixed(digits)}%`, "end", "middle");
+    text(f.root, m.left - 8, y(v), "tick", count(Math.round(v)), "end", "middle");
   }
+  text(f.root, m.left, m.top - 10, "axis-title", "Reach", "start");
+  svg("line", { x1: m.left, x2: f.width - m.right, y1: y(o.respondents), y2: y(o.respondents), class: "ceiling" }, f.root);
+  text(f.root, f.width - m.right, y(o.respondents) - 6, "ceiling-label", `All ${count(o.respondents)} respondents`, "end");
   for (let v = x0; v <= x1 + 1e-9; v += fStep) {
     text(f.root, x(v), f.height - m.bottom + 18, "tick", count(Math.round(v)));
   }
@@ -375,59 +377,60 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   const pts = o.points;
   if (pts.length > 1) {
     // Steps down, then right: the edge of what some portfolio reaches. No portfolio is above it.
-    let d = `M${x(pts[0].frequency).toFixed(1)},${y(pts[0].reach / o.respondents).toFixed(1)}`;
+    let d = `M${x(pts[0].frequency).toFixed(1)},${y(pts[0].reach).toFixed(1)}`;
     for (let i = 1; i < pts.length; i++) {
-      d += `V${y(pts[i].reach / o.respondents).toFixed(1)}H${x(pts[i].frequency).toFixed(1)}`;
+      d += `V${y(pts[i].reach).toFixed(1)}H${x(pts[i].frequency).toFixed(1)}`;
     }
     svg("path", { d, class: "frontier-line" }, f.root);
   }
   pts.forEach((p, i) => {
     const sel = i === o.selected;
-    svg("circle", { cx: x(p.frequency), cy: y(p.reach / o.respondents), r: sel ? 6 : 4.5, class: sel ? "dot dot-selected" : "dot" }, f.root);
+    svg("circle", { cx: x(p.frequency), cy: y(p.reach), r: sel ? 6 : 4.5, class: sel ? "dot dot-selected" : "dot" }, f.root);
   });
   if (!o.chosenOnFrontier) {
     const cx = x(o.chosen.frequency);
-    const cy = y(o.chosen.reach / o.respondents);
+    const cy = y(o.chosen.reach);
     svg("path", { d: `M${cx},${cy - 7}L${cx + 7},${cy}L${cx},${cy + 7}L${cx - 7},${cy}Z`, class: "chosen-mark" }, f.root);
     text(f.root, cx, cy + 22, "end-label", "Chosen");
   }
   const at = (q: FrontierPoint) => pts.findIndex((p) => p.reach === q.reach && p.frequency === q.frequency);
   const mp = o.mostPopular;
   if (mp && at(mp) < 0) {
-    svg("circle", { cx: x(mp.frequency), cy: y(mp.reach / o.respondents), r: 4.5, class: "baseline-mark" }, f.root);
+    svg("circle", { cx: x(mp.frequency), cy: y(mp.reach), r: 4.5, class: "baseline-mark" }, f.root);
   }
   const g = o.greedy;
   if (g && at(g) < 0) {
     const gx = x(g.frequency);
-    const gy = y(g.reach / o.respondents);
+    const gy = y(g.reach);
     svg("rect", { x: gx - 5, y: gy - 5, width: 10, height: 10, class: "baseline-mark" }, f.root);
   }
   // Label the two ends, where the trade-off runs between, and the simple choices.
   if (pts.length) {
     const first = pts[0];
-    text(f.root, x(first.frequency) + 10, y(first.reach / o.respondents) - 10, "end-label", "Most reach", "start");
+    text(f.root, x(first.frequency) + 10, y(first.reach) - 10, "end-label", "Most reach", "start");
   }
   const right = mp ?? (pts.length > 1 && pts.at(-1)!.frequency >= o.maxFrequency ? pts.at(-1)! : null);
   if (right && !(pts.length && at(right) === 0)) {
-    text(f.root, x(right.frequency) - 10, y(right.reach / o.respondents) + 22, "end-label", mp ? "Most popular" : "Most frequency", "end");
+    // Above and right of the point: the lowest point sits near the frequency labels, and the line comes in from the left.
+    text(f.root, x(right.frequency) + 10, y(right.reach) - 10, "end-label", mp ? "Most popular" : "Most frequency", "start");
   }
-  if (g) text(f.root, x(g.frequency) + 10, y(g.reach / o.respondents) + 22, "end-label", "Greedy", "start");
+  // Above and left of the point, clear of the labels that sit to its right.
+  if (g) text(f.root, x(g.frequency) - 10, y(g.reach) - 10, "end-label", "Greedy", "end");
 
   const base = pts[0];
   pts.forEach((p, i) => {
     const cx = x(p.frequency);
-    const cy = y(p.reach / o.respondents);
+    const cy = y(p.reach);
     const hit = svg("circle", {
       cx, cy, r: 14, class: "hit", tabindex: 0, role: "button", "data-index": i,
-      "aria-label": `Reach ${percent(p.reach / o.respondents)}, frequency ${count(p.frequency)}. Select to show these products.`,
+      "aria-label": `Reach ${count(p.reach)} (${percent(p.reach / o.respondents)}), frequency ${count(p.frequency)}. Select to show these products.`,
     }, f.root);
     interactive(hit, () => {
       const lines: TipLine[] = [
-        { text: `Reach ${percent(p.reach / o.respondents)}, frequency ${count(p.frequency)}`, strong: true },
-        { text: `Penetration ${decimal(p.penetration)}` },
+        { text: `Reach ${count(p.reach)} (${percent(p.reach / o.respondents)}), frequency ${count(p.frequency)}`, strong: true },
       ];
       if (i > 0) {
-        lines.push({ text: `${points((p.reach - base.reach) / o.respondents)} reach, +${count(p.frequency - base.frequency)} frequency against most reach`, muted: true });
+        lines.push({ text: `${count(p.reach - base.reach)} reach, +${count(p.frequency - base.frequency)} frequency against most reach`, muted: true });
       }
       lines.push({ text: list(p.names), muted: true });
       tooltip.show(lines, cx, cy);

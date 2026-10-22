@@ -689,7 +689,6 @@ function renderResults(): void {
     };
     stat("Reach", percent(p.reachProp), `${count(p.reach)} of ${count(p.respondents)} respondents`);
     stat("Frequency", count(p.frequency), `${decimal(p.frequency / p.respondents)} products per respondent`);
-    stat("Penetration", decimal(p.penetration), "Harmonic mean of product reach");
     if (p.reach === run.summary.reachable) {
       el("p", "muted", "This portfolio reaches every respondent that any product reaches.", head);
     }
@@ -855,8 +854,9 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
     const name = el("div", "stage-name", undefined, li);
     el("span", "stage-number", `Stage ${s + 1}`, name);
     el("span", "stage-criterion", s === 0 ? "Most reach" : c === "frequency" ? "Most frequency" : "Best penetration", name);
-    const value = c === "reach" ? p.reach : c === "frequency" ? p.frequency : p.penetration;
-    el("div", "stage-value", formatCriterion(c, value, run.respondents), li);
+    // Penetration only breaks ties, so its value is not shown.
+    const value = c === "reach" ? p.reach : c === "frequency" ? p.frequency : null;
+    el("div", "stage-value", value === null ? "" : formatCriterion(c, value, run.respondents), li);
     const detail = el("div", "stage-detail", undefined, li);
     if (!info) {
       if (a) el("span", "skeleton", undefined, detail);
@@ -870,7 +870,7 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
         : `${portfolios(tied, info.tiesAtLeast)} of ${size} reach ${percent(p.reachProp)}, the most possible.`.replace(/^./, (m) => m.toUpperCase());
     } else {
       const among = prev!.ties === 1 && !prev!.tiesAtLeast ? "The one portfolio left" : `Among the ${portfolios(prev!.ties, prev!.tiesAtLeast)} left`;
-      const range = info.worst === null ? "" : Math.abs(info.worst - value) < 1e-9
+      const range = info.worst === null || value === null ? "" : Math.abs(info.worst - value) < 1e-9
         ? `, ${CRITERION_LABEL[c].toLowerCase()} is ${formatCriterion(c, value, run.respondents)} for all of them`
         : `, ${CRITERION_LABEL[c].toLowerCase()} runs from ${formatCriterion(c, info.worst, run.respondents)} to ${formatCriterion(c, value, run.respondents)}`;
       const keep = tied === 1 && !info.tiesAtLeast ? "This stage keeps one." : `This stage keeps ${portfolios(tied, info.tiesAtLeast)}.`;
@@ -926,8 +926,8 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
   const sub = el("div", "block-title", undefined, section);
   el("h4", "sub-title", "Reach and frequency trade-off", sub);
   el("p", "muted", (run.fixed.length
-    ? "Each point is a portfolio with the fixed products that no other such portfolio beats on both reach and frequency, with the best penetration of those. "
-    : "Each point is a portfolio that no other portfolio beats on both reach and frequency, with the best penetration of those. ") +
+    ? "Each point is a portfolio with the fixed products that no other such portfolio beats on both reach and frequency; penetration breaks ties. "
+    : "Each point is a portfolio that no other portfolio beats on both reach and frequency; penetration breaks ties. ") +
     "From the left, each step gives up reach for frequency.", sub);
   if (a.points.length === 0) {
     const msg = el("p", "muted", undefined, section);
@@ -943,14 +943,14 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
   const pts = a.points;
   const same = (q: Point, r: { reach: number; frequency: number } | null) =>
     r !== null && q.reach === r.reach && q.frequency === r.frequency;
-  const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, penetration: q.penetration, names: marked(q.products, run) });
+  const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, names: marked(q.products, run) });
   const onFrontier = pts.some((q) => same(q, p));
   const sel = state.frontierSelected !== null && state.frontierSelected < pts.length ? state.frontierSelected : null;
   const chart = el("div", "chart", undefined, section);
   const maxFrequency = a.maxFrequency ?? Math.max(...pts.map((q) => q.frequency));
   const draw = () => frontierChart(chart, {
     points: pts.map(named), maxFrequency, respondents: run.respondents,
-    chosen: { reach: p.reach, frequency: p.frequency, penetration: p.penetration, names: marked(p.products, run) },
+    chosen: { reach: p.reach, frequency: p.frequency, names: marked(p.products, run) },
     chosenOnFrontier: onFrontier, selected: sel, onSelect: selectFrontier,
     mostPopular: a.mostPopular && named(a.mostPopular), greedy: a.greedy && named(a.greedy),
   });
@@ -964,14 +964,14 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
     : "";
   if (status) el("p", a.status === "running" ? "hint live" : "hint", status, section);
   if (a.penetrationLimited) {
-    el("p", "hint", "For some points, the search for the best penetration stopped at its limit, " +
-       "so their penetration is the best only to within the solver tolerance (about 1e-9).", section);
+    el("p", "hint", "For some points, the penetration tie-break stopped at its limit, " +
+       "so another portfolio with the same reach and frequency can break the tie better.", section);
   }
 
   const wrap = el("div", "table-wrap", undefined, section);
   const table = el("table", "results-table frontier-table", undefined, wrap);
   const hr = el("tr", undefined, undefined, el("thead", undefined, undefined, table));
-  for (const [text, cls] of [["Reach", "num"], ["Frequency", "num"], ["Penetration", "num"], ["Products", "text"],
+  for (const [text, cls] of [["Reach", "num"], ["Frequency", "num"], ["Products", "text"],
                              ["Change from most reach", "text"], ["Same as", "text"]]) {
     el("th", cls, text, hr).scope = "col";
   }
@@ -983,16 +983,15 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
     tr.dataset.index = String(i);
     if (i === sel) { tr.className = "is-selected"; tr.setAttribute("aria-current", "true"); }
     const reach = el("td", "num", undefined, tr);
-    reach.append(percent(q.reach / run.respondents), " ");
-    el("span", "sub", `(${count(q.reach)})`, reach);
+    reach.append(count(q.reach), " ");
+    el("span", "sub", `(${percent(q.reach / run.respondents)})`, reach);
     el("td", "num", count(q.frequency), tr);
-    el("td", "num", decimal(q.penetration), tr);
     el("td", "text products", marked(q.products, run).join(", "), tr);
     const now = new Set(q.products);
     const out = pts[0].products.filter((j) => !now.has(j)).map((j) => run.names[j]);
     const inn = q.products.filter((j) => !first.has(j)).map((j) => run.names[j]);
     el("td", "text muted", i === 0 ? "Most reach" : `Swaps ${list(out)} for ${list(inn)}`, tr);
-    // Reach and frequency only: the simple choices may have another penetration.
+    // Reach and frequency only: the simple choices may break the penetration tie another way.
     const notes = [same(q, a.mostPopular) ? "Most popular" : "", same(q, a.greedy) ? "Greedy" : ""].filter(Boolean);
     el("td", "text muted", notes.join(", "), tr);
     tr.addEventListener("click", () => selectFrontier(i));
@@ -1012,7 +1011,7 @@ function renderComparison(section: HTMLElement, run: Run, size: number, p: Portf
     el("p", undefined, "Every product of this portfolio is fixed, so there is no choice to compare.", block);
     return;
   }
-  const reachOf = (q: Point) => `${percent(q.reach / n)} (${count(q.reach)})`;
+  const reachOf = (q: Point) => `${count(q.reach)} respondents (${percent(q.reach / n)})`;
   const gain = (q: Point) => `This portfolio reaches ${count(p.reach - q.reach)} more ${p.reach - q.reach === 1 ? "respondent" : "respondents"}, ${points((p.reach - q.reach) / n)}.`;
   const popular = run.fixed.length
     ? `The fixed products and the ${free === 1 ? "most popular other product" : `${free} most popular other products`}`
@@ -1054,7 +1053,6 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
   const heads: [string, string, string?][] = [
     ["Size", "num"], ["Reach", "num"], ["Gain", "num", "Reach gained over the previous size"],
     ["Frequency", "num", "Sum of the individual reach of the products"],
-    ["Penetration", "num", "Harmonic mean of the individual reach of the products"],
     ["Products", "text"], ["Time", "num"],
   ];
   for (const [text, cls, title] of heads) {
@@ -1071,14 +1069,14 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
       el("td", "num", String(s), tr);
       if (run.current === s) {
         const td = el("td", "text", "Solving…", tr);
-        td.colSpan = 5;
+        td.colSpan = 4;
         const time = el("td", "num live-time", seconds((performance.now() - run.currentStart) / 1000), tr);
         time.dataset.start = String(run.currentStart);
       } else if (run.status === "running") {
-        for (let k = 0; k < 6; k++) el("span", "skeleton", undefined, el("td", k === 4 ? "text" : "num", undefined, tr));
+        for (let k = 0; k < 5; k++) el("span", "skeleton", undefined, el("td", k === 3 ? "text" : "num", undefined, tr));
       } else {
         const td = el("td", "text muted", run.status === "cancelled" ? "Cancelled" : "Not solved", tr);
-        td.colSpan = 6;
+        td.colSpan = 5;
       }
       continue;
     }
@@ -1094,7 +1092,6 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
     el("span", "sub", `(${count(p.reach)})`, reach);
     el("td", "num", prev ? points(p.reachProp - prev.reachProp).replace(" points", "") : "", tr);
     el("td", "num", count(p.frequency), tr);
-    el("td", "num", decimal(p.penetration), tr);
     el("td", "text products", marked(p.products, run).join(", "), tr);
     el("td", "num muted", seconds(r.seconds), tr);
     tr.addEventListener("click", () => select(s));
