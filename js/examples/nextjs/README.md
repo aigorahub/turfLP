@@ -26,6 +26,8 @@ Complete results (no warnings) are kept in a cache of at most 16 MB per instance
 
 The limits are per instance. A limit for the whole service needs the platform's rate limits or a shared store.
 
+On Vercel with Fluid compute, several concurrent requests can go to one instance, because its handler only waits for the worker. They then wait in that instance's queue, so each waiting request adds one solve time, and past the queue the answer is 503. In a test on Vercel (gen-bench-200x20, size 5, about 1.65 s per solve; turfLP 0.4.0), the median request took 1.7 s at 1 concurrent request, 3.3 s at 2, 6.5 s at 4, and at 8 the admitted requests took up to 8.3 s (p95) while 31 to 45 of 100 got 503. A route that solves on the request thread scaled out to one instance per request instead (1.7 s at every concurrency), but it cannot stop a solve at a deadline. Plan the queue and the size limit together: the largest admitted problem (200 x 40) can take about 3 s on Vercel, so a request behind 4 such problems waits about 15 s.
+
 `next.config.mjs` sets `serverExternalPackages: ["turflp", "highs"]`, `output: "standalone"`, and `outputFileTracingIncludes` for the worker script and the two packages, which the route loads by path. See the "Next.js on Vercel" section of `../../README.md`.
 
 ## Tests
