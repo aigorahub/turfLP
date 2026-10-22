@@ -14,11 +14,11 @@ Stop allowed right now: no. Stop only after the release and the redeploy, or on 
 
 ## Current phase
 
-B1 review (astra, grok), then B2.
+B1 delta, B2, B3, B5 reviews (astra, grok) sent at c414373. Baseline and B3 benchmarks running in worktrees. B4 MIP start code is uncommitted in js/src (settings.mipStart, default off) until measured.
 
 ## Next exact action
 
-Send B1 to astra and grok.
+When the baseline and B3 benchmarks finish: log them, run the interleaved primary gate (baseline 34536fc against B3 0dd093d, skip and mipStart variants), decide skip and mipStart, commit B4. Then B6.
 
 ## Deferred hygiene
 
