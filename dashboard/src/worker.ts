@@ -38,7 +38,7 @@ export type Reply =
   | { type: "baselines"; id: number; mostPopular: Point | null; greedy: Point; stop: Stop }
   | { type: "stages"; id: number; stages: StageInfo[]; stop: Stop }
   | { type: "point"; id: number; point: Point }
-  | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop }
+  | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop; penetrationLimited: boolean }
   | { type: "error"; id: number | null; message: string };
 
 function rowsOf(m: Matrix): number[][] {

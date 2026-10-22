@@ -114,6 +114,8 @@ interface Analysis {
   points: Point[];
   maxFrequency: number | null;
   frontierStop: Stop | null;
+  /** True when the search for the best penetration of a point stopped at its limit. */
+  penetrationLimited: boolean;
   message: string | null;
 }
 
@@ -323,6 +325,7 @@ function onReply(r: Reply): void {
       analysis.points = r.points;
       analysis.maxFrequency = r.maxFrequency;
       analysis.frontierStop = r.stop;
+      analysis.penetrationLimited = r.penetrationLimited;
       analysis.status = "done";
     } else if (r.type === "error") {
       analysis.status = "error";
@@ -499,7 +502,7 @@ function requestAnalysis(run: Run, size: number): void {
   const a: Analysis = {
     id: nextId++, size, status: "running", mostPopular: null, greedy: null, baselinesStop: null,
     stages: null, stagesStop: null, points: [],
-    maxFrequency: null, frontierStop: null, message: null,
+    maxFrequency: null, frontierStop: null, penetrationLimited: false, message: null,
   };
   run.analyses.set(size, a);
   send({ type: "analyze", id: a.id, products: [...result.portfolio.products], tiebreak: run.tiebreak, fixed: run.fixed,
@@ -960,6 +963,10 @@ function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysi
     : !onFrontier ? "The chosen portfolio has the most reach but is not on the frontier: a portfolio with the same reach has more frequency. Choose frequency for stage 2 to get it."
     : "";
   if (status) el("p", a.status === "running" ? "hint live" : "hint", status, section);
+  if (a.penetrationLimited) {
+    el("p", "hint", "For some points, the search for the best penetration stopped at its limit, " +
+       "so their penetration is the best only to within the solver tolerance (about 1e-9).", section);
+  }
 
   const wrap = el("div", "table-wrap", undefined, section);
   const table = el("table", "results-table frontier-table", undefined, wrap);

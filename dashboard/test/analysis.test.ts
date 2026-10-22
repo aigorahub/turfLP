@@ -130,6 +130,21 @@ describe("frontier", () => {
     expect([p.products, p.penetration]).toEqual([[0, 2], 3]);
   });
 
+  it("searches past the solver tolerance for the best penetration", async () => {
+    // A and B reach 50,000 each (penetration 50,000); C and D reach 49,999 and 50,001
+    // (penetration 49,999.99998). Both pairs reach everyone with frequency 100,000.
+    const counts: [number[], number][] = [[[1, 0, 1, 0], 25_000], [[1, 0, 0, 1], 25_000], [[0, 1, 1, 0], 24_999], [[0, 1, 0, 1], 25_001]];
+    const a = counts.flatMap(([row, n]) => Array.from({ length: n }, () => row));
+    const m = { rows: a.length, cols: 4, data: Uint8Array.from(a.flat()), names: ["A", "B", "C", "D"] };
+    const chosen = await turf(a, 2, { tiebreak: ["frequency", "penetration"] });
+    expect(chosen.products).toEqual([0, 1]);
+    for (const options of [{}, { chosen: { products: chosen.products, tiebreak: ["frequency"] as const } }]) {
+      const res = await frontier(m, 2, options);
+      expect([res.stop, res.penetrationLimited, res.points[0].products, res.points[0].penetration])
+        .toEqual(["complete", false, [0, 1], expect.closeTo(50_000, 6)]);
+    }
+  });
+
   it("finds the most popular products that reach the most when products tie on reach at the cut", async () => {
     // A reaches 3; B, C, and D reach 2 each. A and B reach the same respondents, so {A, B} reaches 3 and {A, C} 4.
     const a = [[1, 1, 0, 0], [1, 1, 0, 1], [1, 0, 1, 1], [0, 0, 1, 0]];

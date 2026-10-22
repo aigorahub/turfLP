@@ -35,6 +35,8 @@ export interface StageInfo {
 export const TIE_CAP = 20;
 // Solves per range or count that may return portfolios outside the bounds, before the count stops.
 const MAX_REJECTS = 50;
+// Portfolios searched for the best penetration of one frontier point, as the package's pool.
+const MAX_POOL = 1000;
 const EPS = 2 ** -52;
 
 /** Pause between solves so that a cancel message can arrive. Returns false to stop. */
@@ -245,15 +247,39 @@ class SizeModel {
   /**
    * The best penetration among the portfolios with this reach and frequency.
    * Called for a frontier point, where no portfolio has more of either, so
-   * the bounds hold with equality.
+   * the bounds hold with equality. The solver meets the penetration optimum
+   * only to within its tolerance, so, as the package does (docs/algorithm.md
+   * section 8), the portfolios within that tolerance of the first one are
+   * searched, up to MAX_POOL of them, and the best is kept exactly.
+   * `complete` is false when the search stopped at that limit.
    */
-  bestPenetration(reach: number, frequency: number, deadline: number): Uint8Array {
-    const sel = this.solve("min", this.penCoef, this.atLeastFrequency(this.atLeastReach(this.base, reach), frequency),
-                           deadline);
-    if (!sel) throw new Stopped("invalid");
-    const q = this.point(sel);
-    if (q.reach !== reach || q.frequency !== frequency) throw new Stopped("invalid");
-    return sel;
+  bestPenetration(reach: number, frequency: number, deadline: number): { sel: Uint8Array; complete: boolean } {
+    let mod = this.atLeastFrequency(this.atLeastReach(this.base, reach), frequency);
+    const first = this.solve("min", this.penCoef, mod, deadline);
+    if (!first) throw new Stopped("invalid");
+    const exact = (sel: Uint8Array) => {
+      const q = this.point(sel);
+      return q.reach === reach && q.frequency === frequency;
+    };
+    if (!exact(first)) throw new Stopped("invalid");
+    const bound = this.penSum(first);
+    const tol = 16 * this.size * EPS * Math.max(1, Math.abs(bound));
+    const pool = [first];
+    mod = this.atMostPenSum(mod, bound);
+    let last = first;
+    let complete = false;
+    for (let i = 0; i < MAX_POOL; i++) {
+      mod = this.exclude(mod, last);
+      const next = this.solve("min", this.penCoef, mod, deadline);
+      if (!next) { complete = true; break; }
+      last = next;
+      if (exact(next) && this.penSum(next) <= bound + tol) pool.push(next);
+    }
+    // The least sum of 1/reach terms is the best penetration; the first within rounding of it wins.
+    const sums = pool.map((sel) => this.penSum(sel));
+    const lo = Math.min(...sums);
+    const best = sums.findIndex((v) => v <= lo + 16 * this.size * EPS * Math.max(1, Math.abs(lo)));
+    return { sel: pool[best], complete };
   }
 
   exclude(mod: solver.Model, sel: Uint8Array): solver.Model {
@@ -407,11 +433,12 @@ export interface FrontierOptions {
  * whole numbers, so the bounds are exact.
  */
 export async function frontier(matrix: Matrix, size: number, options: FrontierOptions = {}):
-    Promise<{ points: Point[]; maxFrequency: number; stop: Stop }> {
+    Promise<{ points: Point[]; maxFrequency: number; stop: Stop; penetrationLimited: boolean }> {
   await solver.getSolver();
   const sm = new SizeModel(matrix, size, options.fixed);
   const deadline = performance.now() / 1000 + (options.seconds ?? 30);
   const maxPoints = options.maxPoints ?? 40;
+  let penetrationLimited = false;
   const maxFrequency = sm.maxFrequency();
   const chosen = options.chosen ? sm.point(sm.selection(options.chosen.products)) : null;
   const through = options.chosen?.tiebreak[0] !== "frequency" ? 0 : options.chosen.tiebreak[1] === "penetration" ? 2 : 1;
@@ -449,7 +476,9 @@ export async function frontier(matrix: Matrix, size: number, options: FrontierOp
           frequency = sm.point(b).frequency;
         }
         await pause(options.between);
-        pt = sm.point(sm.bestPenetration(reach, frequency, deadline));
+        const best = sm.bestPenetration(reach, frequency, deadline);
+        if (!best.complete) penetrationLimited = true;
+        pt = sm.point(best.sel);
       }
       const prev = points.at(-1);
       if (pt.reach !== reach || pt.frequency < freqFloor || (prev && !(pt.reach < prev.reach && pt.frequency > prev.frequency))) {
@@ -465,7 +494,7 @@ export async function frontier(matrix: Matrix, size: number, options: FrontierOp
     if (!(e instanceof Stopped)) throw e;
     stop = e.reason;
   }
-  return { points, maxFrequency, stop };
+  return { points, maxFrequency, stop, penetrationLimited };
 }
 
 /**
