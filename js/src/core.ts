@@ -176,7 +176,7 @@ export async function turf(reach: ReachMatrix, size: number, options: TurfOption
   const tiebreak = checkTiebreak(options.tiebreak);
   checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
   await solver.getSolver();
-  return turfSync(prepare(r), size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
+  return turfSync(timed("pack", () => prepare(r)), size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
 }
 
 /**
@@ -472,7 +472,7 @@ export async function turfMinCover(reach: ReachMatrix,
   const r = asReach(reach, options.names);
   const fixed = checkFixed(options.fixed, r.cols);
   await solver.getSolver();
-  return minCoverSync(prepare(r), fixed);
+  return minCoverSync(timed("pack", () => prepare(r)), fixed);
 }
 
 function minCoverSync(p: Prepared, fixedIn: readonly number[] = []): Portfolio {
@@ -520,7 +520,7 @@ export async function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | 
   const fixed = checkFixedReach(checkFixed(options.fixed, r.cols), columnSums(r), r.names);
   await solver.getSolver();
   // Prepared once for the minimum cover and every size.
-  const p = prepare(r);
+  const p = timed("pack", () => prepare(r));
   const from = Math.max(1, fixed.length);
   const list = sizes ?? Array.from({ length: minCoverSync(p, fixed).size - from + 1 }, (_, i) => i + from);
   return list.map((k) => turfSync(p, k, tiebreak, fixed, options.maxPool ?? 1000,

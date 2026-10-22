@@ -218,7 +218,7 @@ for (const [name, make] of Object.entries(INPUTS)) {
     console.log([row.id.padEnd(36), `n=${row.total.n}${censored ? "*" : ""}`,
       `median ${row.total.median.toFixed(1)} ms`, `p95 ${row.total.p95.toFixed(1)}`,
       `solves ${row.solves} pool ${row.poolSolves}`, `model ${row.model?.rows}x${row.model?.cols}/${row.model?.nnz}`,
-      `prep ${(ph.prepare ?? 0).toFixed(1)} csr ${(ph.csr ?? 0).toFixed(1)} pass ${(ph.passModel ?? 0).toFixed(1)} run ${(ph.run ?? 0).toFixed(1)} check ${(ph.check ?? 0).toFixed(1)}`,
+      `pack ${(ph.pack ?? 0).toFixed(1)} prep ${(ph.prepare ?? 0).toFixed(1)} csr ${(ph.csr ?? 0).toFixed(1)} pass ${(ph.passModel ?? 0).toFixed(1)} run ${(ph.run ?? 0).toFixed(1)} check ${(ph.check ?? 0).toFixed(1)}`,
       Object.entries(row.stages).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(" "),
       `rss ${row.rssMB} MB`].join("  "));
   }
