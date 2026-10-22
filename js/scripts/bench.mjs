@@ -2,14 +2,15 @@
 // of the built package, with the phase times of solver.trace.
 //
 //   npm run build && node scripts/bench.mjs [--out results.json] [--samples 30]
-//     [--warmups 5] [--budget 60] [--only name,name] [--set reduce=off] [--list]
+//     [--warmups 5] [--budget seconds] [--only input-or-case,...] [--set reduce=off] [--list]
 //   node scripts/bench.mjs --freeze   (writes scripts/bench-cases.json)
 //
 // The cases come from scripts/bench-cases.json, frozen once, so that a fixed
-// set taken from a minimum cover does not change between runs. --budget caps
-// the measured seconds of a case that is not primary: such a case stops early
-// and is marked censored, with its sample count. Primary cases always take
-// every sample. Results go to --out as JSON, and a table goes to stdout.
+// set taken from a minimum cover does not change between runs. Every case takes
+// every sample by default. --budget, for quick local runs only, caps the
+// measured seconds of a case that is not primary: such a case stops early and
+// is marked censored, with its sample count; a run with censored cases is not
+// a comparison result. Results go to --out as JSON, and a table goes to stdout.
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -24,7 +25,7 @@ const arg = (name, fallback) => {
 };
 const SAMPLES = Number(arg("samples", 30));
 const WARMUPS = Number(arg("warmups", 5));
-const BUDGET = Number(arg("budget", 60));
+const BUDGET = Number(arg("budget", Infinity));
 const ONLY = arg("only", null)?.split(",");
 const OUT = arg("out", null);
 // --set name=value,name=value changes solver.settings, to compare variants.
@@ -157,9 +158,10 @@ if (args.includes("--list")) {
 
 const results = [];
 for (const [name, make] of Object.entries(INPUTS)) {
-  if (ONLY && !ONLY.includes(name)) continue;
+  const cases = MANIFEST_CASES.filter((m) => m.input === name && (!ONLY || ONLY.includes(name) || ONLY.includes(m.id)));
+  if (cases.length === 0) continue;
   const input = make();
-  for (const c of MANIFEST_CASES.filter((m) => m.input === name)) {
+  for (const c of cases) {
     if (c.checksum !== input.checksum) throw new Error(`${c.id}: the input changed (checksum ${input.checksum})`);
     const run = async () => {
       const events = [];
