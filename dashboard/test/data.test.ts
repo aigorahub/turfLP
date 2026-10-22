@@ -34,18 +34,18 @@ describe("summarize", () => {
 });
 
 describe("resultsCsv", () => {
-  it("writes one row per size and quotes names", () => {
+  it("writes one row per size, quotes names, and names the fixed products", () => {
     const p = { products: [0, 2], names: ['Mint, "fresh"', "Vanilla"], size: 2, reach: 90, reachProp: 0.75,
-                frequency: 120, penetration: 58.5, respondents: 120, fixed: [], warnings: [] };
+                frequency: 120, penetration: 58.5, respondents: 120, fixed: [2], warnings: [] };
     expect(resultsCsv([{ portfolio: p, seconds: 0.25 }])).toBe(
-      "size,reach,reach_percent,frequency,penetration,products,seconds\n" +
-      '2,90,75.00,120,58.5000,"Mint, ""fresh""; Vanilla",0.250\n');
+      "size,reach,reach_percent,frequency,penetration,products,fixed,seconds\n" +
+      '2,90,75.00,120,58.5000,"Mint, ""fresh""; Vanilla",Vanilla,0.250\n');
   });
 
   it("keeps a spreadsheet from reading product names as a formula", () => {
     const p = { products: [0, 1], names: ["=1+1", "B"], size: 2, reach: 2, reachProp: 1,
                 frequency: 2, penetration: 1, respondents: 2, fixed: [], warnings: [] };
-    expect(resultsCsv([{ portfolio: p, seconds: 0 }]).split("\n")[1]).toBe("2,2,100.00,2,1.0000,'=1+1; B,0.000");
+    expect(resultsCsv([{ portfolio: p, seconds: 0 }]).split("\n")[1]).toBe("2,2,100.00,2,1.0000,'=1+1; B,,0.000");
   });
 });
 

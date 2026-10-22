@@ -15,6 +15,8 @@ import type { Reply, Request } from "./worker.js";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const DEFAULT_MAX_SIZE = 8;
+// Above this many products, the fixed-product list gets a filter.
+const FIXED_FILTER_FROM = 13;
 
 const CRITERION_LABEL: Record<"reach" | Criterion, string> = {
   reach: "Reach", frequency: "Frequency", penetration: "Penetration",
@@ -48,6 +50,10 @@ const ui = {
   sizeFrom: $<HTMLInputElement>("size-from"),
   sizeTo: $<HTMLInputElement>("size-to"),
   sizeHint: $("size-hint"),
+  fixedFilter: $<HTMLInputElement>("fixed-filter"),
+  fixedList: $("fixed-list"),
+  fixedHint: $("fixed-hint"),
+  fixedClear: $<HTMLButtonElement>("fixed-clear"),
   stage2: $<HTMLSelectElement>("stage2"),
   stage3: $<HTMLSelectElement>("stage3"),
   run: $<HTMLButtonElement>("run"),
@@ -87,10 +93,11 @@ interface Run {
   names: string[];
   summary: ReachSummary;
   respondents: number;
-  /** The reach matrix and tie-break of the run, kept for the analysis of its portfolios. */
+  /** The reach matrix, tie-break, and fixed products of the run, kept for the analysis of its portfolios. */
   reach: Uint8Array;
   cols: number;
   tiebreak: Criterion[];
+  fixed: number[];
   analyses: Map<number, Analysis>;
 }
 
@@ -117,6 +124,10 @@ const state = {
   coverId: 0,
   sizesTouched: false,
   tiebreak: ["frequency", "penetration"] as Criterion[],
+  /** Columns that every portfolio must contain, ascending. */
+  fixed: [] as number[],
+  /** Why products were unfixed, after a threshold change. */
+  fixedNote: null as string | null,
   run: null as Run | null,
   selected: null as number | null,
   chartMode: "line" as "line" | "columns",
@@ -129,7 +140,7 @@ const state = {
 let nextId = 1;
 
 function settingsKey(): string {
-  return `${state.threshold}|${state.tiebreak.join(",")}`;
+  return `${state.threshold}|${state.tiebreak.join(",")}|${state.fixed.join(",")}`;
 }
 
 // Solver
@@ -267,7 +278,7 @@ function requestCover(): void {
   if (!state.loaded || !state.reach || state.solver !== "ready") return;
   state.coverId = nextId++;
   const t = state.loaded.table;
-  send({ type: "cover", id: state.coverId,
+  send({ type: "cover", id: state.coverId, fixed: [...state.fixed],
          matrix: { rows: t.rows, cols: t.cols, data: state.reach, names: t.names } });
 }
 
@@ -277,8 +288,9 @@ function onReply(r: Reply): void {
     state.cover = r.portfolio;
     // Do not change the sizes of a run in progress.
     if (!state.sizesTouched && state.loaded && state.run?.status !== "running") {
-      ui.sizeFrom.value = "1";
-      ui.sizeTo.value = String(Math.min(r.portfolio.size, DEFAULT_MAX_SIZE, state.loaded.table.cols));
+      const from = Math.max(1, state.fixed.length);
+      ui.sizeFrom.value = String(from);
+      ui.sizeTo.value = String(Math.max(from, Math.min(r.portfolio.size, DEFAULT_MAX_SIZE, state.loaded.table.cols)));
     }
     render();
     return;
@@ -337,6 +349,9 @@ function setData(loaded: Loaded, threshold: number): void {
   state.run = null;
   state.selected = null;
   state.sizesTouched = false;
+  // Fixed products are columns of the old table.
+  state.fixed = [];
+  ui.fixedFilter.value = "";
   ui.dataError.hidden = true;
   renderDataInfo();
   const cols = loaded.table.cols;
@@ -354,6 +369,15 @@ function setThreshold(threshold: number): void {
   state.threshold = threshold;
   state.reach = toReach(t, threshold);
   state.summary = summarize(state.reach, t.rows, t.cols);
+  // A product that reaches no one at this threshold cannot be fixed.
+  const reach = state.summary.productReach;
+  const dropped = state.fixed.filter((j) => reach[j] === 0);
+  state.fixed = state.fixed.filter((j) => reach[j] > 0);
+  state.fixedNote = dropped.length === 0 ? null
+    : `${list(dropped.map((j) => t.names[j]))} ${dropped.length === 1 ? "reaches" : "reach"} no respondent at this threshold, ` +
+      `so ${dropped.length === 1 ? "it is" : "they are"} no longer fixed.`;
+  if (dropped.length && !state.sizesTouched) ui.sizeFrom.value = String(Math.max(1, state.fixed.length));
+  buildFixedList();
   state.cover = null;
   state.coverError = null;
   requestCover();
@@ -417,6 +441,8 @@ function sizeRange(): { sizes: number[] } | { error: string } {
     return { error: "Sizes must be whole numbers." };
   }
   if (from < 1 || to > cols) return { error: `Sizes must be from 1 to ${cols}, the number of products.` };
+  const f = state.fixed.length;
+  if (from < f) return { error: `With ${f} fixed products, the smallest size is ${f}.` };
   if (from > to) return { error: "The first size must not be larger than the last." };
   return { sizes: Array.from({ length: to - from + 1 }, (_, k) => from + k) };
 }
@@ -426,16 +452,17 @@ function startRun(): void {
   if (state.solver !== "ready" || !state.loaded || !state.reach || !state.summary || "error" in range) return;
   const t = state.loaded.table;
   const tiebreak = [...state.tiebreak];
+  const fixed = [...state.fixed];
   cancelAnalyses();
   state.run = {
     id: nextId++, key: settingsKey(), sizes: range.sizes, results: new Map(), status: "running",
     message: null, current: null, currentStart: performance.now(), names: t.names,
     summary: state.summary, respondents: t.rows,
-    reach: state.reach, cols: t.cols, tiebreak, analyses: new Map(),
+    reach: state.reach, cols: t.cols, tiebreak, fixed, analyses: new Map(),
   };
   state.selected = null;
   state.frontierSelected = null;
-  send({ type: "run", id: state.run.id, sizes: range.sizes, tiebreak,
+  send({ type: "run", id: state.run.id, sizes: range.sizes, tiebreak, fixed,
          matrix: { rows: t.rows, cols: t.cols, data: state.reach, names: t.names } });
   render();
 }
@@ -464,7 +491,7 @@ function requestAnalysis(run: Run, size: number): void {
     maxFrequency: null, frontierStop: null, message: null,
   };
   run.analyses.set(size, a);
-  send({ type: "analyze", id: a.id, products: [...result.portfolio.products], tiebreak: run.tiebreak,
+  send({ type: "analyze", id: a.id, products: [...result.portfolio.products], tiebreak: run.tiebreak, fixed: run.fixed,
          seconds: ANALYSIS_SECONDS, maxPoints: MAX_FRONTIER_POINTS,
          matrix: { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names } });
 }
@@ -577,10 +604,14 @@ function renderSettings(): void {
     ui.sizeHint.classList.add("is-error");
   } else if (state.cover) {
     const k = state.cover.size;
-    ui.sizeHint.textContent = `${k} ${k === 1 ? "product reaches" : "products reach"} every respondent that any product reaches.`;
+    ui.sizeHint.textContent = state.fixed.length
+      ? `${k} products, the fixed ones included, reach every respondent that any product reaches.`
+      : `${k} ${k === 1 ? "product reaches" : "products reach"} every respondent that any product reaches.`;
   } else {
     ui.sizeHint.textContent = "Finding the smallest full cover…";
   }
+
+  renderFixed();
 
   const running = state.run?.status === "running";
   ui.run.textContent = running ? "Cancel" : "Run";
@@ -633,7 +664,7 @@ function renderResults(): void {
     const p = run.results.get(shown)!.portfolio;
     el("h2", "headline-title",
        `${p.size} ${p.size === 1 ? "product reaches" : "products reach"} ${percent(p.reachProp)} of respondents`, head);
-    el("p", "headline-products", list(p.names), head);
+    el("p", "headline-products", list(marked(p.products, run)), head);
     const stats = el("dl", "stats", undefined, head);
     const stat = (label: string, value: string, note: string) => {
       const d = el("div", "stat", undefined, stats);
@@ -667,14 +698,12 @@ function renderResults(): void {
   }));
   const curve = el("div", "chart", undefined, curveSection);
   const matrix = { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names };
-  const stacks = stackColumns(matrix, done.map((s) => run.results.get(s)!.portfolio));
+  const stacks = stackColumns(matrix, done.map((s) => run.results.get(s)!.portfolio), run.fixed);
   const columns: Column[] = done.map((s, k) => ({
     size: s, reach: run.results.get(s)!.portfolio.reach,
     parts: stacks.columns[k].map((part) => ({
-      name: part.slot === PRODUCT_COLORS
-        ? (part.products.length === 1 ? run.names[part.products[0]] : `${part.products.length} other products`)
-        : run.names[part.products[0]],
-      names: part.products.map((j) => run.names[j]),
+      name: part.products.length === 1 ? marked(part.products, run)[0] : `${part.products.length} other products`,
+      names: marked(part.products, run),
       added: part.added, slot: part.slot,
     })),
   }));
@@ -683,7 +712,7 @@ function renderResults(): void {
         sizes: run.sizes,
         points: done.map((s) => {
           const p = run.results.get(s)!.portfolio;
-          return { size: s, reach: p.reach, reachProp: p.reachProp, names: p.names };
+          return { size: s, reach: p.reach, reachProp: p.reachProp, names: marked(p.products, run) };
         }),
         respondents: run.respondents,
         reachable: run.summary.reachable / run.respondents,
@@ -751,8 +780,13 @@ function renderResults(): void {
   const barsHost = el("div", "bars-host", undefined, bars);
   productBars(barsHost, {
     names: run.names, productReach: run.summary.productReach, respondents: run.respondents,
-    selected: selectedSet,
+    selected: selectedSet, fixed: new Set(run.fixed),
   });
+}
+
+/** Product names of a run, with "(fixed)" after each fixed product. */
+function marked(products: readonly number[], run: Run): string[] {
+  return products.map((j) => (run.fixed.includes(j) ? `${run.names[j]} (fixed)` : run.names[j]));
 }
 
 /** A segmented control: radio semantics, one tab stop, arrow keys move and select. */
@@ -794,9 +828,10 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
   const title = el("div", "block-title", undefined, head);
   el("h3", undefined, "How the portfolio was chosen", title);
   const order = ["reach", ...run.tiebreak] as ("reach" | Criterion)[];
-  el("p", "muted", order.length === 1
+  el("p", "muted", (order.length === 1
     ? "One stage: the most reach. Ties on reach are not broken."
-    : `${order.length} stages: the most reach, then ${list(order.slice(1).map((c) => CRITERION_LABEL[c].toLowerCase()))} among the portfolios still tied.`,
+    : `${order.length} stages: the most reach, then ${list(order.slice(1).map((c) => CRITERION_LABEL[c].toLowerCase()))} among the portfolios still tied.`) +
+    (run.fixed.length ? " Only portfolios with the fixed products count." : ""),
     title);
   const p = run.results.get(size)!.portfolio;
   const ol = el("ol", "stages", undefined, section);
@@ -849,7 +884,9 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
   const head = el("div", "block-head", undefined, section);
   const title = el("div", "block-title", undefined, head);
   el("h3", undefined, `Reach and frequency trade-off for ${size} ${size === 1 ? "product" : "products"}`, title);
-  el("p", "muted", "Each point is a portfolio that no other portfolio beats on both reach and frequency. " +
+  el("p", "muted", (run.fixed.length
+    ? "Each point is a portfolio with the fixed products that no other such portfolio beats on both reach and frequency. "
+    : "Each point is a portfolio that no other portfolio beats on both reach and frequency. ") +
     "From the left, each step gives up reach for frequency.", title);
   const p = run.results.get(size)!.portfolio;
   if (!a || a.points.length === 0) {
@@ -865,14 +902,14 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     return null;
   }
   const pts = a.points;
-  const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, penetration: q.penetration, names: q.products.map((j) => run.names[j]) });
+  const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, penetration: q.penetration, names: marked(q.products, run) });
   const onFrontier = pts.some((q) => q.reach === p.reach && q.frequency === p.frequency);
   const sel = state.frontierSelected !== null && state.frontierSelected < pts.length ? state.frontierSelected : null;
   const chart = el("div", "chart", undefined, section);
   const maxFrequency = a.maxFrequency ?? Math.max(...pts.map((q) => q.frequency));
   const draw = () => frontierChart(chart, {
     points: pts.map(named), maxFrequency, respondents: run.respondents,
-    chosen: { reach: p.reach, frequency: p.frequency, penetration: p.penetration, names: p.names },
+    chosen: { reach: p.reach, frequency: p.frequency, penetration: p.penetration, names: marked(p.products, run) },
     chosenOnFrontier: onFrontier, selected: sel, onSelect: selectFrontier,
   });
   draw();
@@ -903,7 +940,7 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     el("span", "sub", `(${count(q.reach)})`, reach);
     el("td", "num", count(q.frequency), tr);
     el("td", "num", decimal(q.penetration), tr);
-    el("td", "text products", q.products.map((j) => run.names[j]).join(", "), tr);
+    el("td", "text products", marked(q.products, run).join(", "), tr);
     const now = new Set(q.products);
     const out = pts[0].products.filter((j) => !now.has(j)).map((j) => run.names[j]);
     const inn = q.products.filter((j) => !first.has(j)).map((j) => run.names[j]);
@@ -972,7 +1009,7 @@ function renderTable(host: HTMLElement, run: Run, shown: number | null): void {
     el("td", "num", prev ? points(p.reachProp - prev.reachProp).replace(" points", "") : "", tr);
     el("td", "num", count(p.frequency), tr);
     el("td", "num", decimal(p.penetration), tr);
-    el("td", "text products", p.names.join(", "), tr);
+    el("td", "text products", marked(p.products, run).join(", "), tr);
     el("td", "num muted", seconds(r.seconds), tr);
     tr.addEventListener("click", () => select(s));
     tr.addEventListener("keydown", (e) => {
@@ -995,7 +1032,75 @@ function renderPreview(host: HTMLElement, l: Loaded, summary: ReachSummary): voi
   el("h3", undefined, "Reach of each product", el("div", "block-head", undefined, bars));
   productBars(el("div", "bars-host", undefined, bars), {
     names: t.names, productReach: summary.productReach, respondents: t.rows, selected: null,
+    fixed: new Set(state.fixed),
   });
+}
+
+// Fixed products. The list is built when the data or the threshold changes
+// and updated in place on each render, so that its focus and filter survive
+// the solver's replies.
+
+let fixedItems: { label: HTMLLabelElement; box: HTMLInputElement; name: string }[] = [];
+
+function buildFixedList(): void {
+  ui.fixedList.replaceChildren();
+  fixedItems = [];
+  const l = state.loaded;
+  const summary = state.summary;
+  ui.fixedFilter.hidden = !l || l.table.cols < FIXED_FILTER_FROM;
+  if (!l || !summary) return;
+  l.table.names.forEach((name, j) => {
+    const label = el("label", "fixed-item", undefined, ui.fixedList);
+    const box = el("input", undefined, undefined, label);
+    box.type = "checkbox";
+    box.value = String(j);
+    el("span", "fixed-name", name, label).title = name;
+    el("span", "fixed-reach", percent(summary.productReach[j] / l.table.rows), label);
+    box.addEventListener("change", () => {
+      setFixed(box.checked ? [...state.fixed, j] : state.fixed.filter((k) => k !== j));
+    });
+    fixedItems.push({ label, box, name });
+  });
+  el("p", "muted fixed-none", "No product matches the filter.", ui.fixedList).hidden = true;
+}
+
+function renderFixed(): void {
+  const summary = state.summary;
+  const q = ui.fixedFilter.value.trim().toLowerCase();
+  let shown = 0;
+  fixedItems.forEach(({ label, box, name }, j) => {
+    const none = !summary || summary.productReach[j] === 0;
+    box.checked = state.fixed.includes(j);
+    box.disabled = none;
+    label.classList.toggle("is-disabled", none);
+    label.title = none ? "Reaches no respondent at this threshold" : "";
+    // A checked product stays in view, so the filter never hides what is fixed.
+    label.hidden = q !== "" && !box.checked && !name.toLowerCase().includes(q);
+    if (!label.hidden) shown++;
+  });
+  const empty = ui.fixedList.querySelector<HTMLElement>(".fixed-none");
+  if (empty) empty.hidden = shown > 0;
+  const f = state.fixed.length;
+  ui.fixedHint.textContent = (state.fixedNote ? `${state.fixedNote} ` : "") + (f === 0
+    ? "Check the products that every portfolio must contain. The sizes count them."
+    : `${f} fixed: every portfolio contains ${f === 1 ? "it" : "them"}, and the sizes count ${f === 1 ? "it" : "them"}.`);
+  ui.fixedClear.hidden = f === 0;
+}
+
+function setFixed(fixed: number[]): void {
+  if (state.run?.status === "running") cancelRun();
+  cancelAnalyses();
+  state.fixed = [...new Set(fixed)].sort((a, b) => a - b);
+  state.fixedNote = null;
+  if (!state.sizesTouched) {
+    const from = Math.max(1, state.fixed.length);
+    ui.sizeFrom.value = String(from);
+    if (!(Number(ui.sizeTo.value) >= from)) ui.sizeTo.value = String(from);
+  }
+  state.cover = null;
+  state.coverError = null;
+  requestCover();
+  render();
 }
 
 /** Show the portfolio of one size. */
@@ -1099,6 +1204,9 @@ ui.stage3.addEventListener("change", () => {
   const second = state.tiebreak[0];
   if (second) setTiebreak(ui.stage3.value === "none" ? [second] : [second, ui.stage3.value as Criterion]);
 });
+
+ui.fixedFilter.addEventListener("input", renderFixed);
+ui.fixedClear.addEventListener("click", () => setFixed([]));
 
 for (const input of [ui.sizeFrom, ui.sizeTo]) {
   input.addEventListener("input", () => { state.sizesTouched = true; renderSettings(); });
