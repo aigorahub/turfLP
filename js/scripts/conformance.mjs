@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { turf, turfMinCover, turfSizes } from "../dist/index.js";
 import { formatG, worseOnEarlier } from "../dist/core.js";
 import { loadedSolver, settings } from "../dist/solver.js";
+import { GROUP_RATIO } from "../dist/prepare.js";
 
 const root = new URL("../../conformance/", import.meta.url);
 const read = (path) => JSON.parse(readFileSync(new URL(path, root), "utf8"));
@@ -99,14 +100,18 @@ function checkExpected(id, a, p, e) {
 const counts = {};
 const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
-for (const [presolve, reduce, skip, mipStart] of [["on", "on", "off", "off"], ["off", "on", "off", "off"],
-                                                  ["on", "off", "off", "off"], ["on", "on", "on", "off"],
-                                                  ["on", "on", "off", "on"], ["on", "off", "off", "on"]]) {
+// groupRatio 1 groups every set of equal rows, so the weighted rows are checked
+// on inputs that the default ratio leaves ungrouped.
+for (const [presolve, reduce, skip, mipStart, groupRatio] of [
+  ["on", "on", "off", "off", GROUP_RATIO], ["off", "on", "off", "off", GROUP_RATIO],
+  ["on", "off", "off", "off", GROUP_RATIO], ["on", "on", "on", "off", GROUP_RATIO],
+  ["on", "on", "off", "on", GROUP_RATIO], ["on", "off", "off", "on", GROUP_RATIO], ["on", "on", "off", "off", 1]]) {
   settings.presolve = presolve;
   settings.reduce = reduce;
   settings.skip = skip;
   settings.mipStart = mipStart;
-  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, mipStart ${mipStart}`;
+  settings.groupRatio = groupRatio;
+  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, mipStart ${mipStart}, groupRatio ${groupRatio}`;
   for (const c of read("fixtures/turf.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
@@ -182,6 +187,7 @@ settings.presolve = "on";
 settings.reduce = "on";
 settings.skip = "off";
 settings.mipStart = "off";
+settings.groupRatio = GROUP_RATIO;
 
 const obj = { name: "x", direction: "min", value: (v) => v };
 for (const c of read("fixtures/comparator.json").cases) {
@@ -197,9 +203,10 @@ for (const c of read("fixtures/format.json").cases) {
 // Large regression cases from tests/testthat/test-turf.R, with the reduced and
 // the unreduced model: their unique optima must not change.
 const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
-for (const reduce of ["on", "off"]) {
+for (const [reduce, groupRatio] of [["on", GROUP_RATIO], ["on", 1], ["off", GROUP_RATIO]]) {
   settings.reduce = reduce;
-  const tag = (id) => `${id} (reduce ${reduce})`;
+  settings.groupRatio = groupRatio;
+  const tag = (id) => `${id} (reduce ${reduce}, groupRatio ${groupRatio})`;
   let p = await turf(input("stage-40000").a, 2, { tiebreak: ["penetration", "frequency"] });
   check(same(p.products, [0, 1]) && p.penetration === 20000, tag("stage-40000"), JSON.stringify(p.products));
   p = await turf(input("retry-35043").a, 2, { tiebreak: ["penetration", "frequency"] });
@@ -214,7 +221,8 @@ for (const reduce of ["on", "off"]) {
         tag("flood-402 max_pool 50"), JSON.stringify(p));
 }
 settings.reduce = "on";
-counts.regression = 10;
+settings.groupRatio = GROUP_RATIO;
+counts.regression = 15;
 
 const v = loadedSolver().version;
 console.log(`highs ${v.string} (${v.gitHash})`);

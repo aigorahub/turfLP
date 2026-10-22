@@ -219,7 +219,7 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
   // Candidate positions of the fixed products: they must be selected.
   const fixPos = fixed.map((j) => cand.indexOf(j));
   // Coverage rows (section 3): one per group of respondents, with its weight.
-  const groups = groupRows(p, fixPos, solver.settings.reduce === "on");
+  const groups = groupRows(p, fixPos, solver.settings.reduce === "on", solver.settings.groupRatio);
   const n = groups.weight.length;
   const xVars = Int32Array.from({ length: m }, (_, k) => n + k);
   const nVars = n + m + 1;
@@ -494,7 +494,8 @@ function minCoverSync(p: Prepared, fixedIn: readonly number[] = []): Portfolio {
   const m = cand.length;
   const fixPos = fixed.map((j) => cand.indexOf(j));
   // Section 11: one coverage row per group; weights do not matter here.
-  const groups = groupRows(p, fixPos, solver.settings.reduce === "on");
+  // Equal cover rows are one constraint; grouping them has no weights.
+  const groups = groupRows(p, fixPos, solver.settings.reduce === "on", 1);
   const n = groups.weight.length;
   const starts = new Int32Array(n + 1);
   for (let g = 0; g < n; g++) starts[g + 1] = groups.start[g + 1];

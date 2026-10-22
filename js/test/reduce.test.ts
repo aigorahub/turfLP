@@ -2,10 +2,11 @@
 // one weighted row) against exhaustive enumeration and the unreduced model.
 import { afterEach, describe, expect, it } from "vitest";
 import { loadSolver, turf, turfMinCover, turfSizes } from "../src/index.js";
+import { GROUP_RATIO } from "../src/prepare.js";
 import { settings } from "../src/solver.js";
 import type { Criterion } from "../src/input.js";
 
-afterEach(() => { settings.reduce = "on"; });
+afterEach(() => { settings.reduce = "on"; settings.groupRatio = GROUP_RATIO; });
 
 type M = number[][];
 const colReach = (a: M) => a[0].map((_, j) => a.reduce((s, r) => s + r[j], 0));
@@ -72,10 +73,12 @@ describe("reduced model", () => {
       const tiebreak = ORDERS[seed % 3];
       const want = oracle(a, size, tiebreak, fixed);
       const id = `seed ${seed}: size ${size}, fixed ${fixed}, ${tiebreak}`;
-      for (const reduce of ["on", "off"] as const) {
+      // Ratio 1 always groups equal rows; ratio 0 never does but still leaves out the fixed-covered rows.
+      for (const [reduce, ratio] of [["on", 1], ["on", 0], ["off", 1]] as const) {
         settings.reduce = reduce;
+        settings.groupRatio = ratio;
         const p = await turf(a, size, { tiebreak, fixed });
-        expect(p.reach, `${id}, reduce ${reduce}`).toBe(want.reach);
+        expect(p.reach, `${id}, reduce ${reduce}, ratio ${ratio}`).toBe(want.reach);
         expect(p.reachProp, id).toBe(want.reach / a.length);
         expect(fixed.every((j) => p.products.includes(j)), id).toBe(true);
         if (tiebreak[0] === "frequency") expect(p.frequency, id).toBe(want.frequency);

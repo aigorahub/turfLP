@@ -1,6 +1,7 @@
 // HiGHS through the npm package `highs` (WebAssembly). Mirrors solve_lp() in
 // R/turf.R with the settings of docs/algorithm.md section 13.
 
+import { GROUP_RATIO } from "./prepare.js";
 import highsImport from "highs";
 import type { Highs, InitOptions } from "highs";
 
@@ -95,9 +96,13 @@ export function loadedSolver(): Highs {
 export const settings = {
   presolve: "on" as "on" | "off",
   // "on" leaves out the respondents that the fixed products reach and gives
-  // respondents reached by the same products one weighted row; "off" builds
+  // respondents reached by the same products one weighted row (when there are
+  // few enough groups, see groupRatio); "off" builds
   // one row per reachable respondent, the reference model.
   reduce: "on" as "on" | "off",
+  // The largest share of groups among the rows left for which those rows are
+  // grouped (prepare.ts GROUP_RATIO); 1 groups whenever two rows are equal.
+  groupRatio: GROUP_RATIO,
   // "on" skips a stage whose optimum a cheap portfolio meets at a proved bound
   // (docs/algorithm.md section 7); "off" solves every stage.
   skip: "off" as "on" | "off",

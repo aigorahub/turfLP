@@ -69,13 +69,25 @@ export interface Groups {
 }
 
 /**
+ * Rows are grouped only when the groups are at most this share of the rows
+ * left after the fixed products. Measured on the benchmark inputs
+ * (docs/plans/bip-speed-log.md, B3): weighted rows make the reach stage
+ * smaller, but the reach bound of the later stages becomes a row with
+ * weights, which HiGHS solved several times slower on cafe (2004 groups of
+ * 2431 rows) than the row of ones.
+ */
+export const GROUP_RATIO = 0.6;
+
+/**
  * Coverage rows over the reachable respondents. With `reduce`, respondents
  * that a fixed product reaches are left out (every portfolio reaches them),
- * and respondents reached by the same candidates share one row whose weight
- * is their number. Without it, each reachable respondent is its own row of
- * weight 1, as in the unreduced model.
+ * and, when the groups are at most `maxRatio` of the rows left, respondents
+ * reached by the same candidates share one row whose weight is their number.
+ * Otherwise each respondent left is its own row of weight 1; without
+ * `reduce`, every reachable respondent is, as in the unreduced model.
  */
-export function groupRows(p: Prepared, fixPos: readonly number[], reduce: boolean): Groups {
+export function groupRows(p: Prepared, fixPos: readonly number[], reduce: boolean,
+                          maxRatio = GROUP_RATIO): Groups {
   const { r, cand } = p;
   const residual = p.reachable.slice();
   let covered = 0;
@@ -85,24 +97,30 @@ export function groupRows(p: Prepared, fixPos: readonly number[], reduce: boolea
     covered = bits.count(fixedSet);
     bits.andNotInto(residual, fixedSet);
   }
-  const weight: number[] = [];
-  const start = [0];
-  const index: number[] = [];
-  const byPattern = new Map<string, number>();
-  bits.forEach(residual, (i) => {
-    const off = i * r.cols;
-    const pattern: number[] = [];
-    for (let k = 0; k < cand.length; k++) if (r.data[off + cand[k]] === 1) pattern.push(k);
-    if (reduce) {
-      const key = pattern.join(",");
-      const g = byPattern.get(key);
-      if (g !== undefined) { weight[g]++; return; }
-      byPattern.set(key, weight.length);
-    }
-    weight.push(1);
-    index.push(...pattern);
-    start.push(index.length);
-  });
+  const rows = (group: boolean) => {
+    const weight: number[] = [];
+    const start = [0];
+    const index: number[] = [];
+    const byPattern = new Map<string, number>();
+    bits.forEach(residual, (i) => {
+      const off = i * r.cols;
+      const pattern: number[] = [];
+      for (let k = 0; k < cand.length; k++) if (r.data[off + cand[k]] === 1) pattern.push(k);
+      if (group) {
+        const key = pattern.join(",");
+        const g = byPattern.get(key);
+        if (g !== undefined) { weight[g]++; return; }
+        byPattern.set(key, weight.length);
+      }
+      weight.push(1);
+      index.push(...pattern);
+      start.push(index.length);
+    });
+    return { weight, start, index };
+  };
+  let built = rows(reduce);
+  if (reduce && built.weight.length > maxRatio * bits.count(residual)) built = rows(false);
+  const { weight, start, index } = built;
   const per = cand.map(() => [] as number[]);
   for (let g = 0; g < weight.length; g++) {
     for (let t = start[g]; t < start[g + 1]; t++) per[index[t]].push(g);
