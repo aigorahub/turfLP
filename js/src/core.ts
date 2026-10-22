@@ -310,7 +310,7 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
       const remaining = deadline - performance.now() / 1000;
       if (remaining <= 0) return { status: "time", model: mod };
       const sol = solver.hooks.solve(obj.direction, obj.coef, mod, xVars, obj.name, previous !== null,
-                               remaining);
+                               remaining, previous === null && t === 0 ? startFor(obj) : undefined);
       if (sol === null) return { status: "none", model: mod };
       if (sol === "time") return { status: "time", model: mod };
       const invalid = () => {
@@ -375,6 +375,18 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
       take(best);
     }
     return sel;
+  };
+  // A MIP start for the first reach solve: the greedy portfolio, with each z_g
+  // at its smallest feasible value and p at the penetration sum.
+  const startFor = (obj: Obj): Float64Array | undefined => {
+    if (solver.settings.mipStart !== "on" || obj.name !== "reach") return undefined;
+    const sel = greedy();
+    const x = new Float64Array(nVars);
+    const hit = new Uint8Array(n);
+    sel.forEach((v, k) => { if (v) { x[n + k] = 1; for (const g of groups.colGroups[k]) hit[g] = 1; } });
+    for (let g = 0; g < n; g++) x[g] = hit[g] ? 0 : 1;
+    x[nVars - 1] = fsum(Array.from(sel, (v, k) => (v ? penCoef[k] : 0)));
+    return x;
   };
   const freeReach = Array.from(candReach).filter((_, k) => !fixPos.includes(k)).sort((a, b) => b - a);
   const maxFrequency = fixPos.reduce((t, k) => t + candReach[k], 0) +

@@ -99,12 +99,14 @@ function checkExpected(id, a, p, e) {
 const counts = {};
 const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
-for (const [presolve, reduce, skip] of [["on", "on", "off"], ["off", "on", "off"], ["on", "off", "off"],
-                                        ["on", "on", "on"]]) {
+for (const [presolve, reduce, skip, mipStart] of [["on", "on", "off", "off"], ["off", "on", "off", "off"],
+                                                  ["on", "off", "off", "off"], ["on", "on", "on", "off"],
+                                                  ["on", "on", "off", "on"], ["on", "off", "off", "on"]]) {
   settings.presolve = presolve;
   settings.reduce = reduce;
   settings.skip = skip;
-  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}`;
+  settings.mipStart = mipStart;
+  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, mipStart ${mipStart}`;
   for (const c of read("fixtures/turf.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
@@ -179,6 +181,7 @@ for (const [presolve, reduce, skip] of [["on", "on", "off"], ["off", "on", "off"
 settings.presolve = "on";
 settings.reduce = "on";
 settings.skip = "off";
+settings.mipStart = "off";
 
 const obj = { name: "x", direction: "min", value: (v) => v };
 for (const c of read("fixtures/comparator.json").cases) {

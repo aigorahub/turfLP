@@ -101,6 +101,9 @@ export const settings = {
   // "on" skips a stage whose optimum a cheap portfolio meets at a proved bound
   // (docs/algorithm.md section 7); "off" solves every stage.
   skip: "off" as "on" | "off",
+  // "on" passes a greedy portfolio to HiGHS as a MIP start for the first
+  // reach solve; HiGHS still proves the optimum.
+  mipStart: "off" as "on" | "off",
 };
 // Options of the most recent solve, read back from HiGHS. Tests check them.
 export const lastOptions: Record<string, unknown> = {};
@@ -176,7 +179,7 @@ export type SolveResult = Float64Array | null | "time" | "invalid";
  */
 export function solve(
   direction: "min" | "max", objective: Float64Array, model: Model, binary: Int32Array,
-  stage: string, soft = false, timeLimit = Infinity,
+  stage: string, soft = false, timeLimit = Infinity, start?: Float64Array,
 ): SolveResult {
   const h = loadedSolver();
   const n = model.nVars;
@@ -224,6 +227,7 @@ export function solve(
     };
     if (Number.isFinite(timeLimit)) options.time_limit = timeLimit;
     m.options.set(options);
+    if (start) m.setSolution({ colValue: start });
     const result = m.run().modelStatus;
     lap("run");
     for (const name of OPTION_NAMES) lastOptions[name] = m.options.get(name);
