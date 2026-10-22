@@ -1,6 +1,0 @@
-gen-bench-200x20/k5                  base 501.2 ms (p95 549.6)  reduce 170.2 (66% faster, p95 -64%)  skip 170.0 (66% faster, p95 -63%)  mipstart 197.3 (61% faster, p95 -58%)  both 199.5 (60% faster, p95 -56%)
-gen-bench-200x40/k3                  base 903.1 ms (p95 976.9)  reduce 902.4 (0% faster, p95 -3%)  skip 908.1 (-1% faster, p95 1%)  mipstart 761.5 (16% faster, p95 -18%)  both 760.7 (16% faster, p95 -18%)
-cafe/k3                              base 2164.0 ms (p95 2362.8)  reduce 7748.2 (-258% faster, p95 241%)  skip 7715.9 (-257% faster, p95 242%)  mipstart 7618.9 (-252% faster, p95 237%)  both 7593.5 (-251% faster, p95 230%)
-cafe/k5                              base 4049.7 ms (p95 4275.9)  reduce 9259.4 (-129% faster, p95 126%)  skip 9218.9 (-128% faster, p95 125%)  mipstart 7704.2 (-90% faster, p95 87%)  both 7662.7 (-89% faster, p95 86%)
-dup-2000x25/k3                       base 550.2 ms (p95 599.4)  reduce 11.9 (98% faster, p95 -98%)  skip 11.6 (98% faster, p95 -98%)  mipstart 11.6 (98% faster, p95 -98%)  both 11.7 (98% faster, p95 -98%)
-near-42000/k2/penetration-first      base 2020.4 ms (p95 2426.9)  reduce 8.3 (100% faster, p95 -100%)  skip 5.2 (100% faster, p95 -100%)  mipstart 5.3 (100% faster, p95 -100%)  both 5.1 (100% faster, p95 -100%)

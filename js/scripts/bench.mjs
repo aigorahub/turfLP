@@ -1,4 +1,4 @@
-// Benchmark of the frozen cases of docs/plans/bip-speed.md (B1): warm solves
+// Benchmark of the frozen cases (scripts/bench-cases.json): warm solves
 // of the built package, with the phase times of solver.trace.
 //
 //   npm run build && node scripts/bench.mjs [--out results.json] [--samples 30]
@@ -32,7 +32,7 @@ const OUT = arg("out", null);
 for (const kv of arg("set", "").split(",").filter(Boolean)) {
   const [k, v] = kv.split("=");
   if (!(k in settings)) throw new Error(`unknown setting ${k}`);
-  settings[k] = v;
+  settings[k] = typeof settings[k] === "number" ? Number(v) : v;
 }
 const MANIFEST = new URL("./bench-cases.json", import.meta.url);
 

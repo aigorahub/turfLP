@@ -353,7 +353,7 @@ function turfSync(p: Prepared, size: number, tiebreak: Criterion[], fixedIn: unk
                   `optimal on ${middle} may not be optimal on ${stage}.`);
   };
 
-  // A stage skipped at a proved bound (John's additions, docs/plans/bip-speed.md):
+  // A stage skipped at a proved bound (docs/algorithm.md section 7):
   // reach, when a greedy portfolio of exactly `size` candidates with every
   // fixed product reaches every model respondent; frequency, when the selection
   // entering the stage, after every earlier bound, has the largest frequency

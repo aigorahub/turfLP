@@ -1,4 +1,4 @@
-// B2-A4 of docs/plans/bip-speed.md: the JS 32-bit kernel against a small
+// The JS 32-bit kernel of src/bitset.ts against a small
 // WASM kernel with 64-bit OR and popcount, for |a OR b| over respondent sets.
 // The WASM module is assembled here byte by byte (no toolchain needed). The
 // sets stay resident in WASM memory for a batch; the copy into that memory is

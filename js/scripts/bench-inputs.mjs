@@ -1,4 +1,4 @@
-// The frozen benchmark inputs of docs/plans/bip-speed.md (B1), shared by
+// The frozen benchmark inputs, shared by
 // bench.mjs and gate.mjs. Each input carries a checksum, and the case manifest
 // (bench-cases.json) records the checksum it was frozen with.
 import { createHash } from "node:crypto";
@@ -59,7 +59,7 @@ export const INPUTS = {
   "unique-500x30": () => synthetic("unique", 500, 30, 104, (r) => (r() < 0.3 ? 1 : 0)),
 };
 
-// The declared primary workloads of the performance gate (docs/plans/bip-speed-log.md, B1-A5).
+// The primary workloads of the performance gate (gate.mjs).
 export const PRIMARY = ["gen-bench-200x20/k5", "gen-bench-200x40/k3", "cafe/k3", "cafe/k5", "dup-2000x25/k3",
                         "near-42000/k2/penetration-first"];
 

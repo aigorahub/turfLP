@@ -1,4 +1,4 @@
-// The performance gate of docs/plans/bip-speed.md: the primary workloads,
+// The performance gate of the solver changes: the primary workloads,
 // solved by a reference build and by this build under named settings, with the
 // variants interleaved in every round so that machine load hits them alike.
 //
@@ -33,7 +33,8 @@ const defaults = { ...settings };
 const variants = arg("variants", "current:")
   .split(",").map((v) => {
     const [name, spec = ""] = v.split(":");
-    const set = Object.fromEntries(spec.split("+").filter(Boolean).map((kv) => kv.split("=")));
+    const set = Object.fromEntries(spec.split("+").filter(Boolean).map((kv) => kv.split("="))
+      .map(([k, v]) => [k, typeof settings[k] === "number" ? Number(v) : v]));
     for (const k of Object.keys(set)) if (!(k in settings)) throw new Error(`unknown setting ${k}`);
     return { name, set };
   });

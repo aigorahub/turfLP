@@ -71,7 +71,7 @@ export interface Groups {
 /**
  * Rows are grouped only when the groups are at most this share of the rows
  * left after the fixed products. Measured on the benchmark inputs
- * (docs/plans/bip-speed-log.md, B3): weighted rows make the reach stage
+ * (scripts/bench-cases.json) for 0.4.0: weighted rows make the reach stage
  * smaller, but the reach bound of the later stages becomes a row with
  * weights, which HiGHS solved several times slower on cafe (2004 groups of
  * 2431 rows) than the row of ones.

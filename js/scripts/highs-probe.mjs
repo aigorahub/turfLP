@@ -1,5 +1,5 @@
 // Checks, by calls, the parts of the pinned highs runtime that model reuse
-// needs (docs/plans/bip-speed.md, B1-A3): rows added, changed, and deleted,
+// needs: rows added, changed, and deleted,
 // objective changes, option and clock resets, and a MIP start. Each step on
 // one reused model must match a fresh model of the same logical state.
 //
