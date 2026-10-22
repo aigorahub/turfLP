@@ -151,6 +151,52 @@ def test_bad_input_gives_clear_errors():
         turf(TIE, 2, names=["x"])
 
 
+def test_fixed_products_give_exact_errors_in_order():
+    type_text = "`fixed` must be a vector of whole-number product indices."
+    for bad, err in (("1", TypeError), ([True], TypeError), (["1"], TypeError), (3, TypeError),
+                     ([1.5], ValueError), ([math.nan], ValueError), ([math.inf], ValueError)):
+        with pytest.raises(err) as e:
+            turf(TIE, 2, fixed=bad)
+        assert str(e.value) == type_text
+    for bad in ([-1], [5], [0, 5]):
+        with pytest.raises(ValueError) as e:
+            turf(TIE, 2, fixed=bad)
+        assert str(e.value) == "`fixed` must hold product indices from 0 to 4."
+    with_zero = np.hstack([np.array(TIE), np.zeros((8, 2))])
+    with pytest.raises(ValueError) as e:
+        turf(with_zero, 2, fixed=[1, 6, 5])
+    assert str(e.value) == "Fixed product P7 reaches no respondent."
+    with pytest.raises(ValueError) as e:
+        turf(TIE, 1, fixed=[0, 1, 1])
+    assert str(e.value) == "`size` is 1, but 2 products are fixed."
+    # The size checks come first, and turf_sizes checks `fixed` before any size.
+    with pytest.raises(ValueError) as e:
+        turf(TIE, 6, fixed=[-1])
+    assert "only 5 products" in str(e.value)
+    with pytest.raises(ValueError) as e:
+        turf_sizes(TIE, [], fixed=[-1])
+    assert str(e.value) == "`fixed` must hold product indices from 0 to 4."
+    with pytest.raises(ValueError) as e:
+        turf_min_cover(np.zeros((3, 3)), fixed=[0])
+    assert str(e.value) == "No product reaches any respondent."
+    with pytest.raises(ValueError) as e:
+        turf_min_cover(with_zero, fixed=[5])
+    assert str(e.value) == "Fixed product P6 reaches no respondent."
+    assert turf(TIE, 2, fixed=None) == turf(TIE, 2)
+    assert turf(TIE, 2, fixed=np.array([], dtype=int)).fixed == ()
+    assert turf(TIE, 2, fixed=np.array([0])).fixed == (0,)
+
+
+def test_a_fixed_product_does_not_force_its_identical_twins_in():
+    # Product 4 is a copy of product 1. With 4 fixed, the best partner is 2
+    # (reach 7, frequency 8); a symmetry row x1 >= x4 would force 1 in.
+    twin = np.hstack([np.array(TIE)[:, :4], np.array(TIE)[:, [1]]])
+    p = turf(twin, 2, fixed=[4])
+    assert p.products == (2, 4) and p.fixed == (4,)
+    c = turf_min_cover(twin, fixed=[4])
+    assert 4 in c.products and c.fixed == (4,)
+
+
 @needs_conformance
 def test_a_later_stage_cannot_make_an_earlier_criterion_worse():
     a, _ = read_input("stage-40000")

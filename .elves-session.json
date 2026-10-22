@@ -58,25 +58,25 @@
       "acceptance": [
         {
           "criterion": "Python turf, turf_min_cover, and turf_sizes accept keyword-only fixed and pytest passes, conformance included, with presolve on and off, and the Python runner loads the fixed cases and passes fixed into each call.",
-          "evidence": "",
+          "evidence": "cd python && uv sync --locked --extra test && uv run --locked pytest: 3898 passed (test_fixed runs the 155 fixed cases with presolve on and off; check_fixed asserts p.fixed and that every fixed index is selected).",
           "id": "B3-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "JavaScript turf, turfMinCover, and turfSizes accept options.fixed, and npm run typecheck, test, build, and test:conformance pass, with presolve on and off, and the JavaScript runner loads the fixed cases and passes fixed into each call.",
-          "evidence": "",
+          "evidence": "cd js: npm run typecheck, vitest (81 passed), build, test:conformance: all pass, fixed (presolve on): 155 cases, fixed (presolve off): 155 cases; scripts/conformance.mjs loops fixtures/fixed.json and passes options.fixed.",
           "id": "B3-A2",
-          "met": false
+          "met": true
         },
         {
           "criterion": "Each port tests each new error message with the exact text and error type.",
-          "evidence": "",
+          "evidence": "python/tests/test_turf.py test_fixed_products_give_exact_errors_in_order and js/test/turf.test.ts 'fixed products give exact errors with the right type, in order' assert each message by exact text and the error type (Python TypeError/ValueError, JS TypeError/RangeError); both ports have the identical-twin test.",
           "id": "B3-A3",
-          "met": false
+          "met": true
         }
       ],
       "id": "B3",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "acceptance": [

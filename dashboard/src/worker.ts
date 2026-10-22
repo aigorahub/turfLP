@@ -45,7 +45,7 @@ function plain(p: Portfolio): Portfolio {
   return {
     products: [...p.products], names: [...p.names], size: p.size, reach: p.reach,
     reachProp: p.reachProp, frequency: p.frequency, penetration: p.penetration,
-    respondents: p.respondents, warnings: [...p.warnings],
+    respondents: p.respondents, fixed: [...p.fixed], warnings: [...p.warnings],
   };
 }
 

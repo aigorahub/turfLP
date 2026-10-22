@@ -11,7 +11,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _solver
-from ._input import as_reach_matrix, check_limits, check_size, check_tiebreak
+from ._input import (as_reach_matrix, check_fixed, check_fixed_reach, check_limits, check_size,
+                     check_tiebreak)
 
 EPS = 2.0 ** -52
 MAX_SOLVES = 100
@@ -24,7 +25,7 @@ class TurfWarning(UserWarning):
 
 @dataclass(frozen=True)
 class Portfolio:
-    """A selected portfolio. `products` are 0-based column indices, ascending."""
+    """A selected portfolio. `products` and `fixed` are 0-based column indices, ascending."""
     products: tuple
     names: tuple
     size: int
@@ -33,6 +34,7 @@ class Portfolio:
     frequency: int
     penetration: float
     respondents: int
+    fixed: tuple = ()
 
 
 # Section 5: the comparison rule.
@@ -73,7 +75,7 @@ def _format_seconds(x):
     return "%g" % x
 
 
-def _portfolio(reach, names, products):
+def _portfolio(reach, names, products, fixed=()):
     products = sorted(int(p) for p in products)
     r = reach[:, products].sum(axis=0) if products else np.zeros(0)
     reached = int(np.any(reach[:, products] > 0, axis=1).sum()) if products else 0
@@ -87,28 +89,34 @@ def _portfolio(reach, names, products):
         frequency=int(r.sum()),
         penetration=k / math.fsum(1.0 / x for x in r),
         respondents=int(reach.shape[0]),
+        fixed=tuple(fixed),
     )
 
 
-def turf(reach, size, tiebreak=DEFAULT_TIEBREAK, *, names=None, max_pool=1000,
+def turf(reach, size, tiebreak=DEFAULT_TIEBREAK, *, names=None, fixed=(), max_pool=1000,
          max_pool_seconds=30.0):
     """Find the portfolio of `size` products with maximum reach.
 
     Ties on reach are broken by the criteria in `tiebreak`, in order
     ("frequency", "penetration", or an empty sequence for reach only).
-    Returns a Portfolio. Emits TurfWarning when a search stops early.
+    `fixed` lists 0-based column indices of products the portfolio must
+    contain; `size` counts them. Returns a Portfolio. Emits TurfWarning when
+    a search stops early.
     """
     reach, names = as_reach_matrix(reach, names)
     tiebreak = check_tiebreak(tiebreak)
     check_limits(max_pool, max_pool_seconds)
-    return _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds)
+    return _turf(reach, names, size, tiebreak, fixed, max_pool, max_pool_seconds)
 
 
-def _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds):
+def _turf(reach, names, size, tiebreak, fixed, max_pool, max_pool_seconds):
     # Section 2: reduction.
     prod_reach = reach.sum(axis=0)
     cand = np.flatnonzero(prod_reach > 0)
     size = check_size(size, len(cand))
+    fixed = check_fixed_reach(check_fixed(fixed, reach.shape[1]), prod_reach, names)
+    if size < len(fixed):
+        raise ValueError("`size` is %d, but %d products are fixed." % (size, len(fixed)))
     a = reach[np.ix_(reach[:, cand].sum(axis=1) > 0, cand)]
     n, m = a.shape
     x_vars = np.arange(n, n + m)
@@ -141,10 +149,18 @@ def _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds):
     def on_x(coef):
         return x_vars, np.asarray(coef, dtype=np.float64)
 
-    # Symmetry rows for identical products.
+    # Candidate positions of the fixed products: they must be selected.
+    fix_pos = np.searchsorted(cand, fixed).astype(np.int64)
+    if len(fix_pos):
+        model = model.add_row(x_vars[fix_pos], np.ones(len(fix_pos)), len(fix_pos), len(fix_pos))
+
+    # Symmetry rows for identical free products. A fixed product takes no
+    # part, or the row would force its twins into the portfolio.
     keys = [tuple(np.flatnonzero(a[:, j])) for j in range(m)]
     last_seen = {}
     for j, key in enumerate(keys):
+        if j in fix_pos:
+            continue
         if key in last_seen:
             model = model.add_row([n + last_seen[key], n + j], [1.0, -1.0], 0.0, math.inf)
         last_seen[key] = j
@@ -196,7 +212,7 @@ def _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds):
             x = sol[x_vars]
             sel = x > 0.5
             if (np.isnan(x).any() or int(sel.sum()) != size
-                    or np.any(np.abs(x - sel) > 1e-6)):
+                    or np.any(np.abs(x - sel) > 1e-6) or not sel[fix_pos].all()):
                 if previous is None:
                     raise RuntimeError("HiGHS returned an invalid solution in the %s stage."
                                        % obj["name"])
@@ -278,19 +294,23 @@ def _turf(reach, names, size, tiebreak, max_pool, max_pool_seconds):
             # Fix this criterion at the value the selected products give.
             model = add_bound(model, obj, obj["value"](selected))
 
-    return _portfolio(reach, names, cand[selected])
+    return _portfolio(reach, names, cand[selected], fixed)
 
 
-def turf_min_cover(reach, *, names=None):
-    """Find the smallest portfolio that reaches every reachable respondent."""
+def turf_min_cover(reach, *, names=None, fixed=()):
+    """Find the smallest portfolio that reaches every reachable respondent
+    and contains the `fixed` products (0-based column indices)."""
     reach, names = as_reach_matrix(reach, names)
-    return _min_cover(reach, names)
+    return _min_cover(reach, names, fixed)
 
 
-def _min_cover(reach, names):
-    cand = np.flatnonzero(reach.sum(axis=0) > 0)
+def _min_cover(reach, names, fixed=()):
+    fixed = check_fixed(fixed, reach.shape[1])
+    prod_reach = reach.sum(axis=0)
+    cand = np.flatnonzero(prod_reach > 0)
     if len(cand) == 0:
         raise ValueError("No product reaches any respondent.")
+    fixed = check_fixed_reach(fixed, prod_reach, names)
     a = reach[np.ix_(reach[:, cand].sum(axis=1) > 0, cand)]
     n, m = a.shape
     rows_i, cols_j = np.nonzero(a)
@@ -299,23 +319,29 @@ def _min_cover(reach, names):
     start = np.concatenate([[0], np.cumsum(counts)]).astype(np.int32)
     model = _solver.Model(m, (start, cols_j[order].astype(np.int32), np.ones(len(order)),
                               np.ones(n), np.full(n, np.inf)))
+    fix_pos = np.searchsorted(cand, fixed).astype(np.int64)
+    if len(fix_pos):
+        model = model.add_row(fix_pos, np.ones(len(fix_pos)), len(fix_pos), len(fix_pos))
     sol = _solver.solve("min", np.ones(m), model, np.arange(m), "set cover")
     sel = sol > 0.5
     # Section 11: check the cover.
-    if not np.all(np.any(a[:, sel] > 0, axis=1)) or np.any(np.abs(sol - sel) > 1e-6):
+    if (not np.all(np.any(a[:, sel] > 0, axis=1)) or np.any(np.abs(sol - sel) > 1e-6)
+            or not sel[fix_pos].all()):
         raise RuntimeError("HiGHS returned an invalid solution in the set cover stage.")
-    return _portfolio(reach, names, cand[sel])
+    return _portfolio(reach, names, cand[sel], fixed)
 
 
-def turf_sizes(reach, sizes=None, tiebreak=DEFAULT_TIEBREAK, *, names=None, max_pool=1000,
-               max_pool_seconds=30.0):
+def turf_sizes(reach, sizes=None, tiebreak=DEFAULT_TIEBREAK, *, names=None, fixed=(),
+               max_pool=1000, max_pool_seconds=30.0):
     """Solve `turf` for each size and return a list of Portfolio values.
 
-    The default sizes are 1 to the size of the minimum cover.
+    The default sizes are 1 (or the number of fixed products) to the size of
+    the minimum cover with the same `fixed`.
     """
     reach, names = as_reach_matrix(reach, names)
     tiebreak = check_tiebreak(tiebreak)
     check_limits(max_pool, max_pool_seconds)
+    fixed = check_fixed_reach(check_fixed(fixed, reach.shape[1]), reach.sum(axis=0), names)
     if sizes is None:
-        sizes = range(1, _min_cover(reach, names).size + 1)
-    return [_turf(reach, names, k, tiebreak, max_pool, max_pool_seconds) for k in sizes]
+        sizes = range(max(1, len(fixed)), _min_cover(reach, names, fixed).size + 1)
+    return [_turf(reach, names, k, tiebreak, fixed, max_pool, max_pool_seconds) for k in sizes]

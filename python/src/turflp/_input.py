@@ -1,5 +1,5 @@
-"""Input checks. Mirrors as_reach_matrix(), check_size(), and check_tiebreak()
-in R/turf.R; the error texts are those of docs/algorithm.md section 1."""
+"""Input checks. Mirrors as_reach_matrix(), check_size(), check_tiebreak(),
+check_fixed(), and check_fixed_reach() in R/turf.R; the error texts are those of docs/algorithm.md section 1."""
 
 import math
 import numbers
@@ -76,6 +76,35 @@ def check_size(size, max_size):
         raise ValueError("`size` is %d, but only %d products reach at least one respondent."
                          % (size, max_size))
     return size
+
+
+def check_fixed(fixed, cols):
+    """The type and range checks of `fixed`. Returns 0-based indices as given,
+    so that the zero-reach check names the first bad one."""
+    if fixed is None:
+        return []
+    if isinstance(fixed, (str, bytes)):
+        raise TypeError("`fixed` must be a vector of whole-number product indices.")
+    try:
+        fixed = list(fixed)
+    except TypeError:
+        raise TypeError("`fixed` must be a vector of whole-number product indices.") from None
+    for j in fixed:
+        if not isinstance(j, numbers.Real) or isinstance(j, (bool, np.bool_)):
+            raise TypeError("`fixed` must be a vector of whole-number product indices.")
+        if not math.isfinite(j) or j != int(j):
+            raise ValueError("`fixed` must be a vector of whole-number product indices.")
+    if any(j < 0 or j > cols - 1 for j in fixed):
+        raise ValueError("`fixed` must hold product indices from 0 to %d." % (cols - 1))
+    return [int(j) for j in fixed]
+
+
+def check_fixed_reach(fixed, prod_reach, names):
+    """Every fixed product must reach someone. Returns the distinct indices, sorted."""
+    for j in fixed:
+        if prod_reach[j] == 0:
+            raise ValueError("Fixed product %s reaches no respondent." % names[j])
+    return sorted(set(fixed))
 
 
 def check_tiebreak(tiebreak):

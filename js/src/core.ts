@@ -1,7 +1,8 @@
 // The turfLP algorithm. Mirrors R/turf.R; docs/algorithm.md is the spec.
 // Section numbers in comments refer to docs/algorithm.md.
 
-import { asReach, checkLimits, checkSize, checkTiebreak, type Criterion, type Reach, type ReachMatrix } from "./input.js";
+import { asReach, checkFixed, checkFixedReach, checkLimits, checkSize, checkTiebreak, type Criterion, type Reach,
+         type ReachMatrix } from "./input.js";
 import * as solver from "./solver.js";
 
 const EPS = 2 ** -52;
@@ -12,6 +13,8 @@ export interface TurfOptions {
   tiebreak?: readonly Criterion[] | null;
   /** Product names, one per column. Default P1, P2, .... */
   names?: readonly string[];
+  /** 0-based column indices of products that the portfolio must contain. `size` counts them. */
+  fixed?: readonly number[] | null;
   /** Pool limit of the penetration stage. Default 1000. */
   maxPool?: number;
   /** Seconds for the penetration pool, and again for a later frequency fallback. Default 30. */
@@ -28,6 +31,8 @@ export interface Portfolio {
   readonly frequency: number;
   readonly penetration: number;
   readonly respondents: number;
+  /** 0-based column indices of the fixed products, ascending. */
+  readonly fixed: readonly number[];
   /** Warnings of docs/algorithm.md section 10, in order. */
   readonly warnings: readonly string[];
 }
@@ -134,7 +139,7 @@ function columnSums(r: Reach): Int32Array {
   return s;
 }
 
-function portfolio(r: Reach, products: number[], warnings: string[]): Portfolio {
+function portfolio(r: Reach, products: number[], warnings: string[], fixed: readonly number[] = []): Portfolio {
   products = [...products].sort((a, b) => a - b);
   const sums = columnSums(r);
   let reached = 0;
@@ -152,6 +157,7 @@ function portfolio(r: Reach, products: number[], warnings: string[]): Portfolio 
     frequency: products.reduce((s, j) => s + sums[j], 0),
     penetration: k / fsum(products.map((j) => 1 / sums[j])),
     respondents: r.rows,
+    fixed: [...fixed],
     warnings,
   };
 }
@@ -168,10 +174,10 @@ export async function turf(reach: ReachMatrix, size: number, options: TurfOption
   const tiebreak = checkTiebreak(options.tiebreak);
   checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
   await solver.getSolver();
-  return turfSync(r, size, tiebreak, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
+  return turfSync(r, size, tiebreak, options.fixed, options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
 }
 
-function turfSync(r: Reach, size: number, tiebreak: Criterion[], maxPool: number,
+function turfSync(r: Reach, size: number, tiebreak: Criterion[], fixedIn: unknown, maxPool: number,
                   maxPoolSeconds: number): Portfolio {
   const warnings: string[] = [];
   // Section 2: reduction.
@@ -179,6 +185,10 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], maxPool: number
   const cand: number[] = [];
   for (let j = 0; j < r.cols; j++) if (prodReach[j] > 0) cand.push(j);
   size = checkSize(size, cand.length);
+  const fixed = checkFixedReach(checkFixed(fixedIn, r.cols), prodReach, r.names);
+  if (size < fixed.length) {
+    throw new RangeError(`\`size\` is ${size}, but ${fixed.length} products are fixed.`);
+  }
   const rowsKept: number[] = [];
   for (let i = 0; i < r.rows; i++) {
     if (cand.some((j) => r.data[i * r.cols + j] === 1)) rowsKept.push(i);
@@ -220,9 +230,18 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], maxPool: number
     starts, indices: Int32Array.from(idx), values: Float64Array.from(val), lower, upper,
   });
 
-  // Symmetry rows for identical products.
+  // Candidate positions of the fixed products: they must be selected.
+  const fixPos = fixed.map((j) => cand.indexOf(j));
+  if (fixPos.length) {
+    model = model.addRow(fixPos.map((k) => n + k), new Float64Array(fixPos.length).fill(1),
+                         fixPos.length, fixPos.length);
+  }
+
+  // Symmetry rows for identical free products. A fixed product takes no
+  // part, or the row would force its twins into the portfolio.
   const lastSeen = new Map<string, number>();
   colRows.forEach((rows, k) => {
+    if (fixPos.includes(k)) return;
     const key = rows.join(",");
     const prev = lastSeen.get(key);
     if (prev !== undefined) model = model.addRow([n + prev, n + k], [1, -1], 0, Infinity);
@@ -286,7 +305,7 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], maxPool: number
         if (x > 0.5) { sel[k] = 1; count++; }
         if (Math.abs(x - sel[k]) > 1e-6) bad = true;
       }
-      if (bad || count !== size) return invalid();
+      if (bad || count !== size || fixPos.some((k) => !sel[k])) return invalid();
       if (previous === null || !worseOnEarlier(earlier, sel, previous, size)) {
         return { status: "ok", sel, model: mod };
       }
@@ -373,22 +392,28 @@ function turfSync(r: Reach, size: number, tiebreak: Criterion[], maxPool: number
 
   const products: number[] = [];
   selected!.forEach((v, k) => { if (v) products.push(cand[k]); });
-  return portfolio(r, products, warnings);
+  return portfolio(r, products, warnings, fixed);
 }
 
-/** Find the smallest portfolio that reaches every reachable respondent. */
+/**
+ * Find the smallest portfolio that reaches every reachable respondent and
+ * contains the `fixed` products.
+ */
 export async function turfMinCover(reach: ReachMatrix,
-                                   options: { names?: readonly string[] } = {}): Promise<Portfolio> {
+                                   options: { names?: readonly string[]; fixed?: readonly number[] | null } = {}):
+    Promise<Portfolio> {
   const r = asReach(reach, options.names);
+  const fixed = checkFixed(options.fixed, r.cols);
   await solver.getSolver();
-  return minCoverSync(r);
+  return minCoverSync(r, fixed);
 }
 
-function minCoverSync(r: Reach): Portfolio {
+function minCoverSync(r: Reach, fixedIn: readonly number[] = []): Portfolio {
   const sums = columnSums(r);
   const cand: number[] = [];
   for (let j = 0; j < r.cols; j++) if (sums[j] > 0) cand.push(j);
   if (cand.length === 0) throw new RangeError("No product reaches any respondent.");
+  const fixed = checkFixedReach(fixedIn, sums, r.names);
   const rowsKept: number[] = [];
   for (let i = 0; i < r.rows; i++) {
     if (cand.some((j) => r.data[i * r.cols + j] === 1)) rowsKept.push(i);
@@ -401,33 +426,40 @@ function minCoverSync(r: Reach): Portfolio {
     cand.forEach((j, k) => { if (r.data[i * r.cols + j] === 1) idx.push(k); });
     starts[ii + 1] = idx.length;
   });
-  const model = new solver.Model(m, {
+  let model = new solver.Model(m, {
     starts, indices: Int32Array.from(idx), values: new Float64Array(idx.length).fill(1),
     lower: new Float64Array(n).fill(1), upper: new Float64Array(n).fill(Infinity),
   });
+  const fixPos = fixed.map((j) => cand.indexOf(j));
+  if (fixPos.length) {
+    model = model.addRow(fixPos, new Float64Array(fixPos.length).fill(1), fixPos.length, fixPos.length);
+  }
   const sol = solver.solve("min", new Float64Array(m).fill(1), model,
                            Int32Array.from({ length: m }, (_, k) => k), "set cover") as Float64Array;
   const products = cand.filter((_, k) => sol[k] > 0.5);
   // Section 11: check the cover.
   const covered = rowsKept.every((i) => products.some((j) => r.data[i * r.cols + j] === 1));
   const integral = Array.from(sol).every((x) => Math.abs(x - (x > 0.5 ? 1 : 0)) <= 1e-6);
-  if (!covered || !integral) {
+  const hasFixed = fixPos.every((k) => sol[k] > 0.5);
+  if (!covered || !integral || !hasFixed) {
     throw new Error("HiGHS returned an invalid solution in the set cover stage.");
   }
-  return portfolio(r, products, []);
+  return portfolio(r, products, [], fixed);
 }
 
 /**
- * Solve `turf` for each size. The default sizes are 1 to the size of the
- * minimum cover.
+ * Solve `turf` for each size. The default sizes are 1 (or the number of fixed
+ * products) to the size of the minimum cover with the same `fixed`.
  */
 export async function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null,
                                 options: TurfOptions = {}): Promise<Portfolio[]> {
   const r = asReach(reach, options.names);
   const tiebreak = checkTiebreak(options.tiebreak);
   checkLimits(options.maxPool ?? 1000, options.maxPoolSeconds ?? 30);
+  const fixed = checkFixedReach(checkFixed(options.fixed, r.cols), columnSums(r), r.names);
   await solver.getSolver();
-  const list = sizes ?? Array.from({ length: minCoverSync(r).size }, (_, i) => i + 1);
-  return list.map((k) => turfSync(r, k, tiebreak, options.maxPool ?? 1000,
+  const from = Math.max(1, fixed.length);
+  const list = sizes ?? Array.from({ length: minCoverSync(r, fixed).size - from + 1 }, (_, i) => i + from);
+  return list.map((k) => turfSync(r, k, tiebreak, fixed, options.maxPool ?? 1000,
                                   options.maxPoolSeconds ?? 30));
 }

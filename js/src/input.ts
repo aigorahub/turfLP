@@ -1,5 +1,5 @@
-// Input checks. Mirrors as_reach_matrix(), check_size(), and check_tiebreak()
-// in R/turf.R; the error texts are those of docs/algorithm.md section 1.
+// Input checks. Mirrors as_reach_matrix(), check_size(), check_tiebreak(),
+// check_fixed(), and check_fixed_reach() in R/turf.R; the error texts are those of docs/algorithm.md section 1.
 
 export type ReachMatrix = ReadonlyArray<ReadonlyArray<number | boolean>>;
 export type Criterion = "frequency" | "penetration";
@@ -82,6 +82,36 @@ export function checkSize(size: unknown, maxSize: number): number {
     );
   }
   return size;
+}
+
+const NOT_FIXED = "`fixed` must be a vector of whole-number product indices.";
+
+/**
+ * The type and range checks of `fixed`. Returns the 0-based indices as given,
+ * so that the zero-reach check names the first bad one.
+ */
+export function checkFixed(fixed: unknown, cols: number): number[] {
+  if (fixed === undefined || fixed === null) return [];
+  if (!Array.isArray(fixed)) throw new TypeError(NOT_FIXED);
+  // Index every entry: every() and some() would skip the holes of a sparse array.
+  for (let i = 0; i < fixed.length; i++) {
+    if (typeof fixed[i] !== "number") throw new TypeError(NOT_FIXED);
+    if (!Number.isInteger(fixed[i])) throw new RangeError(NOT_FIXED);
+  }
+  const out = fixed as number[];
+  if (out.some((j) => j < 0 || j > cols - 1)) {
+    throw new RangeError(`\`fixed\` must hold product indices from 0 to ${cols - 1}.`);
+  }
+  return [...out];
+}
+
+/** Every fixed product must reach someone. Returns the distinct indices, sorted. */
+export function checkFixedReach(fixed: readonly number[], prodReach: ArrayLike<number>,
+                                names: readonly string[]): number[] {
+  for (const j of fixed) {
+    if (prodReach[j] === 0) throw new RangeError(`Fixed product ${names[j]} reaches no respondent.`);
+  }
+  return [...new Set(fixed)].sort((a, b) => a - b);
 }
 
 export function checkTiebreak(tiebreak: unknown): Criterion[] {

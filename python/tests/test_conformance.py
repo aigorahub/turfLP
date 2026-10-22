@@ -91,6 +91,40 @@ def test_sizes(case, presolve):
         check_expected(a, p, e)
 
 
+def check_fixed(p, fixed):
+    """The fixed rule: the distinct fixed indices, sorted, all selected."""
+    assert p.fixed == tuple(sorted(set(fixed)))
+    assert set(p.fixed) <= set(p.products)
+
+
+@pytest.mark.parametrize("case", fixtures("fixed"), ids=turf_ids)
+def test_fixed(case, presolve):
+    a, names = matrix(case["input"])
+    fixed = [j - 1 for j in case["fixed"]]
+    if case["function"] == "turf":
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", TurfWarning)
+            p = turf(a, case["size"], case["tiebreak"], names=names, fixed=fixed,
+                     max_pool_seconds=INF)
+        check_fields(a, names, p, case["size"])
+        check_fixed(p, fixed)
+        check_expected(a, p, case["expected"])
+    elif case["function"] == "min_cover":
+        p = turf_min_cover(a, names=names, fixed=fixed)
+        check_fields(a, names, p)
+        check_fixed(p, fixed)
+        assert p.size == case["expected"]["size"]
+        assert p.reach == case["expected"]["reachable"]
+    else:
+        rows = turf_sizes(a, case["sizes"], case["tiebreak"], names=names, fixed=fixed,
+                          max_pool_seconds=INF)
+        assert [p.size for p in rows] == [e["size"] for e in case["expected"]]
+        for p, e in zip(rows, case["expected"]):
+            check_fields(a, names, p, e["size"])
+            check_fixed(p, fixed)
+            check_expected(a, p, e)
+
+
 @pytest.mark.parametrize("case", fixtures("bounded"), ids=turf_ids)
 def test_bounded(case, presolve):
     a, names = matrix(case["input"])
