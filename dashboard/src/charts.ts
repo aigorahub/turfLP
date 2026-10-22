@@ -320,6 +320,10 @@ export interface FrontierOptions {
   /** The portfolio of the run, drawn as its own mark when it is not on the frontier. */
   chosen: FrontierPoint;
   chosenOnFrontier: boolean;
+  /** The most popular products: the last point, or its own mark while the frontier stops short of it. */
+  mostPopular?: FrontierPoint | null;
+  /** The greedy portfolio: a label on its point, or its own mark when no point has its reach and frequency. */
+  greedy?: FrontierPoint | null;
   selected: number | null;
   onSelect: (index: number) => void;
 }
@@ -339,7 +343,7 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
   const f = frame(host, "frontier", "Reach and frequency of the portfolios on the frontier", 240,
                   { top: 24, right: 24, bottom: 44, left: 56 });
   const { m, iw, ih } = f;
-  const all = [...o.points, o.chosen];
+  const all = [...o.points, o.chosen, ...[o.mostPopular, o.greedy].filter((q): q is FrontierPoint => !!q)];
   const fLo = Math.min(...all.map((p) => p.frequency));
   const fHi = Math.max(o.maxFrequency, ...all.map((p) => p.frequency));
   const rLo = Math.min(...all.map((p) => p.reach)) / o.respondents;
@@ -387,15 +391,27 @@ export function frontierChart(host: HTMLElement, o: FrontierOptions): void {
     svg("path", { d: `M${cx},${cy - 7}L${cx + 7},${cy}L${cx},${cy + 7}L${cx - 7},${cy}Z`, class: "chosen-mark" }, f.root);
     text(f.root, cx, cy + 22, "end-label", "Chosen");
   }
-  // Label the two ends: the trade-off runs between them.
+  const at = (q: FrontierPoint) => pts.findIndex((p) => p.reach === q.reach && p.frequency === q.frequency);
+  const mp = o.mostPopular;
+  if (mp && at(mp) < 0) {
+    svg("circle", { cx: x(mp.frequency), cy: y(mp.reach / o.respondents), r: 4.5, class: "baseline-mark" }, f.root);
+  }
+  const g = o.greedy;
+  if (g && at(g) < 0) {
+    const gx = x(g.frequency);
+    const gy = y(g.reach / o.respondents);
+    svg("rect", { x: gx - 5, y: gy - 5, width: 10, height: 10, class: "baseline-mark" }, f.root);
+  }
+  // Label the two ends, where the trade-off runs between, and the simple choices.
   if (pts.length) {
     const first = pts[0];
     text(f.root, x(first.frequency) + 10, y(first.reach / o.respondents) - 10, "end-label", "Most reach", "start");
-    const last = pts.at(-1)!;
-    if (pts.length > 1 && last.frequency >= o.maxFrequency) {
-      text(f.root, x(last.frequency) - 10, y(last.reach / o.respondents) + 22, "end-label", "Most frequency", "end");
-    }
   }
+  const right = mp ?? (pts.length > 1 && pts.at(-1)!.frequency >= o.maxFrequency ? pts.at(-1)! : null);
+  if (right && !(pts.length && at(right) === 0)) {
+    text(f.root, x(right.frequency) - 10, y(right.reach / o.respondents) + 22, "end-label", mp ? "Most popular" : "Most frequency", "end");
+  }
+  if (g) text(f.root, x(g.frequency) + 10, y(g.reach / o.respondents) + 22, "end-label", "Greedy", "start");
 
   const base = pts[0];
   pts.forEach((p, i) => {

@@ -102,11 +102,17 @@ async function session(workers) {
     }));
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
 
+    // The deep dive runs only on request.
+    check(!(await page.$(".frontier-table")) && !(await page.$(".stage .skeleton")), "the deep dive ran before it was asked for");
+    await click(".deep-dive .button-secondary");
     // Focus on a product bar survives the renders of the analysis replies.
     await page.evaluate(() => document.querySelector('.bar-row[data-product="0"]').focus());
-    // The stages and the trade-off of the selected size, then the columns with what each product adds.
+    // The comparison, the stages, and the trade-off of the selected size, then the columns with what each product adds.
     await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
                      document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    const comparison = await page.$$eval(".comparison p", (c) => c.map((x) => x.textContent));
+    check(comparison.length === 2 && /^The 3 most popular products reach 67\.5% \(81\)\. This portfolio reaches 6 more respondents/.test(comparison[0]) &&
+          comparison[1].startsWith("Greedy also reaches the most possible"), `comparison: ${comparison}`);
     check(await page.evaluate(() => document.activeElement?.getAttribute("data-product")) === "0",
           "a solver reply moved the focus from the product bar");
     const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
@@ -168,6 +174,7 @@ async function session(workers) {
     const fixedRows = await page.$$eval(".size-table tbody tr[tabindex] .products", (c) => c.map((x) => x.textContent));
     check(fixedRows.length > 1 && fixedRows.every((t) => fixedNames.every((n) => t.includes(`${n} (fixed)`))),
           `rows without the fixed products: ${fixedRows}`);
+    await click(".deep-dive .button-secondary");
     await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live") &&
                      !document.querySelector(".stage .skeleton"));
     const frontierRows = await page.$$eval(".frontier-table tbody .products", (c) => c.map((x) => x.textContent));

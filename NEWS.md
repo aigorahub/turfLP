@@ -1,3 +1,7 @@
+# turfLP (development version)
+
+- Dashboard: the extra solves for one size run only on request, as a deep dive. The deep dive compares the optimal portfolio with the most popular products and with the greedy portfolio, and gives the reach each one gives up. Each point of the reach and frequency trade-off now has the best penetration of the portfolios with its reach and frequency, and the trade-off reuses the run's portfolio and the most popular products instead of solving for them again.
+
 # turfLP 0.4.0
 
 - `turf_sizes()` checks `tiebreak` before `fixed`, and also when `sizes` is empty, as `turf()` and the Python and JavaScript ports do.
