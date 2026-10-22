@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 import { beforeAll, describe, expect, it } from "vitest";
 import { loadSolver, turf } from "../../js/src/index.js";
 import { readInput } from "../../js/test/helpers.js";
-import { baselines, frontier, stageInfo, TIE_CAP } from "../src/analysis.js";
+import { baselines, frontier } from "../src/analysis.js";
 import { addedInOrder, contributions, PRODUCT_COLORS, stackColumns } from "../src/contrib.js";
 import { toReach } from "../src/csv.js";
 import { exampleTable } from "../src/data.js";
@@ -181,56 +181,6 @@ describe("frontier", () => {
   });
 });
 
-describe("stageInfo", () => {
-  it.each([3, 5])("gives the ranges and ties of size %i", async (k) => {
-    const chosen = await turf(rows, k, { tiebreak: ["frequency", "penetration"] });
-    const res = await stageInfo(matrix, [...chosen.products], ["frequency", "penetration"]);
-    expect(res.stop).toBe("complete");
-    const all = combos(t.cols, k).map(measure);
-    const atReach = all.filter((p) => p.reach >= chosen.reach);
-    const atFreq = atReach.filter((p) => p.frequency >= chosen.frequency);
-    const [s1, s2, s3] = res.stages;
-    expect(s1).toMatchObject({ criterion: "reach", value: chosen.reach, worst: null });
-    expect(Math.max(...all.map((p) => p.reach))).toBe(chosen.reach);
-    expect(s2.value).toBe(Math.max(...atReach.map((p) => p.frequency)));
-    expect(s2.worst).toBe(Math.min(...atReach.map((p) => p.frequency)));
-    expect(s3.value).toBeCloseTo(Math.max(...atFreq.map((p) => p.penetration)), 9);
-    expect(s3.worst).toBeCloseTo(Math.min(...atFreq.map((p) => p.penetration)), 9);
-    expect(s1.ties).toBe(Math.min(atReach.length, TIE_CAP));
-    expect(s1.tiesAtLeast).toBe(atReach.length >= TIE_CAP);
-    expect(s2.ties).toBe(Math.min(atFreq.length, TIE_CAP));
-  });
-
-  it("counts each of two identical products", async () => {
-    // Columns 0 and 1 reach the same respondents, so {0} and {1} tie on every stage.
-    const a = [[1, 1, 0], [1, 1, 0], [0, 0, 1]];
-    const m = { rows: 3, cols: 3, data: Uint8Array.from(a.flat()), names: ["A", "B", "C"] };
-    const res = await stageInfo(m, [0], ["frequency", "penetration"]);
-    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[2, false], [2, false], [2, false]]);
-  });
-
-  it("counts a penetration tie only within the comparison tolerance", async () => {
-    // Two portfolios have the most reach, with penetration values 2e-13 apart: the solver
-    // tolerance admits both, the comparison tolerance of the package only one.
-    const { a, names } = readInput("near-42000");
-    const m = { rows: a.length, cols: names.length, data: Uint8Array.from(a.flat()), names };
-    const chosen = await turf(a, 2, { tiebreak: ["penetration", "frequency"] });
-    const res = await stageInfo(m, [...chosen.products], ["penetration", "frequency"]);
-    expect(res.stop).toBe("complete");
-    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[2, false], [1, false], [1, false]]);
-  });
-
-  it("follows the tie-break order", async () => {
-    const chosen = await turf(rows, 4, { tiebreak: [] });
-    const res = await stageInfo(matrix, [...chosen.products], []);
-    expect(res.stages.map((s) => s.criterion)).toEqual(["reach"]);
-    const pf = await stageInfo(matrix, [...(await turf(rows, 4, { tiebreak: ["penetration", "frequency"] })).products],
-                               ["penetration", "frequency"]);
-    expect(pf.stages.map((s) => s.criterion)).toEqual(["reach", "penetration", "frequency"]);
-    expect(pf.stop).toBe("complete");
-  });
-});
-
 describe("contributions", () => {
   it("adds up to the reach, largest share first", () => {
     for (const k of [1, 3, 6]) {
@@ -310,27 +260,10 @@ describe("fixed products", () => {
     for (const p of res.points) expect(fixed.every((j) => p.products.includes(j))).toBe(true);
   });
 
-  it.each([3, 5])("the stages of size %i count only portfolios with the fixed products", async (k) => {
-    const chosen = await turf(rows, k, { tiebreak: ["frequency", "penetration"], fixed });
-    const all = withFixed(k);
-    expect(chosen.reach).toBe(Math.max(...all.map((p) => p.reach)));
-    const res = await stageInfo(matrix, [...chosen.products], ["frequency", "penetration"], { fixed });
-    expect(res.stop).toBe("complete");
-    const atReach = all.filter((p) => p.reach >= chosen.reach);
-    const atFreq = atReach.filter((p) => p.frequency >= chosen.frequency);
-    const [s1, s2] = res.stages;
-    expect(s2.worst).toBe(Math.min(...atReach.map((p) => p.frequency)));
-    expect([s1.ties, s1.tiesAtLeast]).toEqual([Math.min(atReach.length, TIE_CAP), atReach.length >= TIE_CAP]);
-    expect(s2.ties).toBe(Math.min(atFreq.length, TIE_CAP));
-  });
-
   it("does not force the twin of a fixed product in", async () => {
     // A and B are identical. With B fixed, {B, C} has the most reach.
     const a = [[1, 1, 0], [1, 1, 0], [0, 0, 1]];
     const m = { rows: 3, cols: 3, data: Uint8Array.from(a.flat()), names: ["A", "B", "C"] };
-    const res = await stageInfo(m, [1, 2], ["frequency"], { fixed: [1] });
-    expect(res.stop).toBe("complete");
-    expect(res.stages.map((s) => [s.ties, s.tiesAtLeast])).toEqual([[1, false], [1, false]]);
     const fr = await frontier(m, 2, { fixed: [1] });
     expect([fr.stop, fr.maxFrequency, fr.points.map((p) => [p.reach, p.frequency])])
       .toEqual(["complete", 4, [[3, 3], [2, 4]]]);
@@ -371,12 +304,6 @@ describe("duplicate respondents", () => {
 
     const chosen = await turf(a, k, { tiebreak: ["frequency", "penetration"], fixed: [...fixed] });
     expect(chosen.reach).toBe(Math.max(...all.map((p) => p.reach)));
-    const res = await stageInfo(m, [...chosen.products], ["frequency", "penetration"], { fixed: [...fixed] });
-    const atReach = all.filter((p) => p.reach >= chosen.reach);
-    const atFreq = atReach.filter((p) => p.frequency >= chosen.frequency);
-    const [s1, s2] = res.stages;
-    expect([s1.ties, s2.worst, s2.ties]).toEqual([
-      Math.min(atReach.length, TIE_CAP), Math.min(...atReach.map((p) => p.frequency)), Math.min(atFreq.length, TIE_CAP)]);
     const parts = contributions(m, [...chosen.products], [...fixed]);
     expect(parts.reduce((s, p) => s + p.added, 0)).toBe(chosen.reach);
   });

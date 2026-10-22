@@ -53,22 +53,20 @@ describe("worker", () => {
     expect(replies.at(-1)).toMatchObject({ type: "error", id: 4 });
   });
 
-  it("analyzes a portfolio: the simple choices, the stages, then each point, then the frontier", async () => {
+  it("analyzes a portfolio: the simple choices, then each point, then the frontier", async () => {
     // The portfolio of a run: the frontier starts from it.
     const run = await ask({ type: "run", id: 51, matrix, sizes: [3], tiebreak: ["frequency"] });
     const products = run.flatMap((r) => (r.type === "size" ? [...r.portfolio.products] : []));
     const replies = await ask({ type: "analyze", id: 5, matrix, products, tiebreak: ["frequency"], optimal: true });
     const types = replies.map((r) => r.type);
-    expect(types.slice(0, 2)).toEqual(["baselines", "stages"]);
+    expect(types[0]).toBe("baselines");
     expect(types.at(-1)).toBe("frontier");
-    expect(types.slice(2, -1).every((x) => x === "point")).toBe(true);
+    expect(types.slice(1, -1).every((x) => x === "point")).toBe(true);
     const base = replies[0].type === "baselines" ? replies[0] : null;
     expect(base?.stop).toBe("complete");
     expect(base?.greedy.products.length).toBe(3);
-    const stages = replies[1].type === "stages" ? replies[1] : null;
-    expect(stages?.stages.map((s) => s.criterion)).toEqual(["reach", "frequency"]);
     const fr = replies.at(-1)!;
-    expect(fr.type === "frontier" && fr.points.length).toBe(types.length - 3);
+    expect(fr.type === "frontier" && fr.points.length).toBe(types.length - 2);
     // The last point is the most popular portfolio.
     expect(fr.type === "frontier" && fr.stop === "complete" && fr.points.at(-1)).toEqual(base?.mostPopular);
   });

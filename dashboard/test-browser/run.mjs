@@ -103,25 +103,22 @@ async function session(workers) {
     check(focus.size === "3" && focus.title.startsWith("3 products"), `keyboard selection: ${JSON.stringify(focus)}`);
 
     // The deep dive runs only on request.
-    check(!(await page.$(".frontier-table")) && !(await page.$(".stage .skeleton")), "the deep dive ran before it was asked for");
+    check(!(await page.$(".frontier-table")) && !(await page.$(".comparison")), "the deep dive ran before it was asked for");
     await click(".deep-dive .button-secondary");
     // Focus on a product bar survives the renders of the analysis replies.
     await page.evaluate(() => document.querySelector('.bar-row[data-product="0"]').focus());
-    // The comparison, the stages, and the trade-off of the selected size, then the columns with what each product adds.
-    await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton") &&
-                     document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
+    // The comparison and the trade-off of the selected size, then the columns with what each product adds.
+    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
     const comparison = await page.$$eval(".comparison p", (c) => c.map((x) => x.textContent));
-    check(comparison.length === 2 && /^The 3 most popular products reach 81 respondents \(67\.5%\)\. This portfolio reaches 6 more respondents/.test(comparison[0]) &&
-          comparison[1].startsWith("Greedy also reaches the most possible"), `comparison: ${comparison}`);
+    check(comparison.length === 2 && comparison[0] === "The 3 most popular products reach 81 (67.5%), 6 fewer." &&
+          comparison[1] === "Greedy, which adds the best product one at a time, reaches as many.", `comparison: ${comparison}`);
     check(await page.evaluate(() => document.activeElement?.getAttribute("data-product")) === "0",
           "a solver reply moved the focus from the product bar");
-    const stage1 = await page.$eval(".stage .stage-value", (e) => e.textContent);
-    check(stage1 === "72.5%", `stage 1 value: ${stage1}`);
     const frontierTop = await page.$eval(".frontier-table tbody tr td", (e) => e.textContent);
     check(frontierTop === "87 (72.5%)", `first frontier point: ${frontierTop}`);
     // Penetration only breaks ties: no table, stat, or chart shows it. The trade-off marks all respondents.
     const shown = await page.evaluate(() => [...document.querySelectorAll("#results th, #results .stat dt")].map((e) => e.textContent));
-    check(!shown.some((t) => /penetration/i.test(t)), `penetration is shown: ${shown}`);
+    check(!shown.some((t) => /penetration|^Time$/i.test(t)), `penetration or time is shown: ${shown}`);
     const all = await page.$eval(".frontier .ceiling-label", (e) => e.textContent);
     check(all === "All 120 respondents", `respondents line: ${all}`);
     await click('.segmented [data-value="columns"]');
@@ -140,7 +137,6 @@ async function session(workers) {
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
     await idle();
-    await wait(() => document.querySelectorAll(".stage").length === 1);
     await page.evaluate(() => {
       const s = document.getElementById("stage2");
       s.value = "frequency";
@@ -180,8 +176,7 @@ async function session(workers) {
     check(fixedRows.length > 1 && fixedRows.every((t) => fixedNames.every((n) => t.includes(`${n} (fixed)`))),
           `rows without the fixed products: ${fixedRows}`);
     await click(".deep-dive .button-secondary");
-    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live") &&
-                     !document.querySelector(".stage .skeleton"));
+    await wait(() => document.querySelector(".frontier-table") && !document.querySelector(".hint.live"));
     const frontierRows = await page.$$eval(".frontier-table tbody .products", (c) => c.map((x) => x.textContent));
     check(frontierRows.every((t) => fixedNames.every((n) => t.includes(n))), `frontier without the fixed products: ${frontierRows}`);
     await click('.segmented [data-value="columns"]');
@@ -264,27 +259,6 @@ async function session(workers) {
       .test(document.getElementById("fixed-hint").textContent));
     const boxB = await page.$eval('#fixed-list input[value="1"]', (e) => [e.checked, e.disabled]);
     check(!boxB[0] && boxB[1], `product B after the threshold change: ${boxB}`);
-    // Two portfolios of 2 tie on reach and frequency; penetration breaks the tie, and the stage says so.
-    await load("ties.csv", "A,B,C,D\n1,0,0,1\n0,1,0,1\n1,0,1,0\n0,1,1,0\n1,0,0,1\n0,1,0,1\n");
-    await wait(() => /6 respondents, 4 products/.test(document.getElementById("data-info").textContent) &&
-                     !document.getElementById("run").disabled);
-    await page.evaluate(() => {
-      const s = document.getElementById("stage3");
-      s.value = "penetration";
-      s.dispatchEvent(new Event("change"));
-      for (const id of ["size-from", "size-to"]) {
-        const i = document.getElementById(id);
-        i.value = "2";
-        i.dispatchEvent(new Event("input"));
-      }
-    });
-    await click("#run");
-    await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 1);
-    await idle();
-    await click(".deep-dive .button-secondary");
-    await wait(() => document.querySelectorAll(".stage").length === 3 && !document.querySelector(".stage .skeleton"));
-    const tie = await page.$$eval(".stage .stage-detail", (d) => d.map((x) => x.textContent));
-    check(tie[2] === "Penetration breaks the tie among the 2 portfolios left. This stage keeps one.", `penetration stage: ${tie}`);
     await load("bad.csv", "A,B\n1,0\n1,x\n");
     await wait(() => !document.getElementById("data-error").hidden);
     const error = await page.$eval("#data-error", (e) => e.textContent);
