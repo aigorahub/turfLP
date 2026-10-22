@@ -1,6 +1,11 @@
-# turfLP (development version)
+# turfLP 0.4.0
 
 - `turf_sizes()` checks `tiebreak` before `fixed`, and also when `sizes` is empty, as `turf()` and the Python and JavaScript ports do.
+- JavaScript: `turf()`, `turfMinCover()`, and `turfSizes()` solve an equivalent smaller model (`docs/algorithm.md` section 3). Respondents that a fixed product reaches leave the model, and when many respondents give the same answers, each set of equal answers is one weighted row. Data with many identical respondents solves much faster: a 2,000 by 25 case of size 3 took 12 ms instead of 0.54 s, and the 42,000-respondent regression case took 9 ms instead of 2.3 s. Other data solves as before. The optima are the same; when several portfolios are optimal, a different one can be returned.
+- JavaScript: a stage is not solved when a portfolio meets a proved bound: a greedy portfolio that reaches every reachable respondent, or a portfolio whose frequency is the largest possible (`docs/algorithm.md` section 7).
+- JavaScript: the data of a `turfSizes()` call is prepared once for every size.
+- The Next.js example solves in a worker thread, one solve at a time per instance with up to 4 waiting, and stops a request at a 50-second deadline (HTTP 504). It forwards `fixed`, answers 400, 413, 503, and 500 as its README states, and caches complete results. It needs Next.js 16.4.2 or later.
+- The dashboard uses the same smaller model, and prepares the data once per run.
 - Dashboard: the fixed-product list sorts by name or by reach. A change to the fixed products no longer stops a run in progress. With 8 or more fixed products, the columns show them as one segment, so the other products keep their own colors.
 
 # turfLP 0.3.0

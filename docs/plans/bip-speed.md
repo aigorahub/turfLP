@@ -88,8 +88,8 @@ Acceptance criteria:
 ### Batch 8 [B8]: Docs and version
 
 Acceptance criteria:
-- [ ] B8-A1: README.md, js/README.md, python/README.md, dashboard/README.md, js/examples/nextjs/README.md, NEWS.md, and docs/algorithm.md match the code.
-- [ ] B8-A2: Version 0.4.0 in DESCRIPTION, python/pyproject.toml, python/uv.lock, python/src/turflp/__init__.py, js and dashboard package.json and package-lock.json, and README examples.
+- [x] B8-A1: README.md, js/README.md, python/README.md, dashboard/README.md, js/examples/nextjs/README.md, NEWS.md, and docs/algorithm.md match the code.
+- [x] B8-A2: Version 0.4.0 in DESCRIPTION, python/pyproject.toml, python/uv.lock, python/src/turflp/__init__.py, js and dashboard package.json and package-lock.json, and README examples.
 
 ## Master acceptance
 

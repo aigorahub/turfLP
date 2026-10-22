@@ -14,8 +14,8 @@ npm package names are lower case, so the package is `turflp`. To install the dev
 
 ```sh
 git clone https://github.com/aigorahub/turfLP.git
-cd turfLP/js && npm ci && npm pack          # writes turflp-0.3.0.tgz
-cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.3.0.tgz
+cd turfLP/js && npm ci && npm pack          # writes turflp-0.4.0.tgz
+cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.4.0.tgz
 ```
 
 ## Usage
@@ -137,6 +137,8 @@ Times for one `turf()` call with both tie-breaks, on random data where each prod
 
 A 20,000 by 20 problem of size 5 took 147 s; 20,000 by 40 at size 5 also exceeded the limit. The example data sets solved faster than random data of the same size: in the dashboard in Chrome, each size from 1 to 8 of `icecream` (120 by 10) took 0.1 s or less, and sizes 1 to 3 of `cafe` (2,500 by 40) took 1.3, 0.5, and 2.3 s. Sizes 1 to 8 of `cafe` took 44 s in total in Node.js.
 
+Data in which many respondents give the same answers solves much faster, because equal respondents share one weighted row of the model (`docs/algorithm.md` section 3): 2,000 respondents with 40 distinct answer patterns and 25 products took 12 ms at size 3, and 42,000 respondents with 9 patterns took 9 ms. Random data like the table above has no such rows, and its times are unchanged.
+
 `turfSizes()` solves each size in turn, so its time is the sum over the sizes. Times of one case varied between runs by up to a factor of about 1.6, and data with many ties on penetration can take up to the 30-second pool budget more.
 
 A rule to start from, to be checked on your own data:
@@ -171,6 +173,7 @@ The penetration tie-break is decided in JavaScript, not by the solver: the packa
 - The limits are options instead of the R options `turfLP.max_pool` and `turfLP.max_pool_seconds`.
 - HiGHS presolve is on. The R package turns it off because HiGHS 1.14, which the R `highs` package bundles, returned a wrong optimum with presolve on in a test case. HiGHS 1.15 solves that case correctly.
 - There is no `turf_simulate()`.
+- The solver gets an equivalent smaller model (`docs/algorithm.md` section 3), and a stage whose optimum a portfolio meets at a proved bound is not solved (section 7). The optima are the same as in R.
 
 When several portfolios are optimal, R, Python, and JavaScript can return different ones, with the same values of the requested criteria. When a search stops early, the warning says which value is not proved optimal.
 

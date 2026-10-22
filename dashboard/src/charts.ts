@@ -36,6 +36,10 @@ const products = (k: number) => `${k} ${k === 1 ? "product" : "products"}`;
 type TipLine = { text: string; strong?: boolean; muted?: boolean };
 
 /** One tooltip, placed next to the mark under the pointer and kept inside its host. */
+// The label of a column segment, the same in the legend and the tooltip.
+const partLabel = (p: { name: string; names: string[]; fixed?: boolean }) =>
+  p.fixed ? `Fixed: ${list(p.names)}` : p.names.length > 1 ? `Other: ${list(p.names)}` : p.name;
+
 export class Tooltip {
   readonly el: HTMLDivElement;
   constructor(private host: HTMLElement) {
@@ -266,7 +270,7 @@ export function reachColumns(host: HTMLElement, o: ColumnsOptions): void {
       const lines: TipLine[] = [
         { text: `${products(c.size)}: reach ${percent(c.reach / o.respondents)}`, strong: true },
         ...c.parts.map((p, k) => ({
-          text: `${k === 0 ? "" : "+ "}${p.names.length > 1 ? list(p.names) : p.name} ${k === 0 ? percent(p.added / o.respondents) : points(p.added / o.respondents).replace(" points", "")}`,
+          text: `${k === 0 ? "" : "+ "}${partLabel(p)} ${k === 0 ? percent(p.added / o.respondents) : points(p.added / o.respondents).replace(" points", "")}`,
           muted: k > 0,
         })),
       ];
@@ -295,7 +299,7 @@ export function contributionList(host: HTMLElement, column: Column, respondents:
     name.scope = "row";
     const sw = html("span", "contrib-swatch", undefined, name);
     sw.style.background = slotColor(p.slot);
-    name.append(p.fixed ? `Fixed: ${list(p.names)}` : p.names.length > 1 ? `Other: ${list(p.names)}` : p.name);
+    name.append(partLabel(p));
     html("td", "num", `${k === 0 ? "" : "+"}${(100 * p.added / respondents).toFixed(1)}`, tr);
     html("td", "num muted", percent(total / respondents), tr);
   });

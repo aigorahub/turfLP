@@ -14,15 +14,15 @@ Stop allowed right now: no. Stop only after the release and the redeploy, or on 
 
 ## Current phase
 
-B1 delta, B2, B3, B5 reviews (astra, grok) sent at c414373. Baseline and B3 benchmarks running in worktrees. B4 MIP start code is uncommitted in js/src (settings.mipStart, default off) until measured.
+B1-B8 done. B3 delta, B5 delta, B4 full sent to astra and grok at 0a47ccc. Then the final review by all three (agy with /boost) at the final head.
 
 ## Next exact action
 
-When the baseline and B3 benchmarks finish: log them, run the interleaved primary gate (baseline 34536fc against B3 0dd093d, skip and mipStart variants), decide skip and mipStart, commit B4. Then B6.
+Read the astra and grok verdicts; fix blockers; send the final head to astra, grok, and agy. Then remove the run files, run all gates, mark the PR ready, CI green, merge with a merge commit, release v0.4.0 with turflp-dashboard.html, check PyPI, redeploy turf.aigora.ai.
 
 ## Deferred hygiene
 
-- Dashboard: the column tooltip of the grouped fixed segment lists names without "Fixed:" (agy advisory on PR #20).
+- (done) Dashboard: the column tooltip of the grouped fixed segment now says "Fixed:".
 
 ## Out-of-scope findings
 

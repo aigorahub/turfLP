@@ -49,7 +49,7 @@ respondent,Product A,Product B,Product C
 
 ## Run time
 
-The solver runs in a Web Worker, so the page stays responsive, and each size appears when it is done. Cancel stops the run and keeps the sizes that are done. Small data sets such as the ice cream, ham, and coffee examples take less than a second for all sizes. The largest example, cafe drinks (2,500 respondents and 40 drinks), takes several seconds for each size from 3 on. "Browser or server" in [../js/README.md](../js/README.md) gives times for other problem sizes and says which problems to move to a server.
+The solver runs in a Web Worker, so the page stays responsive, and each size appears when it is done. Cancel stops the run and keeps the sizes that are done. Small data sets such as the ice cream, ham, and coffee examples take less than a second for all sizes. The largest example, cafe drinks (2,500 respondents and 40 drinks), takes several seconds for each size from 3 on. Data in which many respondents give the same answers solves faster, because the page uses the package's smaller model (`docs/algorithm.md` section 3). "Browser or server" in [../js/README.md](../js/README.md) gives times for other problem sizes and says which problems to move to a server.
 
 If the browser cannot start a worker, the page solves on its own thread and says so next to the solver status. The page then pauses while each size solves, and Cancel stops the run before the next size.
 

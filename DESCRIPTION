@@ -1,6 +1,6 @@
 Package: turfLP
 Title: TURF Analysis with Integer Linear Programming
-Version: 0.3.0
+Version: 0.4.0
 Authors@R:
   c(
     person("John", "Ennis", , "john.m.ennis@aigora.com", role = c("aut", "cre")),
