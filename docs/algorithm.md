@@ -132,6 +132,13 @@ For each stage `s` with criterion `C` and earlier criteria `E`:
 
 The result is built from the final `sel` (section 9).
 
+An implementation may skip the solve of step 1 when a portfolio meets a proved bound of the stage; the stage then has `res.status = ok`, its `sel` is that portfolio, and step 3 adds the same bound row. The JavaScript port does this (its `settings.skip`, on by default); R and Python solve every stage.
+
+- Reach, first stage only: the witness is the greedy portfolio of exactly `size` candidates. It starts from the fixed products and adds, one at a time, the candidate that reaches the most model respondents not yet reached (the lowest position wins a tie). If it reaches every model respondent, its reach is the largest possible, and it is the stage's selection. Any other witness proves nothing.
+- Frequency: the bound is the sum of `r_j` over the fixed products plus the `size − |F|` largest `r_j` of the other candidates. The check applies only to the selection that enters the frequency stage after every earlier bound (reach, and penetration with its section 8 search when penetration comes first). If its frequency equals the bound, it is the stage's selection.
+
+Both checks keep the optimum of the stage. When several portfolios are optimal, the skipped stage can select a different one than the solver would.
+
 ## 8. Penetration stage
 
 Mirrors the `if (stages[s] == "penetration")` block in `turf()`.

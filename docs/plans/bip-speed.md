@@ -41,28 +41,28 @@ Acceptance criteria:
 ### Batch 2 [B2]: Prepare once and bitset kernels
 
 Acceptance criteria:
-- [ ] B2-A1: An internal immutable prepared representation is reused across sizes and the default minimum cover; fixed-specific state is separate and never mutates the original sets.
-- [ ] B2-A2: Bitset operations pass boundary tests at 31, 32, 33, 63, 64, and 65 respondents, empty sets, and complements.
-- [ ] B2-A3: Packed and original calculations agree; input order and public validation are unchanged; memory is bounded.
-- [ ] B2-A4: A WASM 64-bit kernel is measured against the JS kernel; the retained kernel improves a measured workload, or the change is recorded as rejected.
+- [x] B2-A1: An internal immutable prepared representation is reused across sizes and the default minimum cover; fixed-specific state is separate and never mutates the original sets.
+- [x] B2-A2: Bitset operations pass boundary tests at 31, 32, 33, 63, 64, and 65 respondents, empty sets, and complements.
+- [x] B2-A3: Packed and original calculations agree; input order and public validation are unchanged; memory is bounded.
+- [x] B2-A4: A WASM 64-bit kernel is measured against the JS kernel; the retained kernel improves a measured workload, or the change is recorded as rejected.
 
 ### Batch 3 [B3]: Exact row reduction
 
 Acceptance criteria:
-- [ ] B3-A1: docs/algorithm.md documents the fixed-cover removal and the weighted residual groups, with the proof of exactness and the covered and uncovered bound rules.
-- [ ] B3-A2: Reduced and original models agree with the exhaustive oracle and the conformance suite of all ports, with the reduction on and off.
-- [ ] B3-A3: The plan's regression fixtures pass, including unequal weights, unreachable respondents, fixed products covering everyone, a needed candidate with zero residual reach, residual twins with different original reach, and the pinned unique optima.
-- [ ] B3-A4: Minimum cover and default sizes agree; the empty-residual model is valid; a false constant bound is infeasible.
-- [ ] B3-A5: The skip-a-solve checks (John's additions) are measured and kept or rejected.
-- [ ] B3-A6: The retained reduction passes the performance gate, or it is restricted to the workloads where it passes.
+- [x] B3-A1: docs/algorithm.md documents the fixed-cover removal and the weighted residual groups, with the proof of exactness and the covered and uncovered bound rules.
+- [x] B3-A2: Reduced and original models agree with the exhaustive oracle and the conformance suite of all ports, with the reduction on and off.
+- [x] B3-A3: The plan's regression fixtures pass, including unequal weights, unreachable respondents, fixed products covering everyone, a needed candidate with zero residual reach, residual twins with different original reach, and the pinned unique optima.
+- [x] B3-A4: Minimum cover and default sizes agree; the empty-residual model is valid; a false constant bound is infeasible.
+- [x] B3-A5: The skip-a-solve checks (John's additions) are measured and kept or rejected.
+- [x] B3-A6: The retained reduction passes the performance gate, or it is restricted to the workloads where it passes.
 
 ### Batch 4 [B4]: Model reuse within a job
 
 Acceptance criteria:
-- [ ] B4-A1: One native model per size job holds stage bounds and cuts; the penetration fallback never inherits pool-only rows; models are disposed on success and failure.
-- [ ] B4-A2: Tests cover option and clock resets (finite to unlimited, decreasing limits, repeated solves), first-stage failure, fallback, zero pool budget, timed pool exhaustion, presolve on and off, and different fixed sets.
-- [ ] B4-A3: The greedy MIP start is measured and kept or rejected.
-- [ ] B4-A4: Retained reuse lowers measured total time.
+- [x] B4-A1 (not applicable: model reuse rejected by measurement, see the log): One native model per size job holds stage bounds and cuts; the penetration fallback never inherits pool-only rows; models are disposed on success and failure.
+- [x] B4-A2 (not applicable: model reuse rejected by measurement, see the log): Tests cover option and clock resets (finite to unlimited, decreasing limits, repeated solves), first-stage failure, fallback, zero pool budget, timed pool exhaustion, presolve on and off, and different fixed sets.
+- [x] B4-A3: The greedy MIP start is measured and kept or rejected.
+- [x] B4-A4 (not applicable: model reuse rejected by measurement, see the log): Retained reuse lowers measured total time.
 
 ### Batch 5 [B5]: Dashboard
 

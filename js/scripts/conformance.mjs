@@ -102,16 +102,16 @@ const count = (k) => { counts[k] = (counts[k] ?? 0) + 1; };
 
 // groupRatio 1 groups every set of equal rows, so the weighted rows are checked
 // on inputs that the default ratio leaves ungrouped.
-for (const [presolve, reduce, skip, mipStart, groupRatio] of [
-  ["on", "on", "off", "off", GROUP_RATIO], ["off", "on", "off", "off", GROUP_RATIO],
-  ["on", "off", "off", "off", GROUP_RATIO], ["on", "on", "on", "off", GROUP_RATIO],
-  ["on", "on", "off", "on", GROUP_RATIO], ["on", "off", "off", "on", GROUP_RATIO], ["on", "on", "off", "off", 1]]) {
+// The default first (skip on); groupRatio 1 groups every set of equal rows, so
+// the weighted rows are checked on inputs that the default ratio leaves ungrouped.
+for (const [presolve, reduce, skip, groupRatio] of [
+  ["on", "on", "on", GROUP_RATIO], ["off", "on", "on", GROUP_RATIO], ["on", "off", "on", GROUP_RATIO],
+  ["on", "on", "off", GROUP_RATIO], ["on", "on", "on", 1]]) {
   settings.presolve = presolve;
   settings.reduce = reduce;
   settings.skip = skip;
-  settings.mipStart = mipStart;
   settings.groupRatio = groupRatio;
-  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, mipStart ${mipStart}, groupRatio ${groupRatio}`;
+  const mode = `presolve ${presolve}, reduce ${reduce}, skip ${skip}, groupRatio ${groupRatio}`;
   for (const c of read("fixtures/turf.json").cases) {
     const { a, names } = input(c.input);
     const p = await turf(a, c.size, { tiebreak: c.tiebreak, names, maxPoolSeconds: Infinity });
@@ -185,8 +185,7 @@ for (const [presolve, reduce, skip, mipStart, groupRatio] of [
 }
 settings.presolve = "on";
 settings.reduce = "on";
-settings.skip = "off";
-settings.mipStart = "off";
+settings.skip = "on";
 settings.groupRatio = GROUP_RATIO;
 
 const obj = { name: "x", direction: "min", value: (v) => v };

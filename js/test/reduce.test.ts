@@ -6,7 +6,7 @@ import { GROUP_RATIO } from "../src/prepare.js";
 import { settings } from "../src/solver.js";
 import type { Criterion } from "../src/input.js";
 
-afterEach(() => { settings.reduce = "on"; settings.groupRatio = GROUP_RATIO; });
+afterEach(() => { settings.reduce = "on"; settings.groupRatio = GROUP_RATIO; settings.skip = "on"; });
 
 type M = number[][];
 const colReach = (a: M) => a[0].map((_, j) => a.reduce((s, r) => s + r[j], 0));
@@ -74,11 +74,13 @@ describe("reduced model", () => {
       const want = oracle(a, size, tiebreak, fixed);
       const id = `seed ${seed}: size ${size}, fixed ${fixed}, ${tiebreak}`;
       // Ratio 1 always groups equal rows; ratio 0 never does but still leaves out the fixed-covered rows.
-      for (const [reduce, ratio] of [["on", 1], ["on", 0], ["off", 1]] as const) {
+      // Skip on takes a stage's optimum from a proved bound; off solves every stage.
+      for (const [reduce, ratio, skip] of [["on", 1, "on"], ["on", 0, "on"], ["off", 1, "on"], ["on", 1, "off"]] as const) {
         settings.reduce = reduce;
         settings.groupRatio = ratio;
+        settings.skip = skip;
         const p = await turf(a, size, { tiebreak, fixed });
-        expect(p.reach, `${id}, reduce ${reduce}, ratio ${ratio}`).toBe(want.reach);
+        expect(p.reach, `${id}, reduce ${reduce}, ratio ${ratio}, skip ${skip}`).toBe(want.reach);
         expect(p.reachProp, id).toBe(want.reach / a.length);
         expect(fixed.every((j) => p.products.includes(j)), id).toBe(true);
         if (tiebreak[0] === "frequency") expect(p.frequency, id).toBe(want.frequency);
