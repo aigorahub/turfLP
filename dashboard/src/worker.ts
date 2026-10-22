@@ -6,7 +6,7 @@ import { loadSolver, turfMinCover, type Criterion, type Portfolio } from "../../
 import { turfPrepared } from "../../js/src/core.js";
 import { asReach } from "../../js/src/input.js";
 import { prepare } from "../../js/src/prepare.js";
-import { frontier, stageInfo, type Between, type Point, type StageInfo, type Stop } from "./analysis.js";
+import { baselines, frontier, stageInfo, type Between, type Point, type StageInfo, type Stop } from "./analysis.js";
 
 export interface Matrix {
   rows: number;
@@ -20,9 +20,12 @@ export type Request =
   | { type: "load"; wasm: Uint8Array }
   | { type: "cover"; id: number; matrix: Matrix; fixed?: number[] }
   | { type: "run"; id: number; matrix: Matrix; sizes: number[]; tiebreak: Criterion[]; fixed?: number[] }
-  // The stages and the reach and frequency trade-off of one portfolio of a run.
+  // The deep dive into one portfolio of a run: the simple choices to compare
+  // with, the stages, and the reach and frequency trade-off.
   | { type: "analyze"; id: number; matrix: Matrix; products: number[]; tiebreak: Criterion[];
-      fixed?: number[]; seconds?: { stages: number; frontier: number }; maxPoints?: number }
+      fixed?: number[]; seconds?: { baselines: number; stages: number; frontier: number }; maxPoints?: number;
+      // True when the run found the portfolio with no warning, so it is optimal and the frontier can start from it.
+      optimal?: boolean }
   // Stop an analysis at its next solve. Handled at once, not in turn.
   | { type: "cancel"; id: number };
 
@@ -32,9 +35,10 @@ export type Reply =
   | { type: "start"; id: number; size: number }
   | { type: "size"; id: number; portfolio: Portfolio; seconds: number }
   | { type: "done"; id: number }
+  | { type: "baselines"; id: number; mostPopular: Point | null; greedy: Point; stop: Stop }
   | { type: "stages"; id: number; stages: StageInfo[]; stop: Stop }
   | { type: "point"; id: number; point: Point }
-  | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop }
+  | { type: "frontier"; id: number; points: Point[]; maxFrequency: number; stop: Stop; penetrationLimited: boolean }
   | { type: "error"; id: number | null; message: string };
 
 function rowsOf(m: Matrix): number[][] {
@@ -64,12 +68,18 @@ export async function handle(msg: Request, post: (reply: Reply) => void,
     if (msg.type === "cancel") return;
     if (msg.type === "analyze") {
       const options = { between: between as Between | undefined };
+      const size = msg.products.length;
+      const base = await baselines(msg.matrix, size, { ...options, seconds: msg.seconds?.baselines, fixed: msg.fixed });
+      post({ type: "baselines", id: msg.id, ...base });
+      if (base.stop === "cancelled") return;
       const st = await stageInfo(msg.matrix, msg.products, msg.tiebreak,
                                  { ...options, seconds: msg.seconds?.stages, fixed: msg.fixed });
       post({ type: "stages", id: msg.id, ...st });
       if (st.stop === "cancelled") return;
-      const fr = await frontier(msg.matrix, msg.products.length, {
+      const fr = await frontier(msg.matrix, size, {
         ...options, seconds: msg.seconds?.frontier, maxPoints: msg.maxPoints, fixed: msg.fixed,
+        chosen: msg.optimal ? { products: msg.products, tiebreak: msg.tiebreak } : undefined,
+        last: base.mostPopular ?? undefined,
         onPoint: (point) => post({ type: "point", id: msg.id, point }),
       });
       post({ type: "frontier", id: msg.id, ...fr });

@@ -475,6 +475,10 @@ input[type="number"].input { width: 5.5rem; }
 .block-title { display: flex; flex-direction: column; gap: 2px; max-width: 70ch; }
 .block-head h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
 .block-head p { font-size: 13px; line-height: 18px; }
+.comparison { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; margin-bottom: 24px; }
+.deep-dive .block-title + .chart, .deep-dive > .block-title { margin-bottom: 12px; }
+.deep-dive > .block-title p { font-size: 13px; line-height: 18px; }
+.sub-title { font-size: 14px; line-height: 20px; font-weight: 600; }
 .panel-block > .hint { margin-top: 12px; }
 
 /* Charts */
@@ -493,6 +497,7 @@ input[type="number"].input { width: 5.5rem; }
 .plot .dot-label { fill: var(--ink); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .plot .end-label { fill: var(--ink-2); font-size: 12px; font-weight: 500; }
 .plot .chosen-mark { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.plot .baseline-mark { fill: var(--surface); stroke: var(--ink-2); stroke-width: 2; }
 .plot .crosshair { stroke: var(--line-strong); stroke-width: 1; }
 .plot .hit { fill: transparent; cursor: pointer; outline: none; }
 .plot .hit:focus-visible { stroke: var(--focus); stroke-width: 2; rx: 6px; }

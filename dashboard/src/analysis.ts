@@ -35,6 +35,8 @@ export interface StageInfo {
 export const TIE_CAP = 20;
 // Solves per range or count that may return portfolios outside the bounds, before the count stops.
 const MAX_REJECTS = 50;
+// Portfolios searched for the best penetration of one frontier point, as the package's pool.
+const MAX_POOL = 1000;
 const EPS = 2 ** -52;
 
 /** Pause between solves so that a cancel message can arrive. Returns false to stop. */
@@ -182,6 +184,107 @@ class SizeModel {
     return mod.addRow(this.xVars, this.penCoef.subarray(this.groupCount), -Infinity, sum + tol);
   }
 
+  /** The fixed products plus the largest reaches of the others; no portfolio has more frequency. */
+  maxFrequency(): number {
+    const fixedReach = this.fixPos.reduce((s, k) => s + this.candReach[k], 0);
+    return fixedReach + [...this.candReach].filter((_, k) => !this.fixPos.includes(k))
+      .sort((a, b) => b - a).slice(0, this.size - this.fixPos.length).reduce((a, b) => a + b, 0);
+  }
+
+  /**
+   * The greedy portfolio: from the fixed products, add the product that adds
+   * the most reach, one at a time. Ties go to the larger individual reach,
+   * then to the first column. No solve.
+   */
+  greedy(): Uint8Array {
+    const sel = new Uint8Array(this.m);
+    const union = new Uint32Array(this.prep.reachable.length);
+    for (const k of this.fixPos) {
+      sel[k] = 1;
+      bits.orInto(union, this.prep.sets[k]);
+    }
+    for (let t = this.fixPos.length; t < this.size; t++) {
+      let best = -1;
+      let gain = -1;
+      for (let k = 0; k < this.m; k++) {
+        if (sel[k]) continue;
+        const g = bits.countAndNot(this.prep.sets[k], union);
+        if (g > gain || (g === gain && this.candReach[k] > this.candReach[best])) {
+          best = k;
+          gain = g;
+        }
+      }
+      sel[best] = 1;
+      bits.orInto(union, this.prep.sets[best]);
+    }
+    return sel;
+  }
+
+  /**
+   * The most popular products: the fixed products plus the others with the
+   * largest reach, so the most frequency. When products tie on reach at the
+   * cut, one solve picks the tied ones that reach the most respondents. Every
+   * such portfolio has the same product reaches, so the same penetration.
+   */
+  mostPopular(deadline: number): Uint8Array {
+    const free = [...this.candReach.keys()].filter((k) => !this.fixPos.includes(k))
+      .sort((a, b) => this.candReach[b] - this.candReach[a] || a - b);
+    const need = this.size - this.fixPos.length;
+    const cut = need > 0 ? this.candReach[free[need - 1]] : Infinity;
+    const above = free.filter((k) => this.candReach[k] > cut);
+    const at = free.filter((k) => this.candReach[k] === cut);
+    if (above.length + at.length === need) {
+      const sel = new Uint8Array(this.m);
+      for (const k of [...this.fixPos, ...above, ...at]) sel[k] = 1;
+      return sel;
+    }
+    const maxF = this.maxFrequency();
+    const sel = this.solve("min", this.reachCoef, this.atLeastFrequency(this.base, maxF), deadline);
+    if (!sel || this.point(sel).frequency !== maxF) throw new Stopped("invalid");
+    return sel;
+  }
+
+  /**
+   * The best penetration among the portfolios with this reach and frequency.
+   * Called for a frontier point, where no portfolio has more of either, so
+   * the bounds hold with equality. The solver meets the penetration optimum
+   * only to within its tolerance, so, as the package does (docs/algorithm.md
+   * section 8), the portfolios within that tolerance of the first one are
+   * searched, up to MAX_POOL of them, and the best is kept exactly.
+   * `complete` is false when the search stopped at that limit. `between`
+   * runs before each search solve, so a cancel stops the search.
+   */
+  async bestPenetration(reach: number, frequency: number, deadline: number,
+                        between?: Between): Promise<{ sel: Uint8Array; complete: boolean }> {
+    let mod = this.atLeastFrequency(this.atLeastReach(this.base, reach), frequency);
+    const first = this.solve("min", this.penCoef, mod, deadline);
+    if (!first) throw new Stopped("invalid");
+    const exact = (sel: Uint8Array) => {
+      const q = this.point(sel);
+      return q.reach === reach && q.frequency === frequency;
+    };
+    if (!exact(first)) throw new Stopped("invalid");
+    const bound = this.penSum(first);
+    const tol = 16 * this.size * EPS * Math.max(1, Math.abs(bound));
+    const pool = [first];
+    mod = this.atMostPenSum(mod, bound);
+    let last = first;
+    let complete = false;
+    for (let i = 0; i < MAX_POOL; i++) {
+      await pause(between);
+      mod = this.exclude(mod, last);
+      const next = this.solve("min", this.penCoef, mod, deadline);
+      if (!next) { complete = true; break; }
+      last = next;
+      if (exact(next) && this.penSum(next) <= bound + tol) pool.push(next);
+    }
+    // The least sum of 1/reach terms is the best penetration; the first within rounding of it wins.
+    const sums = pool.map((sel) => this.penSum(sel));
+    const lo = Math.min(...sums);
+    const best = sums.findIndex((v) => v <= lo + 16 * this.size * EPS * Math.max(1, Math.abs(lo)));
+    return { sel: pool[best], complete };
+  }
+
   exclude(mod: solver.Model, sel: Uint8Array): solver.Model {
     const ix: number[] = [];
     sel.forEach((v, k) => { if (v) ix.push(this.groupCount + k); });
@@ -315,40 +418,73 @@ export interface FrontierOptions {
   onPoint?: (p: Point) => void;
   /** Columns that every portfolio contains. */
   fixed?: readonly number[];
+  /**
+   * The portfolio of the run and its tie-break. It has the most reach; when
+   * the tie-break starts with frequency, it also has the most frequency at
+   * that reach, and with penetration next, it is the first point.
+   */
+  chosen?: { products: readonly number[]; tiebreak: readonly Criterion[] };
+  /** The most popular portfolio (baselines()), the last point; the search ends at it without solving again. */
+  last?: Point;
 }
 
 /**
  * The portfolios of `size` products where reach cannot rise without frequency
  * falling, from the most reach to the most frequency. Each step finds the most
  * reach with more frequency than the last point, then the most frequency with
- * that reach. Reach and frequency are whole numbers, so the bounds are exact.
+ * that reach, then the best penetration with both. Reach and frequency are
+ * whole numbers, so the bounds are exact.
  */
 export async function frontier(matrix: Matrix, size: number, options: FrontierOptions = {}):
-    Promise<{ points: Point[]; maxFrequency: number; stop: Stop }> {
+    Promise<{ points: Point[]; maxFrequency: number; stop: Stop; penetrationLimited: boolean }> {
   await solver.getSolver();
   const sm = new SizeModel(matrix, size, options.fixed);
   const deadline = performance.now() / 1000 + (options.seconds ?? 30);
   const maxPoints = options.maxPoints ?? 40;
-  // The most frequency is the reach of the fixed columns plus the largest
-  // column sums of the others; no solve needed.
-  const fixedReach = sm.fixPos.reduce((s, k) => s + sm.candReach[k], 0);
-  const maxFrequency = fixedReach + [...sm.candReach].filter((_, k) => !sm.fixPos.includes(k))
-    .sort((a, b) => b - a).slice(0, size - sm.fixPos.length).reduce((a, b) => a + b, 0);
+  let penetrationLimited = false;
+  const maxFrequency = sm.maxFrequency();
+  const chosen = options.chosen ? sm.point(sm.selection(options.chosen.products)) : null;
+  const through = options.chosen?.tiebreak[0] !== "frequency" ? 0 : options.chosen.tiebreak[1] === "penetration" ? 2 : 1;
+  const last = options.last;
   const points: Point[] = [];
   let stop: Stop = "complete";
   try {
     let freqFloor = 0;
     while (points.length < maxPoints) {
-      await pause(options.between);
-      const a = sm.solve("min", sm.reachCoef, sm.atLeastFrequency(sm.base, freqFloor), deadline);
-      if (!a) break;
-      const reach = sm.point(a).reach;
-      await pause(options.between);
-      const b = sm.solve("max", sm.freqCoef, sm.atLeastReach(sm.base, reach), deadline);
-      if (!b) throw new Stopped("invalid");
-      const pt = sm.point(b);
-      const last = points.at(-1);
-      if (pt.reach !== reach || pt.frequency < freqFloor || (last && !(pt.reach < last.reach && pt.frequency > last.frequency))) {
+      const first = chosen !== null && points.length === 0;
+      let reach: number;
+      if (first) {
+        reach = chosen.reach;
+      } else {
+        await pause(options.between);
+        const a = sm.solve("min", sm.reachCoef, sm.atLeastFrequency(sm.base, freqFloor), deadline);
+        if (!a) break;
+        reach = sm.point(a).reach;
+      }
+      let pt: Point;
+      if (first && through === 2) {
+        pt = chosen;
+      } else if (last && reach === last.reach && !(first && through === 1)) {
+        // The most popular portfolio has the most frequency of all, and every
+        // such portfolio has its penetration.
+        pt = last;
+      } else {
+        let frequency: number;
+        if (first && through === 1) {
+          frequency = chosen.frequency;
+        } else {
+          await pause(options.between);
+          const b = sm.solve("max", sm.freqCoef, sm.atLeastReach(sm.base, reach), deadline);
+          if (!b) throw new Stopped("invalid");
+          frequency = sm.point(b).frequency;
+        }
+        await pause(options.between);
+        const best = await sm.bestPenetration(reach, frequency, deadline, options.between);
+        if (!best.complete) penetrationLimited = true;
+        pt = sm.point(best.sel);
+      }
+      const prev = points.at(-1);
+      if (pt.reach !== reach || pt.frequency < freqFloor || (prev && !(pt.reach < prev.reach && pt.frequency > prev.frequency))) {
         throw new Stopped("invalid");
       }
       points.push(pt);
@@ -361,5 +497,27 @@ export async function frontier(matrix: Matrix, size: number, options: FrontierOp
     if (!(e instanceof Stopped)) throw e;
     stop = e.reason;
   }
-  return { points, maxFrequency, stop };
+  return { points, maxFrequency, stop, penetrationLimited };
+}
+
+/**
+ * Two simple ways to choose `size` products, to compare with the optimum:
+ * the most popular products (the most frequency, the last point of the
+ * frontier) and the greedy portfolio. `mostPopular` is null when its solve
+ * stopped.
+ */
+export async function baselines(matrix: Matrix, size: number,
+                                options: { seconds?: number; between?: Between; fixed?: readonly number[] } = {}):
+    Promise<{ mostPopular: Point | null; greedy: Point; stop: Stop }> {
+  await solver.getSolver();
+  const sm = new SizeModel(matrix, size, options.fixed);
+  const greedy = sm.point(sm.greedy());
+  const deadline = performance.now() / 1000 + (options.seconds ?? 10);
+  try {
+    await pause(options.between);
+    return { mostPopular: sm.point(sm.mostPopular(deadline)), greedy, stop: "complete" };
+  } catch (e) {
+    if (!(e instanceof Stopped)) throw e;
+    return { mostPopular: null, greedy, stop: e.reason };
+  }
 }

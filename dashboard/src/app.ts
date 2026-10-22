@@ -21,8 +21,8 @@ const FIXED_FILTER_FROM = 13;
 const CRITERION_LABEL: Record<"reach" | Criterion, string> = {
   reach: "Reach", frequency: "Frequency", penetration: "Penetration",
 };
-// Seconds for the stage counts and for the trade-off frontier of one size.
-const ANALYSIS_SECONDS = { stages: 15, frontier: 30 };
+// Seconds for each part of the deep dive into one size.
+const ANALYSIS_SECONDS = { baselines: 10, stages: 15, frontier: 30 };
 const MAX_FRONTIER_POINTS = 40;
 
 // Elements
@@ -101,16 +101,21 @@ interface Run {
   analyses: Map<number, Analysis>;
 }
 
-/** The stages and the trade-off frontier of the portfolio of one size. */
+/** The deep dive into the portfolio of one size: simple choices, stages, and the trade-off frontier. */
 interface Analysis {
   id: number;
   size: number;
   status: "running" | "done" | "error";
+  mostPopular: Point | null;
+  greedy: Point | null;
+  baselinesStop: Stop | null;
   stages: StageInfo[] | null;
   stagesStop: Stop | null;
   points: Point[];
   maxFrequency: number | null;
   frontierStop: Stop | null;
+  /** True when the search for the best penetration of a point stopped at its limit. */
+  penetrationLimited: boolean;
   message: string | null;
 }
 
@@ -305,7 +310,12 @@ function onReply(r: Reply): void {
   const analysis = r.type !== "ready" && r.id !== null
     ? [...state.run?.analyses.values() ?? []].find((a) => a.id === r.id) : undefined;
   if (analysis) {
-    if (r.type === "stages") {
+    if (r.type === "baselines") {
+      analysis.mostPopular = r.mostPopular;
+      analysis.greedy = r.greedy;
+      analysis.baselinesStop = r.stop;
+      if (r.stop === "cancelled") analysis.status = "done";
+    } else if (r.type === "stages") {
       analysis.stages = r.stages;
       analysis.stagesStop = r.stop;
       if (r.stop === "cancelled") analysis.status = "done";
@@ -315,6 +325,7 @@ function onReply(r: Reply): void {
       analysis.points = r.points;
       analysis.maxFrequency = r.maxFrequency;
       analysis.frontierStop = r.stop;
+      analysis.penetrationLimited = r.penetrationLimited;
       analysis.status = "done";
     } else if (r.type === "error") {
       analysis.status = "error";
@@ -469,7 +480,7 @@ function startRun(): void {
   render();
 }
 
-/** Stop the analysis in progress, if any. It runs again when its size is shown. */
+/** Stop the deep dive in progress, if any. */
 function cancelAnalyses(except?: number): void {
   const run = state.run;
   if (!run) return;
@@ -481,7 +492,7 @@ function cancelAnalyses(except?: number): void {
   }
 }
 
-/** Start the analysis of the portfolio of one size of a finished run. */
+/** Start the deep dive into the portfolio of one size of a finished run. */
 function requestAnalysis(run: Run, size: number): void {
   if (run.status === "running" || state.solver !== "ready") return;
   // Stop the analysis of another size, also when this size is done already.
@@ -489,11 +500,13 @@ function requestAnalysis(run: Run, size: number): void {
   const result = run.results.get(size);
   if (!result || run.analyses.has(size)) return;
   const a: Analysis = {
-    id: nextId++, size, status: "running", stages: null, stagesStop: null, points: [],
-    maxFrequency: null, frontierStop: null, message: null,
+    id: nextId++, size, status: "running", mostPopular: null, greedy: null, baselinesStop: null,
+    stages: null, stagesStop: null, points: [],
+    maxFrequency: null, frontierStop: null, penetrationLimited: false, message: null,
   };
   run.analyses.set(size, a);
   send({ type: "analyze", id: a.id, products: [...result.portfolio.products], tiebreak: run.tiebreak, fixed: run.fixed,
+         optimal: result.portfolio.warnings.length === 0,
          seconds: ANALYSIS_SECONDS, maxPoints: MAX_FRONTIER_POINTS,
          matrix: { rows: run.respondents, cols: run.cols, data: run.reach, names: run.names } });
 }
@@ -734,16 +747,14 @@ function renderResults(): void {
   }
 
   if (shown !== null && run.status !== "running") {
-    // A run whose settings changed gets no new analysis; Run again updates it.
-    if (!stale) requestAnalysis(run, shown);
     const a = run.analyses.get(shown);
     renderStages(el("section", "panel-block", undefined, split), run, shown, a);
-    const fr = renderFrontier(el("section", "panel-block", undefined, host), run, shown, a);
+    const fr = renderDeepDive(el("section", "panel-block deep-dive", undefined, host), run, shown, a, stale);
     if (fr) draws.push(fr);
   } else if (run.status === "running") {
     const wait = el("section", "panel-block", undefined, split);
     el("h3", undefined, "How the portfolio was chosen", el("div", "block-head", undefined, wait));
-    el("p", "muted", "The stages and the trade-off between reach and frequency appear when the run is done.", wait);
+    el("p", "muted", "The stages appear when the run is done.", wait);
   }
   // Draw once both columns of the split row exist, so that the chart gets its final width.
   draw();
@@ -848,7 +859,7 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
     el("div", "stage-value", formatCriterion(c, value, run.respondents), li);
     const detail = el("div", "stage-detail", undefined, li);
     if (!info) {
-      el("span", "skeleton", undefined, detail);
+      if (a) el("span", "skeleton", undefined, detail);
       return;
     }
     const tied = info.ties;
@@ -874,6 +885,7 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
       el("p", "hint", `${portfolios(last.ties, last.tiesAtLeast)} tie on ${order.length === 1 ? "reach" : "every stage"}. The solver keeps the first one it finds.`.replace(/^./, (m) => m.toUpperCase()), section);
     }
   }
+  if (!a) el("p", "hint", "A deep dive counts the portfolios tied at each stage.", section);
   if (a?.stagesStop && a.stagesStop !== "complete" && a.stagesStop !== "cancelled") {
     el("p", "hint", a.stagesStop === "time"
       ? `The count of tied portfolios stopped after ${ANALYSIS_SECONDS.stages} seconds, so the counts are lower bounds.`
@@ -882,20 +894,44 @@ function renderStages(section: HTMLElement, run: Run, size: number, a: Analysis 
   if (a?.status === "error") el("p", "error", a.message ?? "The analysis stopped with an error.", section);
 }
 
-/** The reach and frequency trade-off for one size: a chart and its table. */
-function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysis | undefined): (() => void) | null {
+/**
+ * The deep dive into the portfolio of one size, run on request: the most
+ * popular and the greedy choices against the optimum, and the reach and
+ * frequency trade-off as a chart and a table.
+ */
+function renderDeepDive(section: HTMLElement, run: Run, size: number, a: Analysis | undefined,
+                        stale: boolean): (() => void) | null {
   const head = el("div", "block-head", undefined, section);
   const title = el("div", "block-title", undefined, head);
-  el("h3", undefined, `Reach and frequency trade-off for ${size} ${size === 1 ? "product" : "products"}`, title);
-  el("p", "muted", (run.fixed.length
-    ? "Each point is a portfolio with the fixed products that no other such portfolio beats on both reach and frequency. "
-    : "Each point is a portfolio that no other portfolio beats on both reach and frequency. ") +
-    "From the left, each step gives up reach for frequency.", title);
+  el("h3", undefined, `Deep dive for ${size} ${size === 1 ? "product" : "products"}`, title);
+  if (!a) {
+    el("p", "muted", "Compare this portfolio with the most popular products and with the greedy choice, " +
+       "and find the trade-off between reach and frequency. This runs more solves.", title);
+    if (stale) {
+      el("p", "muted", "Run again with the current settings to start a deep dive.", section);
+      return null;
+    }
+    const start = el("button", "button-secondary", "Start deep dive", head);
+    start.type = "button";
+    start.disabled = state.solver !== "ready";
+    start.addEventListener("click", () => {
+      requestAnalysis(run, size);
+      render();
+    });
+    return null;
+  }
   const p = run.results.get(size)!.portfolio;
-  if (!a || a.points.length === 0) {
+  renderComparison(section, run, size, p, a);
+
+  const sub = el("div", "block-title", undefined, section);
+  el("h4", "sub-title", "Reach and frequency trade-off", sub);
+  el("p", "muted", (run.fixed.length
+    ? "Each point is a portfolio with the fixed products that no other such portfolio beats on both reach and frequency, with the best penetration of those. "
+    : "Each point is a portfolio that no other portfolio beats on both reach and frequency, with the best penetration of those. ") +
+    "From the left, each step gives up reach for frequency.", sub);
+  if (a.points.length === 0) {
     const msg = el("p", "muted", undefined, section);
-    if (a?.status === "error") { msg.className = "error"; msg.textContent = a.message ?? "The analysis stopped with an error."; }
-    else if (!a) msg.textContent = "Run again to find the portfolios on the frontier.";
+    if (a.status === "error") { msg.className = "error"; msg.textContent = a.message ?? "The analysis stopped with an error."; }
     else if (a.status === "running") msg.textContent = "Finding the portfolios on the frontier…";
     else msg.textContent = a.frontierStop === "time"
       ? `The search stopped after ${ANALYSIS_SECONDS.frontier} seconds before it found a point.`
@@ -905,8 +941,10 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     return null;
   }
   const pts = a.points;
+  const same = (q: Point, r: { reach: number; frequency: number } | null) =>
+    r !== null && q.reach === r.reach && q.frequency === r.frequency;
   const named = (q: Point) => ({ reach: q.reach, frequency: q.frequency, penetration: q.penetration, names: marked(q.products, run) });
-  const onFrontier = pts.some((q) => q.reach === p.reach && q.frequency === p.frequency);
+  const onFrontier = pts.some((q) => same(q, p));
   const sel = state.frontierSelected !== null && state.frontierSelected < pts.length ? state.frontierSelected : null;
   const chart = el("div", "chart", undefined, section);
   const maxFrequency = a.maxFrequency ?? Math.max(...pts.map((q) => q.frequency));
@@ -914,6 +952,7 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     points: pts.map(named), maxFrequency, respondents: run.respondents,
     chosen: { reach: p.reach, frequency: p.frequency, penetration: p.penetration, names: marked(p.products, run) },
     chosenOnFrontier: onFrontier, selected: sel, onSelect: selectFrontier,
+    mostPopular: a.mostPopular && named(a.mostPopular), greedy: a.greedy && named(a.greedy),
   });
   draw();
   const status = a.status === "running" ? `Finding more points… ${pts.length} so far.`
@@ -924,11 +963,16 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     : !onFrontier ? "The chosen portfolio has the most reach but is not on the frontier: a portfolio with the same reach has more frequency. Choose frequency for stage 2 to get it."
     : "";
   if (status) el("p", a.status === "running" ? "hint live" : "hint", status, section);
+  if (a.penetrationLimited) {
+    el("p", "hint", "For some points, the search for the best penetration stopped at its limit, " +
+       "so their penetration is the best only to within the solver tolerance (about 1e-9).", section);
+  }
 
   const wrap = el("div", "table-wrap", undefined, section);
   const table = el("table", "results-table frontier-table", undefined, wrap);
   const hr = el("tr", undefined, undefined, el("thead", undefined, undefined, table));
-  for (const [text, cls] of [["Reach", "num"], ["Frequency", "num"], ["Penetration", "num"], ["Products", "text"], ["Change from most reach", "text"]]) {
+  for (const [text, cls] of [["Reach", "num"], ["Frequency", "num"], ["Penetration", "num"], ["Products", "text"],
+                             ["Change from most reach", "text"], ["Same as", "text"]]) {
     el("th", cls, text, hr).scope = "col";
   }
   const tbody = el("tbody", undefined, undefined, table);
@@ -948,12 +992,51 @@ function renderFrontier(section: HTMLElement, run: Run, size: number, a: Analysi
     const out = pts[0].products.filter((j) => !now.has(j)).map((j) => run.names[j]);
     const inn = q.products.filter((j) => !first.has(j)).map((j) => run.names[j]);
     el("td", "text muted", i === 0 ? "Most reach" : `Swaps ${list(out)} for ${list(inn)}`, tr);
+    // Reach and frequency only: the simple choices may have another penetration.
+    const notes = [same(q, a.mostPopular) ? "Most popular" : "", same(q, a.greedy) ? "Greedy" : ""].filter(Boolean);
+    el("td", "text muted", notes.join(", "), tr);
     tr.addEventListener("click", () => selectFrontier(i));
     tr.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectFrontier(i); }
     });
   });
   return draw;
+}
+
+/** The gain of the optimum over the most popular products and over the greedy choice. */
+function renderComparison(section: HTMLElement, run: Run, size: number, p: Portfolio, a: Analysis): void {
+  const block = el("div", "comparison", undefined, section);
+  const n = run.respondents;
+  const free = size - run.fixed.length;
+  if (free === 0) {
+    el("p", undefined, "Every product of this portfolio is fixed, so there is no choice to compare.", block);
+    return;
+  }
+  const reachOf = (q: Point) => `${percent(q.reach / n)} (${count(q.reach)})`;
+  const gain = (q: Point) => `This portfolio reaches ${count(p.reach - q.reach)} more ${p.reach - q.reach === 1 ? "respondent" : "respondents"}, ${points((p.reach - q.reach) / n)}.`;
+  const popular = run.fixed.length
+    ? `The fixed products and the ${free === 1 ? "most popular other product" : `${free} most popular other products`}`
+    : `The ${size === 1 ? "most popular product" : `${size} most popular products`}`;
+  const one = !run.fixed.length && size === 1;
+  const mp = a.mostPopular;
+  if (mp) {
+    el("p", undefined, mp.reach === p.reach
+      ? `${popular} already ${one ? "reaches" : "reach"} the most possible, ${reachOf(mp)}.`
+      : `${popular} ${one ? "reaches" : "reach"} ${reachOf(mp)}. ${gain(mp)} ` +
+        `${popular} ${one ? "has" : "have"} ${count(mp.frequency - p.frequency)} more frequency.`, block);
+  } else if (a.baselinesStop === "time") {
+    el("p", "muted", `The solve for ${popular.toLowerCase()} stopped after ${ANALYSIS_SECONDS.baselines} seconds.`, block);
+  } else if (a.baselinesStop === "invalid") {
+    el("p", "muted", "The solver returned an invalid solution for the most popular products.", block);
+  } else if (a.status === "running") {
+    el("p", "muted", "Comparing with the most popular products…", block);
+  }
+  const g = a.greedy;
+  if (g) {
+    el("p", undefined, g.reach === p.reach
+      ? "Greedy also reaches the most possible. Greedy adds the product that adds the most reach, one at a time."
+      : `Greedy reaches ${reachOf(g)}. Greedy adds the product that adds the most reach, one at a time. ${gain(g)}`, block);
+  }
 }
 
 /** Select a point of the frontier; select it again to clear. */
