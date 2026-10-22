@@ -92,7 +92,13 @@ export function loadedSolver(): Highs {
 
 // Presolve is the one named difference from R. Tests switch it off to run the
 // conformance suite a second time.
-export const settings = { presolve: "on" as "on" | "off" };
+export const settings = {
+  presolve: "on" as "on" | "off",
+  // "on" leaves out the respondents that the fixed products reach and gives
+  // respondents reached by the same products one weighted row; "off" builds
+  // one row per reachable respondent, the reference model.
+  reduce: "off" as "on" | "off",
+};
 // Options of the most recent solve, read back from HiGHS. Tests check them.
 export const lastOptions: Record<string, unknown> = {};
 const OPTION_NAMES = [
