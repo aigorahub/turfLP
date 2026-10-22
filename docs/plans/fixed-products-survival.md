@@ -21,7 +21,7 @@ Stop allowed right now: no. Stop only after the release, or on a hard blocker.
 
 ## Current phase
 
-B4 review; B5 in progress.
+B4 and B5 review, then terminal review and gates.
 
 ## Next exact action
 

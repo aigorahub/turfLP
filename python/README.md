@@ -27,7 +27,12 @@ ham = datasets.load("ham")          # 127 consumers, 9-point liking of 8 hams
 reach = ham.values >= 7             # top-3 box
 print(turf(reach, 2, names=ham.columns))
 # Portfolio(products=(3, 4), names=('N4', 'S1'), size=2, reach=98, reach_prop=0.7716535433070866,
-#           frequency=118, penetration=58.98305084745762, respondents=127)
+#           frequency=118, penetration=58.98305084745762, respondents=127, fixed=())
+
+# Product N1 (column 0) must be in the portfolio; the stages choose the other two.
+p = turf(reach, 3, names=ham.columns, fixed=[0])
+print(p.names, p.reach)
+# ('N1', 'N4', 'S1') 110
 
 for p in turf_sizes(reach, [1, 2, 3, 4], names=ham.columns):
     print(p.size, p.reach, p.names)
@@ -41,16 +46,17 @@ for p in turf_sizes(reach, [1, 2, 3, 4], names=ham.columns):
 
 ```python
 turf(reach, size, tiebreak=("frequency", "penetration"), *,
-     names=None, max_pool=1000, max_pool_seconds=30.0) -> Portfolio
-turf_min_cover(reach, *, names=None) -> Portfolio
+     names=None, fixed=(), max_pool=1000, max_pool_seconds=30.0) -> Portfolio
+turf_min_cover(reach, *, names=None, fixed=()) -> Portfolio
 turf_sizes(reach, sizes=None, tiebreak=("frequency", "penetration"), *,
-           names=None, max_pool=1000, max_pool_seconds=30.0) -> list[Portfolio]
+           names=None, fixed=(), max_pool=1000, max_pool_seconds=30.0) -> list[Portfolio]
 ```
 
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
-- `turf_min_cover` finds the fewest products that together reach every respondent that some product reaches.
-- `turf_sizes` solves several sizes. The default is every size from 1 to the minimum cover size.
-- `Portfolio` is a frozen dataclass with `products`, `names`, `size`, `reach`, `reach_prop`, `frequency`, `penetration`, and `respondents`.
+- `fixed` lists the 0-based column indices of products that every portfolio must contain, for example products already on the shelf. `size` counts them, and the stages choose the other products. Each fixed product must reach at least one respondent; duplicates are ignored, and a set is rejected because it has no order.
+- `turf_min_cover` finds the fewest products that together reach every respondent that some product reaches, with the `fixed` products among them.
+- `turf_sizes` solves several sizes. The default is every size from 1 (or the number of fixed products) to the minimum cover size with the same `fixed`.
+- `Portfolio` is a frozen dataclass with `products`, `names`, `size`, `reach`, `reach_prop`, `frequency`, `penetration`, `respondents`, and `fixed` (the fixed column indices, ascending).
 - `names` gives the product names; otherwise they come from the data frame columns, or are `P1`, `P2`, and so on.
 
 ## Limits and warnings

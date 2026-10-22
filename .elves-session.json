@@ -112,19 +112,19 @@
       "acceptance": [
         {
           "criterion": "README.md, python/README.md, js/README.md, dashboard/README.md, roxygen and man/, and NEWS.md describe fixed products.",
-          "evidence": "",
+          "evidence": "README.md 'Fixed products' section with R output and How it works paragraph; python/README.md and js/README.md examples, signatures, and bullets; dashboard/README.md paragraph; roxygen and man/ (turf, turf_min_cover, turf_sizes) document fixed; NEWS.md turfLP 0.3.0 entry.",
           "id": "B5-A1",
-          "met": false
+          "met": true
         },
         {
           "criterion": "R, Python, JavaScript, and dashboard versions are 0.3.0 in every file that carries the version, lock files (python/uv.lock, js and dashboard package-lock.json), python/src/turflp/__init__.py, and README examples included.",
-          "evidence": "",
+          "evidence": "0.3.0 in DESCRIPTION, python/pyproject.toml, python/uv.lock (uv lock), python/src/turflp/__init__.py, js/package.json and package-lock.json, dashboard/package.json and package-lock.json (npm install --package-lock-only), js/README.md tgz example; git grep finds no other 0.2.0 version string (setup-uv@v10.2.0 is an action version).",
           "id": "B5-A2",
-          "met": false
+          "met": true
         }
       ],
       "id": "B5",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "branch": "feat/fixed-products",

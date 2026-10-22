@@ -1,3 +1,8 @@
+# turfLP 0.3.0
+
+- `turf()`, `turf_min_cover()`, and `turf_sizes()` take `fixed`: column indices of products that the portfolio must contain. `size` counts them, and the stages choose the other products. The default sizes of `turf_sizes()` start at the number of fixed products. Portfolios have a `fixed` element, and `print()` shows the fixed products.
+- The Python and JavaScript ports and the browser dashboard have the same option. The dashboard has a fixed-product list in its settings, and its stage counts, trade-off, charts, and CSV follow the fixed products.
+
 # turfLP 0.2.0
 
 - The integer programs are solved with HiGHS (the highs package) instead of lpSolve, which returned infeasible points as optimal for some inputs. Reach and frequency are fixed with exact bounds, and the penetration stage is decided in R, so the tie-breaks are exact up to double-precision rounding.

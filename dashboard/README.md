@@ -6,6 +6,8 @@ The page has the seven example data sets of the package, and it reads your own C
 
 The settings set the stages of the optimization: stage 1 finds the most reach, and stages 2 and 3 break its ties on frequency, penetration, or both. For the selected size, the page shows how each stage narrows the choice: the range of each criterion among the portfolios still tied, and how many portfolios each stage keeps. It also shows the trade-off between reach and frequency: the portfolios that no other portfolio of that size beats on both, from the most reach to the most frequency. These extra solves run in the worker after the run, with limits of 15 seconds for the stage counts and 30 seconds and 40 points for the trade-off; the page says when a limit stops them. The package itself does not have these functions; they are in `src/analysis.ts`.
 
+Under "Fixed products" in the settings, check the products that every portfolio must contain, for example products that are already on the shelf. The sizes count them, so the smallest size is their number, and the stages choose the other products. The stage counts and the trade-off then count only portfolios with the fixed products. The results mark them "(fixed)", the columns stack them at the bottom so that each other product shows what it adds to them, and the CSV has a `fixed` column. Loading other data clears them; a threshold at which a fixed product reaches no one unfixes it, and the page says so.
+
 ## Build
 
 The build uses the JavaScript package in `../js` and its `highs` dependency, so install that first. Node.js 20.19 or later.
