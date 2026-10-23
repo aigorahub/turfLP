@@ -49,6 +49,11 @@ async function session(workers) {
     const click = (selector) => page.evaluate((s) => document.querySelector(s).click(), selector);
     const clickExample = (title) => page.evaluate((t) =>
       [...document.querySelectorAll(".example")].find((b) => b.textContent.includes(t)).click(), title);
+    const setTo = (v) => page.evaluate((x) => {
+      const to = document.getElementById("size-to");
+      to.value = x;
+      to.dispatchEvent(new Event("input"));
+    }, v);
     const idle = () => wait(() => document.getElementById("run").textContent === "Run" &&
                                   !document.getElementById("run").disabled);
 
@@ -84,7 +89,8 @@ async function session(workers) {
     // An example, all sizes.
     await clickExample("Ice cream");
     await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
-    check(await page.$eval("#size-to", (e) => e.value) === "8", "default sizes are not 1 to 8");
+    check(await page.$eval("#size-to", (e) => e.value) === "5", "default sizes are not 1 to 5");
+    await setTo("8");
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 8);
     await idle();
@@ -165,6 +171,9 @@ async function session(workers) {
     }
 
     // Fixed products: two checked products are in every portfolio, and the sizes start at 2.
+    // Loading the example again clears the sizes set above, so the page sets them.
+    await clickExample("Ice cream");
+    await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
     const fixedNames = await page.$$eval("#fixed-list .fixed-name", (n) => [6, 8].map((j) => n[j].textContent));
     await click('#fixed-list input[value="6"]');
     await click('#fixed-list input[value="8"]');
@@ -214,6 +223,11 @@ async function session(workers) {
     // Another data set clears the fixed products.
     check(await page.$$eval("#fixed-list input:checked", (b) => b.length) === 0 &&
           await page.$eval("#size-from", (e) => e.value) === "1", "the fixed products survive a new data set");
+    // With 40 products, the largest size is still 10.
+    await setTo("11");
+    check(await page.$eval("#size-hint", (e) => e.textContent) === "Sizes must be from 1 to 10." &&
+          await page.$eval("#run", (e) => e.disabled), "size 11 is allowed");
+    await setTo("5");
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length >= 2);
     // A fixed-product change during a run leaves the run going; it keeps its own settings.
@@ -224,11 +238,7 @@ async function session(workers) {
     await click("#fixed-clear");
     const cancelled = await page.$$eval(".size-table tbody tr", (rows) => rows.filter((r) => r.textContent.includes("Cancelled")).length);
     check(cancelled > 0, "Cancel did not stop the run");
-    await page.evaluate(() => {
-      const to = document.getElementById("size-to");
-      to.value = "2";
-      to.dispatchEvent(new Event("input"));
-    });
+    await setTo("2");
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length === 2);
     await idle();

@@ -14,7 +14,9 @@ import { count, decimal, list, percent, points, seconds } from "./format.js";
 import type { Reply, Request } from "./worker.js";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const DEFAULT_MAX_SIZE = 8;
+const DEFAULT_MAX_SIZE = 5;
+// The page solves in the browser, so it offers sizes up to this limit only; the package has none.
+const MAX_SIZE = 10;
 // Above this many products, the fixed-product list gets a filter.
 const FIXED_FILTER_FROM = 13;
 
@@ -364,7 +366,7 @@ function setData(loaded: Loaded, threshold: number): void {
   const cols = loaded.table.cols;
   ui.sizeFrom.value = "1";
   ui.sizeTo.value = String(Math.min(DEFAULT_MAX_SIZE, cols));
-  ui.sizeFrom.max = ui.sizeTo.max = String(cols);
+  ui.sizeFrom.max = ui.sizeTo.max = String(Math.min(MAX_SIZE, cols));
   setThreshold(threshold);
 }
 
@@ -447,8 +449,12 @@ function sizeRange(): { sizes: number[] } | { error: string } {
   if (!Number.isInteger(from) || !Number.isInteger(to) || ui.sizeFrom.value === "" || ui.sizeTo.value === "") {
     return { error: "Sizes must be whole numbers." };
   }
-  if (from < 1 || to > cols) return { error: `Sizes must be from 1 to ${cols}, the number of products.` };
   const f = state.fixed.length;
+  if (f > MAX_SIZE) return { error: `With ${f} fixed products, the smallest size is ${f}, but the largest size is ${MAX_SIZE}.` };
+  if (from < 1 || to > Math.min(MAX_SIZE, cols)) {
+    return { error: cols > MAX_SIZE ? `Sizes must be from 1 to ${MAX_SIZE}.`
+      : `Sizes must be from 1 to ${cols}, the number of products.` };
+  }
   if (from < f) return { error: `With ${f} fixed products, the smallest size is ${f}.` };
   if (from > to) return { error: "The first size must not be larger than the last." };
   return { sizes: Array.from({ length: to - from + 1 }, (_, k) => from + k) };
