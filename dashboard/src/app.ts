@@ -723,9 +723,7 @@ function renderResults(): void {
   }
   if (run.status === "error" && run.message) el("p", "error", run.message, head);
 
-  // The reach chart and the stages side by side on a wide screen.
-  const split = el("div", "split", undefined, host);
-  const curveSection = el("section", "panel-block", undefined, split);
+  const curveSection = el("section", "panel-block", undefined, host);
   const curveHead = el("div", "block-head", undefined, curveSection);
   const curveTitle = el("div", "block-title", undefined, curveHead);
   el("h3", undefined, "Reach by portfolio size", curveTitle);
