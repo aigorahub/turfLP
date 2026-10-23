@@ -1,11 +1,10 @@
-// The stage and trade-off solves, checked against every portfolio of the ice
-// cream data (10 flavors, so every size has at most 252 portfolios).
+// The deep dive's solves and what each product adds, checked against every
+// portfolio of the ice cream data (10 flavors, so every size has at most 252 portfolios).
 
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { beforeAll, describe, expect, it } from "vitest";
 import { loadSolver, turf } from "../../js/src/index.js";
-import { readInput } from "../../js/test/helpers.js";
 import { baselines, frontier } from "../src/analysis.js";
 import { addedInOrder, contributions, PRODUCT_COLORS, stackColumns } from "../src/contrib.js";
 import { toReach } from "../src/csv.js";

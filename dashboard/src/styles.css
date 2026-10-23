@@ -203,8 +203,6 @@ fieldset:disabled .field-label, fieldset:disabled .muted { color: var(--ink-2); 
   min-width: 0;
 }
 
-.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
-
 @media (max-width: 880px) {
   body { height: auto; display: block; }
   .layout { grid-template-columns: minmax(0, 1fr); }
