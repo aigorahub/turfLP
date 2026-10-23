@@ -51,6 +51,7 @@ const ui = {
   thresholdHint: $("threshold-hint"),
   sizeFrom: $<HTMLInputElement>("size-from"),
   sizeTo: $<HTMLInputElement>("size-to"),
+  sizesLabel: $("sizes-label"),
   sizeHint: $("size-hint"),
   fixedFilter: $<HTMLInputElement>("fixed-filter"),
   fixedList: $("fixed-list"),
@@ -366,7 +367,6 @@ function setData(loaded: Loaded, threshold: number): void {
   const cols = loaded.table.cols;
   ui.sizeFrom.value = "1";
   ui.sizeTo.value = String(Math.min(DEFAULT_MAX_SIZE, cols));
-  ui.sizeFrom.max = ui.sizeTo.max = String(Math.min(MAX_SIZE, cols));
   setThreshold(threshold);
 }
 
@@ -442,6 +442,28 @@ function download(name: string, text: string): void {
 
 // Run
 
+/** The sizes the page offers: from the number of fixed products (at least 1) to 10 or the number of products. */
+function sizeLimits(): { lo: number; hi: number } {
+  return { lo: Math.max(1, state.fixed.length), hi: Math.min(MAX_SIZE, state.loaded?.table.cols ?? MAX_SIZE) };
+}
+
+/** Put both sizes in range and in order once an edit is done; `edited` keeps its value when they cross. */
+function settleSizes(edited: HTMLInputElement | null): void {
+  const { lo, hi } = sizeLimits();
+  const read = (input: HTMLInputElement) => input.value.trim() === "" ? NaN : Math.round(Number(input.value));
+  const clamp = (v: number) => Math.min(hi, Math.max(lo, v));
+  let from = read(ui.sizeFrom);
+  let to = read(ui.sizeTo);
+  from = Number.isFinite(from) ? clamp(from) : lo;
+  to = Number.isFinite(to) ? clamp(to) : Math.max(from, Math.min(DEFAULT_MAX_SIZE, hi));
+  if (from > to) {
+    if (edited === ui.sizeTo) from = to;
+    else to = from;
+  }
+  ui.sizeFrom.value = String(from);
+  ui.sizeTo.value = String(to);
+}
+
 function sizeRange(): { sizes: number[] } | { error: string } {
   const cols = state.loaded?.table.cols ?? 0;
   const from = Number(ui.sizeFrom.value);
@@ -450,7 +472,6 @@ function sizeRange(): { sizes: number[] } | { error: string } {
     return { error: "Sizes must be whole numbers." };
   }
   const f = state.fixed.length;
-  if (f > MAX_SIZE) return { error: `With ${f} fixed products, the smallest size is ${f}, but the largest size is ${MAX_SIZE}.` };
   if (from < 1 || to > Math.min(MAX_SIZE, cols)) {
     return { error: cols > MAX_SIZE ? `Sizes must be from 1 to ${MAX_SIZE}.`
       : `Sizes must be from 1 to ${cols}, the number of products.` };
@@ -604,6 +625,13 @@ function renderSettings(): void {
     const top2 = t.integer && state.threshold === t.max - 1 ? ` ${formatValue(t.max - 1)} is the top-2 box.` : "";
     ui.thresholdHint.textContent = `Ratings run from ${formatValue(t.min)} to ${formatValue(t.max)}.${top2}`;
   }
+
+  const { lo, hi } = sizeLimits();
+  for (const input of [ui.sizeFrom, ui.sizeTo]) {
+    input.min = String(lo);
+    input.max = String(hi);
+  }
+  ui.sizesLabel.textContent = l ? `Portfolio sizes (${lo} to ${hi})` : "Portfolio sizes";
 
   ui.sizeHint.classList.remove("is-error");
   const range = l ? sizeRange() : null;
@@ -1110,12 +1138,15 @@ function renderFixed(): void {
   const summary = state.summary;
   const q = ui.fixedFilter.value.trim().toLowerCase();
   let shown = 0;
+  const full = state.fixed.length >= MAX_SIZE;
   fixedItems.forEach(({ label, box, name }, j) => {
     const none = !summary || summary.productReach[j] === 0;
     box.checked = state.fixed.includes(j);
-    box.disabled = none;
-    label.classList.toggle("is-disabled", none);
-    label.title = none ? "Reaches no respondent at this threshold" : "";
+    const capped = full && !box.checked;
+    box.disabled = none || capped;
+    label.classList.toggle("is-disabled", none || capped);
+    label.title = none ? "Reaches no respondent at this threshold"
+      : capped ? `Portfolios have at most ${MAX_SIZE} products` : "";
     // A checked product stays in view, so the filter never hides what is fixed.
     label.hidden = q !== "" && !box.checked && !name.toLowerCase().includes(q);
     if (!label.hidden) shown++;
@@ -1125,6 +1156,7 @@ function renderFixed(): void {
   const f = state.fixed.length;
   ui.fixedHint.textContent = (state.fixedNote ? `${state.fixedNote} ` : "") + (f === 0
     ? "Check the products that every portfolio must contain. The sizes count them."
+    : f >= MAX_SIZE ? `${f} fixed, the most a portfolio can have. Uncheck one to fix another.`
     : `${f} fixed: every portfolio contains ${f === 1 ? "it" : "them"}, and the sizes count ${f === 1 ? "it" : "them"}.`);
   ui.fixedClear.hidden = f === 0;
 }
@@ -1135,11 +1167,10 @@ function setFixed(fixed: number[]): void {
   cancelAnalyses();
   state.fixed = [...new Set(fixed)].sort((a, b) => a - b);
   state.fixedNote = null;
-  if (!state.sizesTouched) {
-    const from = Math.max(1, state.fixed.length);
-    ui.sizeFrom.value = String(from);
-    if (!(Number(ui.sizeTo.value) >= from)) ui.sizeTo.value = String(from);
-  }
+  const from = Math.max(1, state.fixed.length);
+  // A first size set by hand stays unless the fixed products no longer fit in it.
+  if (!state.sizesTouched || !(Number(ui.sizeFrom.value) >= from)) ui.sizeFrom.value = String(from);
+  if (!(Number(ui.sizeTo.value) >= from)) ui.sizeTo.value = String(from);
   state.cover = null;
   state.coverError = null;
   requestCover();
@@ -1252,7 +1283,14 @@ ui.fixedFilter.addEventListener("input", renderFixed);
 ui.fixedClear.addEventListener("click", () => setFixed([]));
 
 for (const input of [ui.sizeFrom, ui.sizeTo]) {
-  input.addEventListener("input", () => { state.sizesTouched = true; renderSettings(); });
+  input.addEventListener("input", () => {
+    state.sizesTouched = true;
+    // A number above the limit cannot be the start of a valid one, so it changes at once.
+    const hi = sizeLimits().hi;
+    if (Number(input.value) > hi) input.value = String(hi);
+    renderSettings();
+  });
+  input.addEventListener("change", () => { settleSizes(input); renderSettings(); });
 }
 
 ui.run.addEventListener("click", () => {

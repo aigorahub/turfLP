@@ -223,11 +223,36 @@ async function session(workers) {
     // Another data set clears the fixed products.
     check(await page.$$eval("#fixed-list input:checked", (b) => b.length) === 0 &&
           await page.$eval("#size-from", (e) => e.value) === "1", "the fixed products survive a new data set");
-    // With 40 products, the largest size is still 10.
+    // With 40 products, the sizes still stop at 10: a larger number becomes 10 as it is typed,
+    // and a first size above the last one moves the last one up when the edit ends.
+    check(await page.$eval("#sizes-label", (e) => e.textContent) === "Portfolio sizes (1 to 10)",
+          "the size label does not give the range");
     await setTo("11");
-    check(await page.$eval("#size-hint", (e) => e.textContent) === "Sizes must be from 1 to 10." &&
-          await page.$eval("#run", (e) => e.disabled), "size 11 is allowed");
-    await setTo("5");
+    check(await page.$eval("#size-to", (e) => e.value) === "10" &&
+          !(await page.$eval("#run", (e) => e.disabled)), "size 11 is not changed to 10");
+    await page.evaluate(() => {
+      const from = document.getElementById("size-from");
+      from.value = "7";
+      document.getElementById("size-to").value = "5";
+      from.dispatchEvent(new Event("change"));
+    });
+    check(await page.$eval("#size-to", (e) => e.value) === "7", "a first size above the last one is not settled");
+    await page.evaluate(() => {
+      document.getElementById("size-from").value = "1";
+      document.getElementById("size-to").value = "5";
+    });
+    // At most 10 fixed products: then the other boxes are off until one is unchecked.
+    for (let j = 0; j < 10; j++) await click(`#fixed-list input[value="${j}"]`);
+    check(await page.$$eval("#fixed-list input:not(:checked)", (b) => b.every((x) => x.disabled)) &&
+          await page.$eval("#size-from", (e) => e.value) === "10", "an 11th product can be fixed");
+    await click('#fixed-list input[value="0"]');
+    check(!(await page.$eval('#fixed-list input[value="10"]', (e) => e.disabled)), "unchecking one does not free the others");
+    await click("#fixed-clear");
+    await page.evaluate(() => {
+      document.getElementById("size-from").value = "1";
+      document.getElementById("size-to").value = "5";
+    });
+    await wait(() => /every respondent/.test(document.getElementById("size-hint").textContent));
     await click("#run");
     await wait(() => document.querySelectorAll(".size-table tbody tr[tabindex]").length >= 2);
     // A fixed-product change during a run leaves the run going; it keeps its own settings.
