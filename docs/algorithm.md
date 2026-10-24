@@ -300,7 +300,7 @@ interface Portfolio {
   readonly warnings: readonly string[];
 }
 
-function loadSolver(options?: { locateFile?: (file: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
+function loadSolver(options?: { locateFile?: (file: string, prefix: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
                                wasmModule?: WebAssembly.Module }): Promise<void>;
 function turf(reach: ReachMatrix, size: number, options?: TurfOptions): Promise<Portfolio>;
 function turfMinCover(reach: ReachMatrix, options?: { names?: readonly string[]; fixed?: readonly number[] | null }): Promise<Portfolio>;

@@ -98,7 +98,10 @@ gets a separate budget of the same length.
 A limit produces an R warning that names the criterion whose optimum was
 not proved. The function still returns the best portfolio found; reach stays
 optimal. Keep the warning with the result. Warnings are not stored in the
-returned list. Input errors or failed solves stop with an error instead.
+returned list. Each search for a valid solution also stops after 100 solver
+attempts. An invalid solver solution after a valid portfolio exists produces
+a warning and retains a valid portfolio. Without a valid result, the call
+stops with an error. Input errors also stop the call.
 }
 
 \examples{

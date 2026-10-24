@@ -132,7 +132,9 @@ When a search stops early, the warning states which criterion is not proved opti
 | Python | `turflp.TurfWarning` | `max_pool`, `max_pool_seconds` arguments |
 | JavaScript | Result's `warnings` array | `maxPool`, `maxPoolSeconds` options |
 
-Invalid inputs and solver failures raise errors instead of returning a successful portfolio. Catch them at the application boundary. In JavaScript, the promise does not make the solve nonblocking: HiGHS blocks its thread. Use a worker for responsive UI and terminate the worker for a hard cancellation. See the [browser guide](../js/README.md#in-the-browser) and [server example](../js/examples/nextjs/README.md).
+Each search for a valid solution also stops after 100 solver attempts. An invalid solver solution after a valid portfolio exists produces a warning and retains a valid portfolio. Without a valid result, the call raises an error. Invalid inputs also raise errors. Handle both warnings and errors at the application boundary.
+
+In JavaScript, the promise does not make the solve nonblocking: HiGHS blocks its thread. Use a worker for responsive UI and terminate the worker for a hard cancellation. See the [browser guide](../js/README.md#in-the-browser) and [server example](../js/examples/nextjs/README.md).
 
 ## Reproduce an analysis
 

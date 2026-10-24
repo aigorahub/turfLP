@@ -76,7 +76,7 @@ with warnings.catch_warnings(record=True) as caught:
 messages = [str(w.message) for w in caught if issubclass(w.category, TurfWarning)]
 ```
 
-The budget does not bound the whole call. Run the solve in a separate process if your application needs a hard deadline. Invalid inputs and solver failures raise exceptions; do not treat them as a portfolio with zero reach.
+The budget does not bound the whole call. Run the solve in a separate process if your application needs a hard deadline. Each search for a valid solution also stops after 100 solver attempts. An invalid solver solution after a valid portfolio exists emits a warning and retains a valid portfolio. Without a valid result, the call raises an exception. Invalid inputs also raise exceptions; do not treat them as a portfolio with zero reach.
 
 ## Differences from R
 

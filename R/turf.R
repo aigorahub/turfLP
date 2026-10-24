@@ -51,7 +51,10 @@
 #' A limit produces an R warning that names the criterion whose optimum was
 #' not proved. The function still returns the best portfolio found; reach stays
 #' optimal. Keep the warning with the result. Warnings are not stored in the
-#' returned list. Input errors or failed solves stop with an error instead.
+#' returned list. Each search for a valid solution also stops after 100 solver
+#' attempts. An invalid solver solution after a valid portfolio exists produces
+#' a warning and retains a valid portfolio. Without a valid result, the call
+#' stops with an error. Input errors also stop the call.
 #'
 #' @param reach A matrix or data frame with one row per respondent and one
 #'   column per product. A value of 1 (or `TRUE`) means that the product

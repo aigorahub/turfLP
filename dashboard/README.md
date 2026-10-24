@@ -10,6 +10,8 @@ Under "Fixed products" in the settings, check the products that every portfolio 
 
 ## Build
 
+This dashboard builds from the repository checkout. Its worker and analysis code import internal modules from `js/src/` for progress and deep-dive calculations. Those modules are not public package exports. A separate application should import only `turflp` and `turflp/datasets`; see the [usage guide](../docs/usage.md) for the package boundary.
+
 The build uses the JavaScript package in `../js` and its `highs` dependency, so install that first. Node.js 20.19 or later.
 
 ```sh
