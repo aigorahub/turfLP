@@ -1,26 +1,40 @@
 # turflp for JavaScript and TypeScript
 
-TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the JavaScript port of the [turfLP R package](https://github.com/aigorahub/turfLP). It uses the same algorithm, solver settings, limits, and warning texts, and it passes the same conformance suite (`conformance/` in the repository), whose expected values come from exact enumeration of every portfolio.
+TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the JavaScript port of the [turfLP R package](https://github.com/aigorahub/turfLP). It follows the same algorithm specification, limits, and warning texts, with the solver differences listed below. It passes the same conformance suite (`conformance/` in the repository), whose expected optima come from exact enumeration of every portfolio.
 
 The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm package `highs`). The package is ESM with TypeScript types. It runs on Node.js 20 or later and in browsers; see "In the browser" and "Browser or server" below.
 
 ## Installation
 
+This guide describes **0.4.0**. On 2026-10-23, npm had only 0.2.0. That version does not include `fixed`, which was added in 0.3.0. Check availability before using a registry version:
+
 ```sh
-npm install turflp
+npm view turflp versions --json
 ```
 
-npm package names are lower case, so the package is `turflp`. To install the development version, build a tarball from the repository:
+To install 0.4.0 now, build the tagged source with Node.js 22:
 
 ```sh
-git clone https://github.com/aigorahub/turfLP.git
+git clone --branch v0.4.0 --depth 1 https://github.com/aigorahub/turfLP.git
 cd turfLP/js && npm ci && npm pack          # writes turflp-0.4.0.tgz
-cd /path/to/your/app && npm install /path/to/turfLP/js/turflp-0.4.0.tgz
 ```
+
+Copy that tarball into the consuming app. Replace the paths below with your app and checkout paths:
+
+```sh
+cd /path/to/your/app
+mkdir -p vendor
+cp /path/to/turfLP/js/turflp-0.4.0.tgz vendor/
+npm install --save-exact ./vendor/turflp-0.4.0.tgz
+```
+
+Commit `vendor/turflp-0.4.0.tgz`, `package.json`, and `package-lock.json` together so another machine can run `npm ci`. Do not point the dependency at a tarball outside the app checkout. Once `npm view turflp@0.4.0 version` confirms registry publication, `npm install --save-exact turflp@0.4.0` is the registry alternative. An unpinned `npm install turflp` follows npm's latest release, not this repository's version.
+
+For development source, clone without `--branch v0.4.0 --depth 1` and pack from the chosen commit. Record that commit as well as the package version; unreleased code can still carry the last release's version.
 
 ## Usage
 
-The input is an array of rows, one per respondent, with one 0/1 (or boolean) value per product.
+The input is a rectangular array of rows, one per respondent, with one 0/1 (or boolean) value per product. Empty matrices, missing cells, and other values are rejected. Convert ratings to booleans before calling the solver. Rows with no reached products still count in the denominator. The [usage guide](https://github.com/aigorahub/turfLP/blob/main/docs/usage.md) explains each result field and the choice of sizes.
 
 ```ts
 import { turf, turfSizes } from "turflp";
@@ -57,24 +71,27 @@ turfSizes(reach, sizes?, options?): Promise<Portfolio[]>
 loadSolver(options?: { locateFile?, wasmBinary?, wasmModule? }): Promise<void>
 
 interface TurfOptions {
-  tiebreak?: ("frequency" | "penetration")[];   // default ["frequency", "penetration"]
-  names?: string[];                             // default P1, P2, ...
-  fixed?: number[];                             // 0-based columns every portfolio contains; default []
+  tiebreak?: readonly ("frequency" | "penetration")[]; // default ["frequency", "penetration"]
+  names?: readonly string[];                     // default P1, P2, ...
+  fixed?: readonly number[] | null;              // 0-based columns every portfolio contains; default []
   maxPool?: number;                             // default 1000
   maxPoolSeconds?: number;                      // default 30
 }
 
 interface Portfolio {
-  products: number[]; names: string[]; size: number; reach: number; reachProp: number;
-  frequency: number; penetration: number; respondents: number; fixed: number[]; warnings: string[];
+  readonly products: readonly number[]; readonly names: readonly string[];
+  readonly size: number; readonly reach: number; readonly reachProp: number;
+  readonly frequency: number; readonly penetration: number; readonly respondents: number;
+  readonly fixed: readonly number[]; readonly warnings: readonly string[];
 }
 ```
 
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
 - `fixed` lists the 0-based column indices of products that every portfolio must contain, for example products already on the shelf. `size` counts them, and the stages choose the other products. Each fixed product must reach at least one respondent; duplicates are ignored.
+- Returned `products` and `fixed` are sorted by ascending column index. At runtime, `tiebreak: null` also means reach only; use `[]` with the published TypeScript interface.
 - `turfMinCover` finds the fewest products that together reach every respondent that some product reaches, with the `fixed` products among them.
 - `turfSizes` solves several sizes. The default is every size from 1 (or the number of fixed products) to the minimum cover size with the same `fixed`.
-- `loadSolver` is optional. The first call of any function loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (the bytes of `highs.wasm`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file, for example in a browser worker ([dashboard/](../dashboard/) does this).
+- `loadSolver` is optional. The first solve loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (an `ArrayBuffer` or `Uint8Array`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file. `wasmModule` takes precedence. Concurrent calls share one load, and a failed load can be retried. Supply custom loading options before the first solve; changing them after loading has started throws an error. The [dashboard](https://github.com/aigorahub/turfLP/tree/main/dashboard) demonstrates byte loading.
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 
 ## The solve blocks the thread
@@ -105,13 +122,26 @@ The same package runs in a browser. [dashboard/](../dashboard/) in the repositor
 import { loadSolver, turf, type ReachMatrix } from "turflp";
 
 // Serve highs.wasm next to the worker script, or use an absolute URL.
-const ready = fetch("highs.wasm").then((r) => r.arrayBuffer()).then((wasmBinary) => loadSolver({ wasmBinary }));
+let ready: Promise<void> | undefined;
 
 self.onmessage = async (e: MessageEvent<{ reach: ReachMatrix; size: number }>) => {
-  await ready;
-  self.postMessage(await turf(e.data.reach, e.data.size));
+  try {
+    ready ??= fetch("highs.wasm").then((r) => {
+      if (!r.ok) throw new Error(`Cannot load solver: HTTP ${r.status}`);
+      return r.arrayBuffer();
+    }).then((wasmBinary) => loadSolver({ wasmBinary })).catch((error) => {
+      ready = undefined;
+      throw error;
+    });
+    await ready;
+    self.postMessage({ portfolio: await turf(e.data.reach, e.data.size) });
+  } catch (error) {
+    self.postMessage({ error: error instanceof Error ? error.message : String(error) });
+  }
 };
 ```
+
+Handle both reply shapes in the parent and display `portfolio.warnings` with the result. Handle worker startup errors through the worker's `error` event. This example serves one caller; an app with concurrent requests also needs request IDs to match replies.
 
 Chrome does not start a module worker from a page opened as a local file (`file://`), so bundle the worker as a classic script if the page must work that way.
 
@@ -144,7 +174,7 @@ Data in which many respondents give the same answers solves much faster, because
 A rule to start from, to be checked on your own data:
 
 - Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel, as the dashboard does.
-- Server, in the request: up to 200 respondents and 40 products and size 8 (the rule of the Next.js example below). The three measured 200 by 40 cases took less than a second; check your own data before you solve in a request.
+- Server, in the request: a measured starting point of 200 respondents and 40 products and size 8. The three measured 200 by 40 cases took less than a second; check your own data before you solve in a request.
 - Server, as a background job: problems of 1,000 respondents and 80 products, 5,000 respondents and 40 products, or larger; many sizes at once; and any problem whose run time you cannot predict.
 
 All 18 completed cases with fewer than 3 million portfolios were checked against an enumeration of every portfolio: reach and frequency matched exactly, and penetration matched to within 1e-9 (relative). Cases that timed out have no result and no check.
@@ -155,16 +185,19 @@ All 18 completed cases with fewer than 3 million portfolios were checked against
 
 - Use the Node.js runtime (`export const runtime = "nodejs"`). The Edge runtime cannot load the solver.
 - Add `serverExternalPackages: ["turflp", "highs"]` to `next.config`, so that `highs` finds `highs.wasm` next to its own module.
+- Include the worker script and both packages in `outputFileTracingIncludes`, as the [example configuration](examples/nextjs/next.config.mjs) does. The route starts the worker by path, so the deployment must contain these files.
 - Solve in a worker thread, not on the request thread: a running solve cannot be interrupted, but a worker can be terminated. The example keeps one worker per function instance, runs one solve at a time (two solves in one Vercel instance share its CPU), queues at most 4 more, and terminates the worker when a request passes its 50-second deadline. Its README lists the HTTP status of each case.
 - On Vercel with Fluid compute, concurrent requests can share one instance and wait in its queue, so latency grows with concurrency (in a test with 1.65-second solves: 1.7 s at 1 request, 6.5 s at 4, and 503 for 31 to 45 of 100 requests at 8). The example's README gives the numbers and the tradeoff against solving on the request thread.
 - Set `maxDuration` above that deadline (the example uses 60 seconds). The penetration pool and a later frequency search each have a 30-second budget, and the reach stage and the first penetration solve have none, so only the deadline bounds a request.
-- Solve in the request only below a size limit that fits your latency budget (the example accepts up to 200 x 40 cells and size 8). Decide before the solve: send larger problems, and any problem whose time you cannot predict (for example data with many near-identical products), to a background job (for example an Inngest function) that calls the same `turf()`.
+- Solve in the request only below a size limit that fits your latency budget (the example accepts at most 8000 cells and size 8, with no separate row or column cap). Decide before the solve: send larger problems, and any problem whose time you cannot predict (for example data with many near-identical products), to a background job (for example an Inngest function) that calls the same `turf()`.
 
 The example's `scripts/standalone-test.mjs` builds it against the packed package with `output: "standalone"`, copies the traced output outside the checkout, starts it, checks a fixed benchmark request against the exact expected values, and checks the HTTP limits and the deadline. That checks the file tracing that Vercel uses; it is not a Vercel deployment.
 
 ## Limits and warnings
 
-The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `maxPool` more portfolios (1000 by default) within `maxPoolSeconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `maxPoolSeconds`. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
+The penetration tie-break is decided in JavaScript, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `maxPool` more portfolios (1000 by default) within `maxPoolSeconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `maxPoolSeconds`. These limits do not bound the whole call: the reach stage, a frequency stage before penetration, and the first penetration solve have no time limit. When a search stops early, the result's `warnings` array says which value is not proved optimal. The package never logs to the console.
+
+The validity check also stops after 100 solver attempts per search for a valid solution. This cap prevents repeated rejected candidates from keeping a stage running. A stopped stage reports a warning when it can retain an earlier valid portfolio; without a valid result, it raises an error.
 
 ## Differences from R
 
@@ -181,6 +214,8 @@ When several portfolios are optimal, R, Python, and JavaScript can return differ
 ## Data sets
 
 `load(name)` from `turflp/datasets` returns `{ columns, values }` with the raw responses of one of the seven example data sets of the R package: `cafe`, `chips`, `coffee`, `ham`, `icecream`, `lunchbags`, and `pies`. The data sets are a separate entry point, so the main bundle does not include them. `ham`, `pies`, and `lunchbags` are under CC BY 4.0 and `coffee` under CC0 1.0; see `COPYRIGHTS`.
+
+`datasetNames` from `turflp/datasets` lists the available names. Use the [example thresholds](https://github.com/aigorahub/turfLP/blob/main/docs/usage.md#example-dataset-thresholds) when reproducing the package examples; the loader does not convert ratings to reach.
 
 ## License
 

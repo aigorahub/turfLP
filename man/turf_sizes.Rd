@@ -19,13 +19,15 @@ names are used as product names.}
 
 \item{sizes}{The portfolio sizes to solve. The default is every size from
 1 (or the number of fixed products) to the size from \code{\link[=turf_min_cover]{turf_min_cover()}}
-with the same \code{fixed}.}
+with the same \code{fixed}. Each size must be a whole number of at least 1,
+no smaller than the number of distinct fixed products and no larger than
+the number of products that reach at least one respondent.}
 
 \item{tiebreak}{A character vector of tie-break criteria to apply after
 reach, in order. Use any of \code{"frequency"} and \code{"penetration"}, or
 \code{character(0)} for reach only.}
 
-\item{fixed}{Column indices of products that the portfolio must contain,
+\item{fixed}{1-based column indices (not names) of products the portfolio must contain,
 or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
 least one respondent. Duplicates are ignored.}
 }
@@ -33,12 +35,21 @@ least one respondent. Duplicates are ignored.}
 A data frame with one row per size and the columns \code{size},
 \code{reach}, \code{reach_prop}, \code{frequency}, \code{penetration}, and \code{products}. The
 \code{products} column holds the names of the selected products, separated
-by commas.
+by commas. It does not include product indices or a separate \code{fixed}
+column. Use \code{\link[=turf]{turf()}} for those fields.
 }
 \description{
 \code{turf_sizes()} calls \code{\link[=turf]{turf()}} once for each value in \code{sizes} and returns
 the results as one table.
 }
+\section{Warnings}{
+
+Each size uses the limits and warnings described in \code{\link[=turf]{turf()}}. Warnings are
+emitted as each size is solved; they are not stored in the data frame and
+do not name the size. Call \code{\link[=turf]{turf()}} separately for each size if you need to
+capture its warnings with its result.
+}
+
 \examples{
 set.seed(1234)
 reach <- turf_simulate(n_respondents = 300, n_products = 15)

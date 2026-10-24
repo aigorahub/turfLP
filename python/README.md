@@ -1,24 +1,24 @@
 # turflp for Python
 
-TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the Python port of the [turfLP R package](https://github.com/aigorahub/turfLP). It uses the same algorithm, solver settings, limits, and warning texts, and it passes the same conformance suite (`conformance/` in the repository), whose expected values come from exact enumeration of every portfolio.
+TURF analysis (total unduplicated reach and frequency) with integer linear programming. This is the Python port of the [turfLP R package](https://github.com/aigorahub/turfLP). It follows the same algorithm specification, limits, and warning texts, with the solver differences listed below. It passes the same conformance suite (`conformance/` in the repository), whose expected optima come from exact enumeration of every portfolio.
 
 The solver is [HiGHS](https://highs.dev) through `highspy`. The dependencies are `highspy` and NumPy.
 
 ## Installation
 
 ```sh
-pip install turfLP
+python -m pip install "turfLP==0.4.0"
 ```
 
-Python 3.10 or later. The package is `turfLP` on PyPI, and the module is `turflp` (`import turflp`). To install the development version from the repository:
+Python 3.10 or later. The package is `turfLP` on PyPI, and the module is `turflp` (`import turflp`). This guide describes 0.4.0. Pin the version in your application's dependencies and lock its transitive dependencies for repeatable installs. Check the loaded version with `python -c "import turflp; print(turflp.__version__)"`. To install the development version from the repository:
 
 ```sh
-pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
+python -m pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"
 ```
 
 ## Usage
 
-The input is a matrix with one row per respondent and one column per product: nested lists, a NumPy array, or a pandas data frame. A 1 (or `True`) means that the product reaches the respondent.
+The input is a matrix with one row per respondent and one column per product: nested lists, a NumPy array, or a pandas data frame. A 1 (or `True`) means that the product reaches the respondent. Other cells must be 0 (or `False`); empty matrices and missing values are rejected. Convert ratings to booleans before calling the solver. Rows with no reached products still count in the denominator. Install pandas separately if you use its data frames. The [usage guide](https://github.com/aigorahub/turfLP/blob/main/docs/usage.md) explains each result field and the choice of sizes.
 
 ```python
 from turflp import turf, turf_sizes, datasets
@@ -53,6 +53,7 @@ turf_sizes(reach, sizes=None, tiebreak=("frequency", "penetration"), *,
 ```
 
 - `turf` finds the `size` products that reach the most respondents. Ties on reach are broken by `tiebreak`, in order: `"frequency"` (the sum of the individual reaches) and `"penetration"` (the harmonic mean of the individual reaches). An empty `tiebreak` means reach only.
+- `size` must be a positive whole number, at least the number of distinct fixed products and at most the number of products that reach someone. Every explicitly requested size has the same bounds.
 - `fixed` lists the 0-based column indices of products that every portfolio must contain, for example products already on the shelf. `size` counts them, and the stages choose the other products. Each fixed product must reach at least one respondent; duplicates are ignored, and a set is rejected because it has no order.
 - `turf_min_cover` finds the fewest products that together reach every respondent that some product reaches, with the `fixed` products among them.
 - `turf_sizes` solves several sizes. The default is every size from 1 (or the number of fixed products) to the minimum cover size with the same `fixed`.
@@ -62,6 +63,20 @@ turf_sizes(reach, sizes=None, tiebreak=("frequency", "penetration"), *,
 ## Limits and warnings
 
 The penetration tie-break is decided in Python, not by the solver: the package collects every portfolio whose penetration can equal the optimum and compares them with the rule in `docs/algorithm.md` section 5. After the first penetration solve, that search examines up to `max_pool` more portfolios (1000 by default) within `max_pool_seconds` seconds (30 by default). If it stops early and frequency comes next, the frequency stage gets another `max_pool_seconds`. When a search stops early, the package emits a `turflp.TurfWarning` that says which result is not proved optimal. `max_pool` must be a whole number of 0 or more and `max_pool_seconds` a number of 0 or more (`math.inf` for no limit); they are checked before any solve. The reach stage and the first penetration solve have no time limit.
+
+To keep warnings with a result, use Python's warning API:
+
+```python
+import warnings
+from turflp import TurfWarning, turf
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always", TurfWarning)
+    p = turf([[1, 0], [0, 1]], 1)
+messages = [str(w.message) for w in caught if issubclass(w.category, TurfWarning)]
+```
+
+The budget does not bound the whole call. Run the solve in a separate process if your application needs a hard deadline. Invalid inputs and solver failures raise exceptions; do not treat them as a portfolio with zero reach.
 
 ## Differences from R
 
@@ -77,6 +92,8 @@ When several portfolios are optimal, R, Python, and JavaScript can return differ
 ## Data sets
 
 `turflp.datasets.load(name)` returns a `Dataset(columns, values)` with the raw responses of one of the seven example data sets of the R package: `cafe`, `chips`, `coffee`, `ham`, `icecream`, `lunchbags`, and `pies`. `ham`, `pies`, and `lunchbags` are under CC BY 4.0 and `coffee` under CC0 1.0; see `COPYRIGHTS`.
+
+`turflp.datasets.names()` lists the available names. For the example reach definitions, use `ham.values >= 7`, `coffee.values >= 8`, `icecream.values >= 8`, and `chips.values >= 4`. The `pies`, `lunchbags`, and `cafe` values are already binary. These are example thresholds; the package does not apply them automatically.
 
 ## License
 
