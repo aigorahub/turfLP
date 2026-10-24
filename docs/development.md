@@ -100,7 +100,7 @@ These commands need only Python's standard library. Regeneration rules and the p
 
 ## Versions and releases
 
-The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, `js/package.json`, and `dashboard/package.json`. Keep lockfile version metadata consistent when changing these versions. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
+The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, `js/package.json`, and `dashboard/package.json`. R and Python currently use 0.4.0; JavaScript uses 0.5.0 for its additional analysis APIs. The dashboard has its own application version. Change only the versions affected by a release and keep their lockfile metadata consistent. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
 
 Before a release:
 

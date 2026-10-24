@@ -6,7 +6,7 @@ The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm packag
 
 ## Installation
 
-This guide describes **0.4.0**. On 2026-10-23, npm had only 0.2.0. That version does not include `fixed`, which was added in 0.3.0. Check availability before using a registry version:
+This checkout is JavaScript **0.5.0**, which adds `turfBaselines` and `turfFrontier`. The installation below uses the existing 0.4.0 tag and provides the core APIs only. On 2026-10-23, npm had only 0.2.0. That version does not include `fixed`, which was added in 0.3.0. Check availability before using a registry version:
 
 ```sh
 npm view turflp versions --json
@@ -220,3 +220,22 @@ When several portfolios are optimal, R, Python, and JavaScript can return differ
 ## License
 
 MIT. See `LICENSE`. The data licenses are in `COPYRIGHTS`.
+
+## Baselines and frontier (JavaScript 0.5.0)
+
+These APIs are JavaScript-only. R and Python remain at 0.4.0. Build and pack this checkout at an exact reviewed commit to use them; 0.5.0 is not assumed to be published to npm or tagged. Record the source commit and tarball checksum with the consuming app.
+
+```ts
+import { turfBaselines, turfFrontier } from "turflp";
+const reach = [[1, 0, 1], [1, 0, 0], [0, 1, 1]];
+const baseline = await turfBaselines(reach, 2, { fixed: [0], seconds: 10 });
+const frontier = await turfFrontier(reach, 2, { fixed: [0], seconds: 30, maxPoints: 40 });
+```
+
+Both functions validate the same reach matrix, size, names, and fixed-product constraints as `turf`. `seconds` must be nonnegative (Infinity removes the solve budget). `maxPoints` must be a positive safe integer. Preparation and solver loading are outside the solve budget. A synchronous solve blocks its thread; a worker is still required for a responsive application and hard cancellation.
+
+`turfBaselines` returns `{ greedy, mostPopular, stop }`. Greedy adds the product with most additional reach, then most individual reach, then lowest column index. The most popular portfolio maximizes frequency and then reach. It is null if that search stops.
+
+`turfFrontier` returns `{ points, maxFrequency, stop, penetrationLimited }`. Points run from maximum reach to maximum frequency; none can improve one measure without reducing the other. Each point has `products` (original 0-based indices), `reach`, `frequency`, and `penetration`. Penetration breaks ties at each reach/frequency pair. `penetrationLimited` means its pool search reached its limit, so do not claim exact penetration.
+
+`stop` is `complete`, `time`, `cancelled`, `limit`, or `invalid`. A partial frontier contains only completed points; it is not the full frontier. `between?: () => Promise<boolean>` runs between solves; return false to stop. `onPoint?: (point) => void` receives an independent copy of each completed frontier point. Callback errors propagate. A caller cannot supply an unverified optimum or endpoint to skip solves.

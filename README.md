@@ -37,7 +37,7 @@ This installs release 0.4.0. Omit `@v0.4.0` only when you want the development v
 
 ## Python and JavaScript
 
-The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same analysis functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), with the solver differences documented there, and pass one shared conformance suite, [conformance/](conformance/). Its fixtures cover optima, validation of results, warnings, formatting, and comparisons. Expected optima come from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push. The simulation helper `turf_simulate()` is available only in R.
+The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same core analysis functions. JavaScript 0.5.0 additionally provides baseline and frontier analysis; see its [API guide](js/README.md#baselines-and-frontier-javascript-050). All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), with the solver differences documented there, and pass one shared conformance suite, [conformance/](conformance/). Its fixtures cover optima, validation of results, warnings, formatting, and comparisons. Expected optima come from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push. The simulation helper `turf_simulate()` is available only in R.
 
 ```sh
 python -m pip install "turfLP==0.4.0"  # Python 3.10 or later; import turflp

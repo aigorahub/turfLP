@@ -1,5 +1,7 @@
 # turfLP (development version)
 
+- JavaScript 0.5.0: add public `turfBaselines` and `turfFrontier` APIs for greedy/most-popular comparisons and the reach/frequency frontier. Validate inputs and report partial search status. R and Python remain at 0.4.0.
+
 - Documentation: add usage and development guides, explain result fields and search limits, expand R function help, and document exact-version installation and the Next.js example setup.
 
 - Dashboard: the extra solves for one size run only on request, as a deep dive. The deep dive compares the optimal portfolio with the most popular products and with the greedy portfolio, and gives the reach each one gives up. Each point of the reach and frequency trade-off now has the best penetration of the portfolios with its reach and frequency, and the trade-off reuses the run's portfolio and the most popular products instead of solving for them again.
