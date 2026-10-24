@@ -24,26 +24,24 @@ turfLP finds product portfolios with TURF analysis (total unduplicated reach and
 
 In R, use `?turf`, `?turf_min_cover`, `?turf_sizes`, and `?turf_simulate` for the installed function help.
 
-The expanded help in this checkout will ship with the next release. For release 0.4.0, use the [usage guide](docs/usage.md) for the full explanation of limits and warnings.
-
 ## Installation
 
 ```r
-# install.packages("remotes")
-remotes::install_github("aigorahub/turfLP@v0.4.0")
+install.packages("turfLP")
 ```
 
-This installs release 0.4.0. Omit `@v0.4.0` only when you want the development version. R 3.5.0 or later is required by turfLP; dependencies can require a newer R version. The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
+To install an exact release from GitHub, use `remotes::install_github("aigorahub/turfLP@v0.5.0")`. Omit `@v0.5.0` only when you want the development version. Check the installed version with `packageVersion("turfLP")`. R 3.5.0 or later is required by turfLP; dependencies can require a newer R version. The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
 
 ## Python and JavaScript
 
 The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same core analysis functions. JavaScript 0.5.0 additionally provides baseline and frontier analysis; see its [API guide](js/README.md#baselines-and-frontier-javascript-050). All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), with the solver differences documented there, and pass one shared conformance suite, [conformance/](conformance/). Its fixtures cover optima, validation of results, warnings, formatting, and comparisons. Expected optima come from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push. The simulation helper `turf_simulate()` is available only in R.
 
 ```sh
-python -m pip install "turfLP==0.4.0"  # Python 3.10 or later; import turflp
+python -m pip install "turfLP==0.5.0"  # Python 3.10 or later; import turflp
+npm install --save-exact turflp@0.5.0  # Node.js 20 or later
 ```
 
-For JavaScript 0.4.0, follow the [tagged source installation](js/README.md#installation). On 2026-10-23, npm had only 0.2.0; `npm install turflp` did not install the `fixed` option or the 0.4.0 improvements. A GitHub release does not prove that the same version is available on every package registry.
+A GitHub release does not prove that the same version is available on every package registry. Check the registry for the exact version before you pin it.
 
 See [python/README.md](python/README.md) and [js/README.md](js/README.md) for the language APIs. The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server.
 

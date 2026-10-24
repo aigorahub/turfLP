@@ -6,31 +6,28 @@ The solver is [HiGHS](https://highs.dev) compiled to WebAssembly (the npm packag
 
 ## Installation
 
-This checkout is JavaScript **0.5.0**, which adds `turfBaselines` and `turfFrontier`. The installation below uses the existing 0.4.0 tag and provides the core APIs only. On 2026-10-23, npm had only 0.2.0. That version does not include `fixed`, which was added in 0.3.0. Check availability before using a registry version:
+```sh
+npm install --save-exact turflp@0.5.0
+```
+
+Version 0.5.0 adds `turfBaselines` and `turfFrontier`. Pin the exact version and commit the lockfile. An unpinned `npm install turflp` follows npm's latest release, not this repository's version. Check that the registry has the version before you depend on it:
 
 ```sh
 npm view turflp versions --json
 ```
 
-To install 0.4.0 now, build the tagged source with Node.js 22:
+To use unreleased source, build a tarball from the chosen commit with Node.js 22, and keep it inside the consuming app:
 
 ```sh
-git clone --branch v0.4.0 --depth 1 https://github.com/aigorahub/turfLP.git
-cd turfLP/js && npm ci && npm pack          # writes turflp-0.4.0.tgz
-```
-
-Copy that tarball into the consuming app. Replace the paths below with your app and checkout paths:
-
-```sh
+git clone https://github.com/aigorahub/turfLP.git
+cd turfLP/js && npm ci && npm pack          # writes turflp-<version>.tgz
 cd /path/to/your/app
 mkdir -p vendor
-cp /path/to/turfLP/js/turflp-0.4.0.tgz vendor/
-npm install --save-exact ./vendor/turflp-0.4.0.tgz
+cp /path/to/turfLP/js/turflp-<version>.tgz vendor/
+npm install --save-exact ./vendor/turflp-<version>.tgz
 ```
 
-Commit `vendor/turflp-0.4.0.tgz`, `package.json`, and `package-lock.json` together so another machine can run `npm ci`. Do not point the dependency at a tarball outside the app checkout. Once `npm view turflp@0.4.0 version` confirms registry publication, `npm install --save-exact turflp@0.4.0` is the registry alternative. An unpinned `npm install turflp` follows npm's latest release, not this repository's version.
-
-For development source, clone without `--branch v0.4.0 --depth 1` and pack from the chosen commit. Record that commit as well as the package version; unreleased code can still carry the last release's version.
+Commit the tarball, `package.json`, and `package-lock.json` together so another machine can run `npm ci`. Record the source commit as well as the package version; unreleased code can still carry the last release's version.
 
 ## Usage
 
@@ -223,7 +220,7 @@ MIT. See `LICENSE`. The data licenses are in `COPYRIGHTS`.
 
 ## Baselines and frontier (JavaScript 0.5.0)
 
-These APIs are JavaScript-only. R and Python remain at 0.4.0. Build and pack this checkout at an exact reviewed commit to use them; 0.5.0 is not assumed to be published to npm or tagged. Record the source commit and tarball checksum with the consuming app.
+These APIs are JavaScript-only. R and Python do not have them.
 
 ```ts
 import { turfBaselines, turfFrontier } from "turflp";

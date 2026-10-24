@@ -1,6 +1,6 @@
-# turfLP (development version)
+# turfLP 0.5.0
 
-- JavaScript 0.5.0: add public `turfBaselines` and `turfFrontier` APIs for greedy/most-popular comparisons and the reach/frequency frontier. Validate inputs and report partial search status. R and Python remain at 0.4.0.
+- JavaScript 0.5.0: add public `turfBaselines` and `turfFrontier` APIs for greedy/most-popular comparisons and the reach/frequency frontier. Validate inputs and report partial search status. R and Python have no API changes; their version follows the shared release.
 
 - Documentation: add usage and development guides, explain result fields and search limits, expand R function help, and document exact-version installation and the Next.js example setup.
 
