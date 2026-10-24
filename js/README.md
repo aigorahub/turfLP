@@ -233,7 +233,7 @@ Both functions validate the same reach matrix, size, names, and fixed-product co
 
 `turfBaselines` returns `{ greedy, mostPopular, stop }`. Greedy adds the product with most additional reach, then most individual reach, then lowest column index. The most popular portfolio maximizes frequency and then reach. It is null if that search stops.
 
-`turfFrontier` returns `{ points, maxFrequency, stop, penetrationLimited }`. Points run from maximum reach to maximum frequency; none can improve one measure without reducing the other. Each point has `products` (original 0-based indices), `reach`, `frequency`, and `penetration`. Penetration breaks ties at each reach/frequency pair. `penetrationLimited` means its pool search reached its limit, so do not claim exact penetration.
+`turfFrontier` returns `{ points, maxFrequency, stop, penetrationLimited }`. Points run from maximum reach to maximum frequency; none can improve one measure without reducing the other. Each point has `products` (original 0-based indices), `reach`, `frequency`, and `penetration`. Penetration breaks ties at each reach/frequency pair. `penetrationLimited` means a pool search reached its portfolio limit or the time limit, so do not claim exact penetration. A point found before the time limit is kept even when its penetration search stopped.
 
 `stop` is `complete`, `time`, `cancelled`, `limit`, or `invalid`. A partial frontier contains only completed points; it is not the full frontier. `between?: () => Promise<boolean>` runs between solves; return false to stop. `onPoint?: (point) => void` receives an independent copy of each completed frontier point. Callback errors propagate. A caller cannot supply an unverified optimum or endpoint to skip solves.
 
