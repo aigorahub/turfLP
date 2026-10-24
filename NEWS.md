@@ -4,9 +4,7 @@
 
 - Documentation: add usage and development guides, explain result fields and search limits, expand R function help, and document exact-version installation and the Next.js example setup.
 
-- Dashboard: the extra solves for one size run only on request, as a deep dive. The deep dive compares the optimal portfolio with the most popular products and with the greedy portfolio, and gives the reach each one gives up. Each point of the reach and frequency trade-off now has the best penetration of the portfolios with its reach and frequency, and the trade-off reuses the run's portfolio and the most popular products instead of solving for them again.
-- Dashboard: the page shows results only. Penetration only breaks ties, so the page no longer shows its value; the CSV keeps it. The "How the portfolio was chosen" panel and its tie counts, and the solve-time column, are removed. The trade-off chart gives reach in respondents, as frequency is, with a dotted line at all respondents.
-- Dashboard: the sizes run from 1 to 5 by default and go up to 10, and at most 10 products can be fixed. The size fields give the range, and a number outside it changes to the nearest size in it.
+- Browser application: move the application to a separate private repository and host it at https://turf.aigora.ai. Remove `dashboard/` and its CI job from this repository. Keep solver regression tests in the JavaScript package. The application retains its CSV input, charts, deep dive, and fixed-product controls. Existing standalone HTML release artifacts remain available in the release history.
 
 # turfLP 0.4.0
 

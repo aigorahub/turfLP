@@ -91,7 +91,7 @@ interface Portfolio {
 - Returned `products` and `fixed` are sorted by ascending column index. At runtime, `tiebreak: null` also means reach only; use `[]` with the published TypeScript interface.
 - `turfMinCover` finds the fewest products that together reach every respondent that some product reaches, with the `fixed` products among them.
 - `turfSizes` solves several sizes. The default is every size from 1 (or the number of fixed products) to the minimum cover size with the same `fixed`.
-- `loadSolver` is optional. The first solve loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (an `ArrayBuffer` or `Uint8Array`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file. `wasmModule` takes precedence. Concurrent calls share one load, and a failed load can be retried. Supply custom loading options before the first solve; changing them after loading has started throws an error. The [dashboard](https://github.com/aigorahub/turfLP/tree/main/dashboard) demonstrates byte loading.
+- `loadSolver` is optional. The first solve loads the WebAssembly solver, and later calls reuse it. Pass `locateFile` when a bundler moves `highs.wasm`. Pass `wasmBinary` (an `ArrayBuffer` or `Uint8Array`) or `wasmModule` (a compiled `WebAssembly.Module`) to load the solver without reading or fetching the file. `wasmModule` takes precedence. Concurrent calls share one load, and a failed load can be retried. Supply custom loading options before the first solve; changing them after loading has started throws an error. The browser example below demonstrates byte loading.
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts of the R package. `maxPool` must be a whole number of 0 or more and `maxPoolSeconds` a number of 0 or more (`Infinity` for no limit); they are checked before any solve.
 
 ## The solve blocks the thread
@@ -111,10 +111,10 @@ Run time depends on the data as well as its size: many portfolios that tie on pe
 
 ## In the browser
 
-The same package runs in a browser. [dashboard/](../dashboard/) in the repository is a complete example. Three things differ from Node.js:
+The same package runs in a browser. The separately maintained [browser application](https://turf.aigora.ai) uses this package. Three things differ from Node.js:
 
 - The browser cannot read `highs.wasm` from `node_modules`. Serve the file (`node_modules/highs/build/highs.wasm`, 3.5 MB, about 1.2 MB with gzip) and pass a function that returns its URL, such as `loadSolver({ locateFile: () => wasmUrl })`, or fetch its bytes and pass them as `wasmBinary`.
-- The `highs` loader has branches for Node.js that import `node:module`, `node:fs`, and other built-in modules. They never run in a browser, but the bundler must leave them out. With esbuild, mark `node:*` as external, as `dashboard/build.mjs` does; other bundlers need the same setting.
+- The `highs` loader has branches for Node.js that import `node:module`, `node:fs`, and other built-in modules. They never run in a browser, but the bundler must leave them out. With esbuild, mark `node:*` as external; other bundlers need the same setting.
 - The solve blocks the thread, so run it in a Web Worker. To cancel a solve, call `terminate()` on the worker and start a new one.
 
 ```ts
@@ -173,7 +173,7 @@ Data in which many respondents give the same answers solves much faster, because
 
 A rule to start from, to be checked on your own data:
 
-- Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel, as the dashboard does.
+- Browser, in a Web Worker: up to about 1,000 respondents and 20 products, or data like the examples up to a few thousand respondents and 40 products, when a few seconds for each size is acceptable. Show progress for each size and offer Cancel.
 - Server, in the request: a measured starting point of 200 respondents and 40 products and size 8. The three measured 200 by 40 cases took less than a second; check your own data before you solve in a request.
 - Server, as a background job: problems of 1,000 respondents and 80 products, 5,000 respondents and 40 products, or larger; many sizes at once; and any problem whose run time you cannot predict.
 

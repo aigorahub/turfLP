@@ -11,7 +11,7 @@ turfLP chooses a fixed number of products to reach as many respondents as possib
 | Fewest products to reach every reachable respondent | `turf_min_cover()` | `turf_min_cover()` | `turfMinCover()` |
 | Simulated binary data | `turf_simulate()` | Not provided | Not provided |
 
-Use the [dashboard](../dashboard/README.md) for CSV input and charts. Applications should depend on the released solver package. The dashboard's CSV parser, progress protocol, contribution charts, and deep dive are application code, not exported solver APIs. The packages do not provide authentication, storage, job queues, or a complete web service.
+Use [TURF analysis](https://turf.aigora.ai) for CSV input and charts. Applications should depend on the released solver package. The application owns CSV parsing, worker progress, and contribution charts. JavaScript 0.5.0 exposes baseline and frontier analysis through its public package API. The packages do not provide authentication, storage, job queues, or a complete web service.
 
 ## Prepare a reach matrix
 
@@ -62,7 +62,7 @@ const p = await turf(reach, 2, { names: ["A", "B", "C"] });
 console.log(p.names, p.reachProp); // ['A', 'C'] 0.75
 ```
 
-These examples need the [R](../README.md#installation), [Python](../python/README.md#installation), or [JavaScript](../js/README.md#installation) installation first. The solver functions accept matrices, not CSV paths. The dashboard has its own [CSV input rules](../dashboard/README.md#data-format).
+These examples need the [R](../README.md#installation), [Python](../python/README.md#installation), or [JavaScript](../js/README.md#installation) installation first. The solver functions accept matrices, not CSV paths. The application has its own [CSV input rules](https://turf.aigora.ai/docs/analysis/).
 
 ## Example dataset thresholds
 

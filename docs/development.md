@@ -1,6 +1,6 @@
 # Developing and releasing turfLP
 
-Run the commands below from the repository root unless a section says otherwise. The R package is at the root; Python, JavaScript, the dashboard, and the Next.js example have separate dependencies.
+Run the commands below from the repository root unless a section says otherwise. The R package is at the root; Python, JavaScript, and the Next.js example have separate dependencies.
 
 ## Repository map
 
@@ -10,7 +10,6 @@ Run the commands below from the repository root unless a section says otherwise.
 | `python/src/turflp/`, `python/tests/` | Python package and tests |
 | `js/src/`, `js/test/` | JavaScript package and tests |
 | `js/examples/nextjs/` | Bounded HTTP example with a solver worker |
-| `dashboard/` | Standalone browser application; not a package API |
 | `docs/algorithm.md` | Shared algorithm and public behavior specification |
 | `conformance/` | Shared fixtures with independently enumerated optima |
 | `data-raw/`, `research/` | Data preparation and reference provenance |
@@ -66,20 +65,9 @@ npm pack
 
 `npm pack` runs the build through `prepack`. Commit `package-lock.json` when changing dependencies. `npm run test:conformance` imports the built package, so build before running it. See the [Next.js example](../js/examples/nextjs/README.md) for its setup and tests.
 
-## Dashboard
+## Browser application
 
-Install the JavaScript package's dependencies first. From the repository root:
-
-```sh
-npm ci --prefix js
-npm ci --prefix dashboard
-npm run typecheck --prefix dashboard
-npm test --prefix dashboard
-npm run build --prefix dashboard
-npm run test:browser --prefix dashboard
-```
-
-The browser test needs Chrome; set `CHROME_PATH` if it is not in a standard location. It opens the built HTML as a local file, with and without Web Workers. A normal build does not need Chrome. Generated output goes into `dashboard/dist/`; do not commit it.
+The application is maintained separately at https://turf.aigora.ai. This repository has no frontend build or private UI dependency. Browser solver integration is documented in [the JavaScript guide](../js/README.md#in-the-browser). The compact Next.js server example remains under `js/examples/nextjs/`.
 
 ## Change a shared behavior
 
@@ -100,13 +88,13 @@ These commands need only Python's standard library. Regeneration rules and the p
 
 ## Versions and releases
 
-The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, `js/package.json`, and `dashboard/package.json`. R and Python currently use 0.4.0; JavaScript uses 0.5.0 for its additional analysis APIs. The dashboard has its own application version. Change only the versions affected by a release and keep their lockfile metadata consistent. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
+The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, and `js/package.json`. R and Python currently use 0.4.0; JavaScript uses 0.5.0 for its additional analysis APIs. Change only the versions affected by a release and keep their lockfile metadata consistent. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
 
 Before a release:
 
-1. Confirm that the version and release notes match the intended source commit. Check all four test workflows: R, Python, JavaScript (including the dashboard and Next.js example), and conformance.
+1. Confirm that the version and release notes match the intended source commit. Check all four test workflows: R, Python, JavaScript (including the Next.js example), and conformance.
 2. Build and test the Python wheel and JavaScript tarball. Check that their README, license notices, data, and public imports are present.
-3. Build the standalone dashboard from the same source. Keep its release artifact distinct from later work on `main`.
+3. Keep existing standalone dashboard artifacts attached to their historical releases. Application deployment is independent of solver releases.
 4. Obtain release approval, then tag the reviewed commit as `v<version>` and publish its GitHub release. The npm and PyPI workflows run on the release's `published` event. They use the configured `npm` and `pypi` GitHub environments and registry trusted publishers. A GitHub release alone does not prove either publication succeeded.
 5. Check both publication jobs and query the registries for the exact version. Install that version in clean environments and run a small example before announcing availability.
 
