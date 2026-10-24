@@ -88,7 +88,7 @@ These commands need only Python's standard library. Regeneration rules and the p
 
 ## Versions and releases
 
-The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, and `js/package.json`. R and Python currently use 0.4.0; JavaScript uses 0.5.0 for its additional analysis APIs. Change only the versions affected by a release and keep their lockfile metadata consistent. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
+The source version is recorded in `DESCRIPTION`, `python/pyproject.toml`, `python/src/turflp/__init__.py`, and `js/package.json`. All three use one version. A GitHub release publishes the npm and PyPI packages, and each publish job fails when the tag differs from its package version, so change all four files and the lockfile metadata (`python/uv.lock`, `js/package-lock.json`) together. [NEWS.md](../NEWS.md) separates unreleased work from tagged versions. A documentation correction alone does not require a package version bump.
 
 Before a release:
 
@@ -98,14 +98,15 @@ Before a release:
 4. Obtain release approval, then tag the reviewed commit as `v<version>` and publish its GitHub release. The npm and PyPI workflows run on the release's `published` event. They use the configured `npm` and `pypi` GitHub environments and registry trusted publishers. A GitHub release alone does not prove either publication succeeded.
 5. Check both publication jobs and query the registries for the exact version. Install that version in clean environments and run a small example before announcing availability.
 
-Registry checks for 0.4.0:
+Registry checks, with the released version in place of 0.5.0:
 
 ```sh
-npm view turflp@0.4.0 version
+npm view turflp@0.5.0 version
 python3 -m pip index versions turfLP
+Rscript -e 'available.packages(repos = "https://cloud.r-project.org")["turfLP", "Version"]'
 ```
 
-On 2026-10-23, GitHub and PyPI had 0.4.0, but npm had only 0.2.0. Use the [JavaScript tagged-source instructions](../js/README.md#installation) for 0.4.0 until npm publication is verified. Do not replace a requested version silently with `latest`.
+CRAN is a separate manual submission of the R source package. Build it with `R CMD build .` from the tagged commit, check it with `R CMD check --as-cran`, and update `cran-comments.md` first. Do not replace a requested version silently with `latest`.
 
 For a consuming app, pin an exact package version and commit its lockfile. A local JavaScript tarball must be kept inside the app's checkout if its lockfile refers to that file. For R, pin a release tag or commit and use an environment lockfile when repeatable dependency versions matter. Keep corrective solver releases possible; pinning an application does not freeze development of the library.
 

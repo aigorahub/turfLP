@@ -7,10 +7,10 @@ The solver is [HiGHS](https://highs.dev) through `highspy`. The dependencies are
 ## Installation
 
 ```sh
-python -m pip install "turfLP==0.4.0"
+python -m pip install "turfLP==0.5.0"
 ```
 
-Python 3.10 or later. The package is `turfLP` on PyPI, and the module is `turflp` (`import turflp`). This guide describes 0.4.0. Pin the version in your application's dependencies and lock its transitive dependencies for repeatable installs. Check the loaded version with `python -c "import turflp; print(turflp.__version__)"`. To install the development version from the repository:
+Python 3.10 or later. The package is `turfLP` on PyPI, and the module is `turflp` (`import turflp`). This guide describes 0.5.0. Pin the version in your application's dependencies and lock its transitive dependencies for repeatable installs. Check the loaded version with `python -c "import turflp; print(turflp.__version__)"`. To install the development version from the repository:
 
 ```sh
 python -m pip install "git+https://github.com/aigorahub/turfLP.git#subdirectory=python"

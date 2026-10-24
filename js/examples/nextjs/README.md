@@ -11,7 +11,7 @@ cd js
 npm ci
 npm pack
 cd examples/nextjs
-npm install --save-exact ../../turflp-0.4.0.tgz
+npm install --save-exact ../../turflp-0.5.0.tgz
 npm run build
 npm start
 ```
