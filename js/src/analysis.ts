@@ -227,7 +227,8 @@ class SizeModel {
    * only to within its tolerance, so, as the package does (docs/algorithm.md
    * section 8), the portfolios within that tolerance of the first one are
    * searched, up to MAX_POOL of them, and the best is kept exactly.
-   * `complete` is false when the search stopped at that limit. `between`
+   * `complete` is false when the search stopped at that limit or at the
+   * deadline; the best portfolio found so far is still returned. `between`
    * runs before each search solve, so a cancel stops the search.
    */
   async bestPenetration(reach: number, frequency: number, deadline: number,
@@ -249,7 +250,13 @@ class SizeModel {
     for (let i = 0; i < MAX_POOL; i++) {
       await pause(between);
       mod = this.exclude(mod, last);
-      const next = this.solve("min", this.penCoef, mod, deadline);
+      let next: Uint8Array | null;
+      try {
+        next = this.solve("min", this.penCoef, mod, deadline);
+      } catch (e) {
+        if (e instanceof Stopped && e.reason === "time") break;
+        throw e;
+      }
       if (!next) { complete = true; break; }
       last = next;
       if (exact(next) && this.penSum(next) <= bound + tol) pool.push(next);

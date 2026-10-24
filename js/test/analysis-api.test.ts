@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { turfBaselines, turfFrontier } from "../src/index.js";
 import { load } from "../src/datasets.js";
 
@@ -69,6 +69,26 @@ describe("public analysis API", () => {
     expect(await turfFrontier(a, 1, { seconds: 0 })).toMatchObject({ points: [], stop: "time" });
     expect(await turfFrontier(a, 1, { between: async () => false })).toMatchObject({ points: [], stop: "cancelled" });
     expect(await turfBaselines(a, 1, { between: async () => false })).toMatchObject({ mostPopular: null, stop: "cancelled" });
+  });
+
+  it("keeps a frontier point whose penetration search reaches the deadline", async () => {
+    const a = load("icecream").values.map((row) => row.map((v) => Number(v >= 8)));
+    const reference = (await turfFrontier(a, 3)).points[0];
+    let now = 0;
+    let calls = 0;
+    const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+    try {
+      // Pauses 1 to 3 come before the reach, frequency and penetration solves of
+      // the first point; pause 4 is the first one inside its penetration search.
+      const result = await turfFrontier(a, 3, { seconds: 60, between: async () => {
+        if (++calls === 4) now = 120_000;
+        return true;
+      } });
+      expect(result).toMatchObject({ stop: "time", penetrationLimited: true });
+      expect(result.points.map((p) => [p.reach, p.frequency])).toEqual([[reference.reach, reference.frequency]]);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("ignores forged optimality hints and isolates progress mutation", async () => {

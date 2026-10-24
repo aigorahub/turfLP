@@ -1,3 +1,8 @@
+# turfLP (development version)
+
+- JavaScript: when `turfFrontier` reaches its time limit during the penetration search of a point, it keeps that point with the best portfolio found and sets `penetrationLimited`. Before, the point was dropped.
+- JavaScript: remove the internal `turfPrepared` function, which had no caller after the dashboard moved out. The public API does not change.
+
 # turfLP 0.5.0
 
 - JavaScript 0.5.0: add public `turfBaselines` and `turfFrontier` APIs for greedy/most-popular comparisons and the reach/frequency frontier. Validate inputs and report partial search status. R and Python have no API changes; their version follows the shared release.
