@@ -312,7 +312,7 @@ function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null, options
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts in section 1. Missing cells include holes in sparse arrays.
 - Data sets: `load(name)` returns `{ columns: string[]; values: number[][] }`; `datasetNames` lists the seven data sets.
 
-## 15. JavaScript baseline and frontier analysis
+## 16. JavaScript baseline and frontier analysis
 
 JavaScript 0.5.0 adds `turfBaselines` and `turfFrontier`; these are not R or Python APIs. They accept the public reach matrix and validate size, names, fixed products, callbacks, and search limits before loading the solver. The [JavaScript guide](../js/README.md#baselines-and-frontier-javascript-050) defines their return values and stop states.
 

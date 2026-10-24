@@ -239,3 +239,5 @@ Both functions validate the same reach matrix, size, names, and fixed-product co
 `turfFrontier` returns `{ points, maxFrequency, stop, penetrationLimited }`. Points run from maximum reach to maximum frequency; none can improve one measure without reducing the other. Each point has `products` (original 0-based indices), `reach`, `frequency`, and `penetration`. Penetration breaks ties at each reach/frequency pair. `penetrationLimited` means its pool search reached its limit, so do not claim exact penetration.
 
 `stop` is `complete`, `time`, `cancelled`, `limit`, or `invalid`. A partial frontier contains only completed points; it is not the full frontier. `between?: () => Promise<boolean>` runs between solves; return false to stop. `onPoint?: (point) => void` receives an independent copy of each completed frontier point. Callback errors propagate. A caller cannot supply an unverified optimum or endpoint to skip solves.
+
+The default baseline budget is 10 seconds. The default frontier budget is 30 seconds, with at most 40 points. Budgets start after preparation and solver loading. A time limit can return a partial frontier.
