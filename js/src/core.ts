@@ -181,7 +181,7 @@ export async function turf(reach: ReachMatrix, size: number, options: TurfOption
 
 /**
  * turf() on data that prepare() made once, for code in this repository that
- * solves many sizes of one input one at a time (the dashboard). It is not part
+ * solves many sizes of one input one at a time. It is not part
  * of the package API (src/index.ts).
  */
 export async function turfPrepared(p: Prepared, size: number, options: TurfOptions = {}): Promise<Portfolio> {

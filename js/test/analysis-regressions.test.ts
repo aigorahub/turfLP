@@ -1,19 +1,22 @@
-// The deep dive's solves and what each product adds, checked against every
+// The analysis solves, checked against every
 // portfolio of the ice cream data (10 flavors, so every size has at most 252 portfolios).
 
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { beforeAll, describe, expect, it } from "vitest";
-import { loadSolver, turf } from "../../js/src/index.js";
+import { loadSolver, turf } from "../src/index.js";
 import { baselines, frontier } from "../src/analysis.js";
-import { addedInOrder, contributions, PRODUCT_COLORS, stackColumns } from "../src/contrib.js";
-import { toReach } from "../src/csv.js";
-import { exampleTable } from "../src/data.js";
+import { load, type DatasetName } from "../src/datasets.js";
 
-const require = createRequire(new URL("../../js/package.json", import.meta.url));
+const require = createRequire(import.meta.url);
 
-const t = exampleTable("icecream");
-const matrix = { rows: t.rows, cols: t.cols, data: toReach(t, 8), names: t.names };
+function exampleMatrix(name: DatasetName, threshold: number) {
+  const dataset = load(name);
+  const rows = dataset.values.map(row => row.map(value => Number(value >= threshold)));
+  return { rows: rows.length, cols: dataset.columns.length, data: Uint8Array.from(rows.flat()), names: dataset.columns };
+}
+const matrix = exampleMatrix("icecream", 8);
+const t = { cols: matrix.cols };
 const iceCream = matrix;
 type M = typeof matrix;
 const rowsOf = (m: M) => Array.from({ length: m.rows }, (_, i) => Array.from(m.data.subarray(i * m.cols, (i + 1) * m.cols)));
@@ -44,8 +47,7 @@ beforeAll(async () => {
   await loadSolver({ wasmBinary: new Uint8Array(readFileSync(require.resolve("highs/runtime"))) });
 });
 
-const chipsTable = exampleTable("chips");
-const chips = { rows: chipsTable.rows, cols: chipsTable.cols, data: toReach(chipsTable, 4), names: chipsTable.names };
+const chips = exampleMatrix("chips", 4);
 
 type Measured = ReturnType<typeof measureIn>;
 /** The frontier by enumeration: [reach, frequency, best penetration of the portfolios with both], most reach first. */
@@ -180,66 +182,6 @@ describe("frontier", () => {
   });
 });
 
-describe("contributions", () => {
-  it("adds up to the reach, largest share first", () => {
-    for (const k of [1, 3, 6]) {
-      const products = combos(t.cols, k)[7 % combos(t.cols, k).length];
-      const parts = contributions(matrix, products);
-      expect(parts.map((p) => p.product).sort((a, b) => a - b)).toEqual(products);
-      expect(parts.reduce((s, p) => s + p.added, 0)).toBe(measure(products).reach);
-      expect(parts[0].added).toBe(Math.max(...products.map((j) => measure([j]).reach)));
-      for (let i = 1; i < parts.length; i++) expect(parts[i].added).toBeLessThanOrEqual(parts[i - 1].added);
-    }
-  });
-});
-
-describe("stackColumns", () => {
-  it("keeps one color slot per product and stacks each column by slot", async () => {
-    const portfolios: Awaited<ReturnType<typeof turf>>[] = [];
-    for (const k of [1, 2, 3, 4, 5]) portfolios.push(await turf(rows, k, { tiebreak: ["frequency", "penetration"] }));
-    const { slots, columns } = stackColumns(matrix, portfolios);
-    // Slots go to products as they first join, so size 1 has slot 0.
-    expect(slots.get(portfolios[0].products[0])).toBe(0);
-    columns.forEach((parts, k) => {
-      expect(parts.reduce((s, p) => s + p.added, 0)).toBe(portfolios[k].reach);
-      const order = parts.map((p) => p.slot);
-      expect(order).toEqual([...order].sort((a, b) => a - b));
-      for (const p of parts) expect(slots.get(p.products[0])).toBe(p.slot);
-    });
-  });
-
-  it("puts the products past the last color in one segment on top", () => {
-    // Twelve products, each reaching its own respondent: each size adds one new product.
-    const n = PRODUCT_COLORS + 4;
-    const m = { rows: n, cols: n, data: Uint8Array.from({ length: n * n }, (_, i) => (i % (n + 1) === 0 ? 1 : 0)),
-                names: Array.from({ length: n }, (_, j) => `P${j}`) };
-    const portfolios = Array.from({ length: n }, (_, k) => ({ products: Array.from({ length: k + 1 }, (_, j) => j) }));
-    const last = stackColumns(m, portfolios).columns.at(-1)!;
-    expect(last.length).toBe(PRODUCT_COLORS + 1);
-    expect(last.at(-1)).toEqual({ products: [8, 9, 10, 11], added: 4, slot: PRODUCT_COLORS, fixed: false });
-  });
-
-  it("puts the fixed products in one segment when they would take every color", () => {
-    // One more fixed product than colors: without the group, no other product gets a color.
-    const n = PRODUCT_COLORS + 4;
-    const m = { rows: n, cols: n, data: Uint8Array.from({ length: n * n }, (_, i) => (i % (n + 1) === 0 ? 1 : 0)),
-                names: Array.from({ length: n }, (_, j) => `P${j}`) };
-    const fixed = Array.from({ length: PRODUCT_COLORS + 1 }, (_, j) => j);
-    const portfolios = [fixed, [...fixed, 9], [...fixed, 9, 10]].map((products) => ({ products }));
-    const last = stackColumns(m, portfolios, fixed).columns.at(-1)!;
-    expect(last).toEqual([
-      { products: fixed, added: fixed.length, slot: 0, fixed: true },
-      { products: [9], added: 1, slot: 1, fixed: false },
-      { products: [10], added: 1, slot: 2, fixed: false },
-    ]);
-  });
-
-  it("counts what each product adds in the given order", () => {
-    expect(addedInOrder(matrix, [0, 1]).reduce((a, b) => a + b, 0)).toBe(measure([0, 1]).reach);
-    expect(addedInOrder(matrix, [1, 0])[0]).toBe(measure([1]).reach);
-  });
-});
-
 describe("fixed products", () => {
   const fixed = [6, 8];
   const withFixed = (k: number) => combos(t.cols, k).filter((c) => fixed.every((j) => c.includes(j))).map(measure);
@@ -268,17 +210,7 @@ describe("fixed products", () => {
       .toEqual(["complete", 4, [[3, 3], [2, 4]]]);
   });
 
-  it("puts the fixed products first in the contributions and at the bottom of each column", () => {
-    const parts = contributions(matrix, [0, 1, 6], [6]);
-    expect(parts[0]).toEqual({ product: 6, added: measure([6]).reach });
-    expect(parts.reduce((s, p) => s + p.added, 0)).toBe(measure([0, 1, 6]).reach);
-    const portfolios = [{ products: [6, 8] }, { products: [0, 6, 8] }, { products: [0, 1, 6, 8] }];
-    const { slots, columns } = stackColumns(matrix, portfolios, fixed);
-    expect([slots.get(6), slots.get(8)].sort()).toEqual([0, 1]);
-    for (const parts of columns) {
-      expect(parts.slice(0, 2).map((p) => p.products[0]).sort()).toEqual(fixed);
-    }
-  });
+
 });
 
 describe("duplicate respondents", () => {
@@ -303,7 +235,5 @@ describe("duplicate respondents", () => {
 
     const chosen = await turf(a, k, { tiebreak: ["frequency", "penetration"], fixed: [...fixed] });
     expect(chosen.reach).toBe(Math.max(...all.map((p) => p.reach)));
-    const parts = contributions(m, [...chosen.products], [...fixed]);
-    expect(parts.reduce((s, p) => s + p.added, 0)).toBe(chosen.reach);
   });
 });

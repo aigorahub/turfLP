@@ -17,7 +17,7 @@ turfLP finds product portfolios with TURF analysis (total unduplicated reach and
 | Install and use Python | [Python guide](python/README.md) |
 | Install and pin JavaScript, or use a browser worker | [JavaScript guide](js/README.md) |
 | Run the Next.js API example | [Next.js guide](js/examples/nextjs/README.md) |
-| Use the standalone browser dashboard | [Dashboard guide](dashboard/README.md) |
+| Use the browser application | [TURF analysis](https://turf.aigora.ai) |
 | Understand the algorithm and exact contracts | [Algorithm specification](docs/algorithm.md) |
 | Build, test, contribute, or release | [Development guide](docs/development.md) |
 | Check changes between versions | [Release notes](NEWS.md) |
@@ -47,9 +47,11 @@ For JavaScript 0.4.0, follow the [tagged source installation](js/README.md#insta
 
 See [python/README.md](python/README.md) and [js/README.md](js/README.md) for the language APIs. The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server.
 
-## Browser dashboard
+## Browser application
 
-[dashboard/](dashboard/) builds a one-file web page that runs the JavaScript port in the browser: open it, load an example data set or a CSV file, and see the best portfolio for each size with a reach curve and the reach of each product. The data does not leave the computer. Download `turflp-dashboard.html` from the [latest release](https://github.com/aigorahub/turfLP/releases/latest), or build it; see [dashboard/README.md](dashboard/README.md) for the build and the data format.
+Use [TURF analysis](https://turf.aigora.ai) for local CSV input, portfolio comparisons, charts, and export. Its [help pages](https://turf.aigora.ai/docs/) explain the workflow. Data stays in browser memory.
+
+The application now lives in a separate private repository. This public repository contains the R, Python, and JavaScript solver packages, datasets, conformance tests, and integration examples. No private package is required to install or test the solver. Existing standalone HTML release artifacts remain available in the [release history](https://github.com/aigorahub/turfLP/releases).
 
 ## Usage
 
