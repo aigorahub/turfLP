@@ -300,7 +300,7 @@ interface Portfolio {
   readonly warnings: readonly string[];
 }
 
-function loadSolver(options?: { locateFile?: (file: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
+function loadSolver(options?: { locateFile?: (file: string, prefix: string) => string; wasmBinary?: ArrayBuffer | Uint8Array;
                                wasmModule?: WebAssembly.Module }): Promise<void>;
 function turf(reach: ReachMatrix, size: number, options?: TurfOptions): Promise<Portfolio>;
 function turfMinCover(reach: ReachMatrix, options?: { names?: readonly string[]; fixed?: readonly number[] | null }): Promise<Portfolio>;
@@ -311,3 +311,9 @@ function turfSizes(reach: ReachMatrix, sizes?: readonly number[] | null, options
 - The solve itself is synchronous inside the returned promise and blocks the JavaScript thread until it finishes.
 - Errors are thrown as `TypeError` (wrong types) or `RangeError` (bad values) with the texts in section 1. Missing cells include holes in sparse arrays.
 - Data sets: `load(name)` returns `{ columns: string[]; values: number[][] }`; `datasetNames` lists the seven data sets.
+
+## 16. JavaScript baseline and frontier analysis
+
+JavaScript 0.5.0 adds `turfBaselines` and `turfFrontier`; these are not R or Python APIs. They accept the public reach matrix and validate size, names, fixed products, callbacks, and search limits before loading the solver. The [JavaScript guide](../js/README.md#baselines-and-frontier-javascript-050) defines their return values and stop states.
+
+Baselines compare greedy coverage with maximum frequency (breaking equal frequency by reach). The frontier enumerates nondominated reach/frequency pairs in descending reach order. Each step maximizes reach above the previous frequency, then frequency at that reach, then penetration at that pair. The numerical implementation uses the same reduced coverage model as the core solver. Each returned point is recomputed from original product indices. Only completed points are emitted. A partial search reports its stop reason; bounded penetration enumeration reports `penetrationLimited`. Caller-supplied optimum claims are not accepted.

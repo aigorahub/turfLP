@@ -12,20 +12,22 @@ column per product. A value of 1 (or \code{TRUE}) means that the product
 reaches the respondent. All other values must be 0 (or \code{FALSE}). Column
 names are used as product names.}
 
-\item{size}{The number of products in the portfolio.}
+\item{size}{The number of products in the portfolio: a whole number of at
+least 1, no smaller than the number of distinct fixed products and no larger
+than the number of products that reach at least one respondent.}
 
 \item{tiebreak}{A character vector of tie-break criteria to apply after
 reach, in order. Use any of \code{"frequency"} and \code{"penetration"}, or
 \code{character(0)} for reach only.}
 
-\item{fixed}{Column indices of products that the portfolio must contain,
+\item{fixed}{1-based column indices (not names) of products the portfolio must contain,
 or \code{NULL} for none. \code{size} counts them. Each fixed product must reach at
 least one respondent. Duplicates are ignored.}
 }
 \value{
 An object of class \code{turf_portfolio}, a list with these elements:
 \describe{
-\item{\code{products}}{Column indices of the selected products.}
+\item{\code{products}}{1-based column indices of the selected products.}
 \item{\code{names}}{Names of the selected products.}
 \item{\code{size}}{Number of selected products.}
 \item{\code{reach}}{Number of respondents that at least one selected
@@ -36,7 +38,7 @@ products.}
 \item{\code{penetration}}{Harmonic mean of the individual reaches of the
 selected products.}
 \item{\code{respondents}}{Number of respondents (rows of \code{reach}).}
-\item{\code{fixed}}{Column indices of the fixed products, sorted, or
+\item{\code{fixed}}{1-based column indices of the fixed products, sorted, or
 \code{integer(0)} when there are none.}
 }
 }
@@ -77,6 +79,29 @@ them.
 With \code{fixed}, every portfolio considered contains the fixed products, so
 the stages choose only the other \code{size - length(fixed)} products. A row
 \eqn{\sum_{j \in F} x_j = |F|} adds this to the model.
+}
+
+\section{Limits and warnings}{
+
+The penetration search examines at most \code{getOption("turfLP.max_pool", 1000)}
+additional portfolios, with a budget of
+\code{getOption("turfLP.max_pool_seconds", 30)} seconds. Use a nonnegative whole
+number for the portfolio limit and a nonnegative number of seconds (\code{Inf}
+for no time limit). For example, \code{options(turfLP.max_pool_seconds = 120)}
+changes the budget for subsequent calls; restore the previous option after use.
+
+These are not whole-call timeouts. The reach stage, a frequency stage before
+penetration, and the first penetration solve have no time limit. If the pool
+search stops early and frequency follows penetration, its recovery search
+gets a separate budget of the same length.
+
+A limit produces an R warning that names the criterion whose optimum was
+not proved. The function still returns the best portfolio found; reach stays
+optimal. Keep the warning with the result. Warnings are not stored in the
+returned list. Each search for a valid solution also stops after 100 solver
+attempts. An invalid solver solution after a valid portfolio exists produces
+a warning and retains a valid portfolio. Without a valid result, the call
+stops with an error. Input errors also stop the call.
 }
 
 \examples{

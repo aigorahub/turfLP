@@ -17,6 +17,8 @@ One set of fixtures binds the R, Python, and JavaScript implementations of turfL
 | `../python/tests/test_conformance.py` | Runs every fixture against the Python package (`pytest`), with presolve on and off. |
 | `../js/scripts/conformance.mjs` | Runs every fixture against the built JavaScript package (`npm run test:conformance`), with presolve on and off. |
 
+Install the language dependencies as described in the [development guide](../docs/development.md) first. The R runner loads the checkout with `pkgload` and reads fixtures with `jsonlite`. Build the JavaScript package before running its conformance command.
+
 Commands, from the repository root:
 
 ```sh

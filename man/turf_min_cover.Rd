@@ -12,7 +12,7 @@ column per product. A value of 1 (or \code{TRUE}) means that the product
 reaches the respondent. All other values must be 0 (or \code{FALSE}). Column
 names are used as product names.}
 
-\item{fixed}{Column indices of products that the portfolio must contain,
+\item{fixed}{1-based column indices (not names) of products the portfolio must contain,
 or \code{NULL} for none. Each fixed product must reach at least one
 respondent. Duplicates are ignored.}
 }

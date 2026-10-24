@@ -7,27 +7,45 @@
 [![conformance](https://github.com/aigorahub/turfLP/actions/workflows/conformance-r.yaml/badge.svg)](https://github.com/aigorahub/turfLP/actions/workflows/conformance-r.yaml)
 <!-- badges: end -->
 
-turfLP is an R package for TURF analysis (total unduplicated reach and frequency) with integer linear programming. You give it a respondent by product matrix that shows which products reach which respondents. It returns the portfolio of a given size that reaches the most respondents. The result is an exact optimum, and the package does not enumerate every possible portfolio.
+turfLP finds product portfolios with TURF analysis (total unduplicated reach and frequency) in R, Python, and JavaScript. You give it a respondent by product matrix that shows which products reach which respondents. It returns the portfolio of a given size that reaches the most respondents. Reach is an exact optimum. Later tie-break searches have limits and report a warning when they cannot prove an optimum. The solver does not enumerate every possible portfolio.
+
+## Documentation
+
+| Task | Guide |
+|---|---|
+| Prepare data, choose a function, and interpret results | [Using turfLP](docs/usage.md) |
+| Install and use Python | [Python guide](python/README.md) |
+| Install and pin JavaScript, or use a browser worker | [JavaScript guide](js/README.md) |
+| Run the Next.js API example | [Next.js guide](js/examples/nextjs/README.md) |
+| Use the standalone browser dashboard | [Dashboard guide](dashboard/README.md) |
+| Understand the algorithm and exact contracts | [Algorithm specification](docs/algorithm.md) |
+| Build, test, contribute, or release | [Development guide](docs/development.md) |
+| Check changes between versions | [Release notes](NEWS.md) |
+
+In R, use `?turf`, `?turf_min_cover`, `?turf_sizes`, and `?turf_simulate` for the installed function help.
+
+The expanded help in this checkout will ship with the next release. For release 0.4.0, use the [usage guide](docs/usage.md) for the full explanation of limits and warnings.
 
 ## Installation
 
 ```r
 # install.packages("remotes")
-remotes::install_github("aigorahub/turfLP")
+remotes::install_github("aigorahub/turfLP@v0.4.0")
 ```
 
-The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
+This installs release 0.4.0. Omit `@v0.4.0` only when you want the development version. R 3.5.0 or later is required by turfLP; dependencies can require a newer R version. The package solves the integer programs with the HiGHS solver through the [highs](https://cran.r-project.org/package=highs) package. It also uses Matrix, which comes with R.
 
 ## Python and JavaScript
 
-The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same functions. All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), use HiGHS with the same settings, limits, and warning texts, and pass one shared conformance suite, [conformance/](conformance/), whose 1,787 fixture cases take their expected values from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push.
+The repository also has a Python package (`python/`) and a JavaScript/TypeScript package (`js/`) with the same core analysis functions. JavaScript 0.5.0 additionally provides baseline and frontier analysis; see its [API guide](js/README.md#baselines-and-frontier-javascript-050). All three implementations follow one specification, [docs/algorithm.md](docs/algorithm.md), with the solver differences documented there, and pass one shared conformance suite, [conformance/](conformance/). Its fixtures cover optima, validation of results, warnings, formatting, and comparisons. Expected optima come from exact enumeration of every portfolio, not from a solver. CI runs the suite against all three on every push. The simulation helper `turf_simulate()` is available only in R.
 
 ```sh
-pip install turfLP     # Python 3.10 or later; import turflp
-npm install turflp     # JavaScript: Node.js 20 or later, or a browser
+python -m pip install "turfLP==0.4.0"  # Python 3.10 or later; import turflp
 ```
 
-See [python/README.md](python/README.md) and [js/README.md](js/README.md). The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server.
+For JavaScript 0.4.0, follow the [tagged source installation](js/README.md#installation). On 2026-10-23, npm had only 0.2.0; `npm install turflp` did not install the `fixed` option or the 0.4.0 improvements. A GitHub release does not prove that the same version is available on every package registry.
+
+See [python/README.md](python/README.md) and [js/README.md](js/README.md) for the language APIs. The JavaScript README covers Next.js on Vercel, use in a browser, and which problem sizes to solve in the browser or on a server.
 
 ## Browser dashboard
 
@@ -161,6 +179,8 @@ Reach and frequency are whole numbers, so the package fixes them with exact boun
 In R, two values count as equal when they differ by less than the rounding error of the sum, 16 × size × machine epsilon (relative, about 7e-15 for a portfolio of two products). Values that differ by less than that are treated as a tie.
 
 The collection stops after 1000 portfolios or 30 seconds. This happens only when very many portfolios have almost the same penetration. The package then warns that the penetration is optimal only to within the solver tolerance, and the solver finds the best frequency with penetration bounded by the best value found, with another 30 seconds. If that search also stops, the package warns and returns the best portfolio on penetration. The time limits apply inside each solve, but the reach stage, a frequency stage before penetration, and the first penetration solve have no time limit. Identical product columns would make many equivalent portfolios, so the model selects identical products in column order.
+
+In R, set `options(turfLP.max_pool = 1000, turfLP.max_pool_seconds = 30)` to control those searches. Restore earlier option values after a temporary change. See `?turf` for limits and warnings.
 
 ### Run time
 

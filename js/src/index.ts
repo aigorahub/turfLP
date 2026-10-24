@@ -5,3 +5,5 @@
 export { turf, turfMinCover, turfSizes, type Portfolio, type TurfOptions } from "./core.js";
 export { loadSolver, type LoadOptions } from "./solver.js";
 export type { ReachMatrix, Criterion } from "./input.js";
+export { turfBaselines, turfFrontier, type AnalysisOptions, type TurfFrontierOptions,
+         type AnalysisPoint, type AnalysisStop } from "./analysis-api.js";

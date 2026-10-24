@@ -35,21 +35,44 @@
 #' the stages choose only the other `size - length(fixed)` products. A row
 #' \eqn{\sum_{j \in F} x_j = |F|} adds this to the model.
 #'
+#' @section Limits and warnings:
+#' The penetration search examines at most `getOption("turfLP.max_pool", 1000)`
+#' additional portfolios, with a budget of
+#' `getOption("turfLP.max_pool_seconds", 30)` seconds. Use a nonnegative whole
+#' number for the portfolio limit and a nonnegative number of seconds (`Inf`
+#' for no time limit). For example, `options(turfLP.max_pool_seconds = 120)`
+#' changes the budget for subsequent calls; restore the previous option after use.
+#'
+#' These are not whole-call timeouts. The reach stage, a frequency stage before
+#' penetration, and the first penetration solve have no time limit. If the pool
+#' search stops early and frequency follows penetration, its recovery search
+#' gets a separate budget of the same length.
+#'
+#' A limit produces an R warning that names the criterion whose optimum was
+#' not proved. The function still returns the best portfolio found; reach stays
+#' optimal. Keep the warning with the result. Warnings are not stored in the
+#' returned list. Each search for a valid solution also stops after 100 solver
+#' attempts. An invalid solver solution after a valid portfolio exists produces
+#' a warning and retains a valid portfolio. Without a valid result, the call
+#' stops with an error. Input errors also stop the call.
+#'
 #' @param reach A matrix or data frame with one row per respondent and one
 #'   column per product. A value of 1 (or `TRUE`) means that the product
 #'   reaches the respondent. All other values must be 0 (or `FALSE`). Column
 #'   names are used as product names.
-#' @param size The number of products in the portfolio.
+#' @param size The number of products in the portfolio: a whole number of at
+#'   least 1, no smaller than the number of distinct fixed products and no larger
+#'   than the number of products that reach at least one respondent.
 #' @param tiebreak A character vector of tie-break criteria to apply after
 #'   reach, in order. Use any of `"frequency"` and `"penetration"`, or
 #'   `character(0)` for reach only.
-#' @param fixed Column indices of products that the portfolio must contain,
+#' @param fixed 1-based column indices (not names) of products the portfolio must contain,
 #'   or `NULL` for none. `size` counts them. Each fixed product must reach at
 #'   least one respondent. Duplicates are ignored.
 #'
 #' @return An object of class `turf_portfolio`, a list with these elements:
 #'   \describe{
-#'     \item{`products`}{Column indices of the selected products.}
+#'     \item{`products`}{1-based column indices of the selected products.}
 #'     \item{`names`}{Names of the selected products.}
 #'     \item{`size`}{Number of selected products.}
 #'     \item{`reach`}{Number of respondents that at least one selected
@@ -60,7 +83,7 @@
 #'     \item{`penetration`}{Harmonic mean of the individual reaches of the
 #'       selected products.}
 #'     \item{`respondents`}{Number of respondents (rows of `reach`).}
-#'     \item{`fixed`}{Column indices of the fixed products, sorted, or
+#'     \item{`fixed`}{1-based column indices of the fixed products, sorted, or
 #'       `integer(0)` when there are none.}
 #'   }
 #'
@@ -346,7 +369,7 @@ turf <- function(reach, size, tiebreak = c("frequency", "penetration"),
 #' respondent.
 #'
 #' @inheritParams turf
-#' @param fixed Column indices of products that the portfolio must contain,
+#' @param fixed 1-based column indices (not names) of products the portfolio must contain,
 #'   or `NULL` for none. Each fixed product must reach at least one
 #'   respondent. Duplicates are ignored.
 #' @return An object of class `turf_portfolio`. See [turf()] for its
@@ -404,11 +427,19 @@ turf_min_cover <- function(reach, fixed = NULL) {
 #' @inheritParams turf
 #' @param sizes The portfolio sizes to solve. The default is every size from
 #'   1 (or the number of fixed products) to the size from [turf_min_cover()]
-#'   with the same `fixed`.
+#'   with the same `fixed`. Each size must be a whole number of at least 1,
+#'   no smaller than the number of distinct fixed products and no larger than
+#'   the number of products that reach at least one respondent.
 #' @return A data frame with one row per size and the columns `size`,
 #'   `reach`, `reach_prop`, `frequency`, `penetration`, and `products`. The
 #'   `products` column holds the names of the selected products, separated
-#'   by commas.
+#'   by commas. It does not include product indices or a separate `fixed`
+#'   column. Use [turf()] for those fields.
+#' @section Warnings:
+#' Each size uses the limits and warnings described in [turf()]. Warnings are
+#' emitted as each size is solved; they are not stored in the data frame and
+#' do not name the size. Call [turf()] separately for each size if you need to
+#' capture its warnings with its result.
 #' @examples
 #' set.seed(1234)
 #' reach <- turf_simulate(n_respondents = 300, n_products = 15)
